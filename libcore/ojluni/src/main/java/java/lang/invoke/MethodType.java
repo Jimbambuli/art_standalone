@@ -123,7 +123,13 @@ class MethodType implements java.io.Serializable {
         this.ptypes = ptypes;
     }
 
-    /*trusted*/ MethodTypeForm form() { return form; }
+    // art_standalone-changed: MethodTypes created by the runtime (e.g. the types of method handles
+    // and call sites resolved from dex files) don't go through makeImpl(), so compute the form lazily.
+    /*trusted*/ MethodTypeForm form() {
+        if (form == null)
+            form = MethodTypeForm.findForm(this);
+        return form;
+    }
     /*trusted*/ /** @hide */ public Class<?> rtype() { return rtype; }
     /*trusted*/ /** @hide */ public Class<?>[] ptypes() { return ptypes; }
 
@@ -594,7 +600,7 @@ class MethodType implements java.io.Serializable {
      * @return true if any of the types are primitives
      */
     public boolean hasPrimitives() {
-        return form.hasPrimitives();
+        return form().hasPrimitives();
     }
 
     /**
@@ -615,7 +621,7 @@ class MethodType implements java.io.Serializable {
      * @return a version of the original type with all reference types replaced
      */
     public MethodType erase() {
-        return form.erasedType();
+        return form().erasedType();
     }
 
     /**
@@ -625,7 +631,7 @@ class MethodType implements java.io.Serializable {
      * @return a version of the original type with all reference and subword types replaced
      */
     /*non-public*/ MethodType basicType() {
-        return form.basicType();
+        return form().basicType();
     }
 
     /**
@@ -969,7 +975,7 @@ class MethodType implements java.io.Serializable {
      * @return the number of JVM stack slots for this type's parameters
      */
     /*non-public*/ int parameterSlotCount() {
-        return form.parameterSlotCount();
+        return form().parameterSlotCount();
     }
 
     /// Queries which have to do with the bytecode architecture
