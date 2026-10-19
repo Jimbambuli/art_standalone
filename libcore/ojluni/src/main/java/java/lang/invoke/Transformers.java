@@ -1363,11 +1363,13 @@ public class Transformers {
                     // from the stack frame.
                     final Class<?> targetType = target.type().ptypes()[arrayOffset];
                     final Class<?> targetComponentType = targetType.getComponentType();
-                    final Class<?> adapterComponentType = type().lastParameterType();
+                    // Read each argument with its own type in the caller's frame: after asType()
+                    // the collected arguments can have different reference types.
+                    final Class<?>[] callerTypes = callerFrame.getMethodType().ptypes();
 
                     Object[] arr = (Object[]) Array.newInstance(targetComponentType, numArrayArgs);
                     for (int i = 0; i < numArrayArgs; ++i) {
-                        arr[i] = reader.nextReference(adapterComponentType);
+                        arr[i] = reader.nextReference(callerTypes[arrayOffset + i]);
                     }
 
                     writer.putNextReference(arr, targetType);
