@@ -9194,8 +9194,13 @@ ObjPtr<mirror::MethodHandle> ClassLinker::ResolveMethodHandleForMethod(
 
   if (UNLIKELY(handle_type == DexFile::MethodHandleType::kInvokeConstructor)) {
     Handle<mirror::Class> constructor_class = hs.NewHandle(target_method->GetDeclaringClass());
+    // Look the constructor up on behalf of the class whose dex file refers to it. The default
+    // lookup (MethodHandles.lookup()) takes the calling class, and refuses java.* classes of
+    // the boot class path, so a constructor reference in libcore (Collectors.toList() uses
+    // ArrayList::new) could not be resolved when libcore is built without desugaring.
+    Handle<mirror::Class> referrer_class = hs.NewHandle(referrer->GetDeclaringClass());
     Handle<mirror::MethodHandlesLookup> lookup =
-        hs.NewHandle(mirror::MethodHandlesLookup::GetDefault(self));
+        hs.NewHandle(mirror::MethodHandlesLookup::Create(self, referrer_class));
     return lookup->FindConstructor(self, constructor_class, method_type);
   }
 
