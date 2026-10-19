@@ -234,6 +234,26 @@ extern "C" char **AssetManager_getLocales(struct AssetManager *asset_manager, bo
   return array;
 }
 
+extern "C" size_t AssetManager_getSizeConfigurations(struct AssetManager *asset_manager, uint16_t **out_sizes)
+{
+  GuardedAssetManager2 *assetManager = reinterpret_cast<GuardedAssetManager2 *>(asset_manager);
+  auto configs = assetManager->GetResourceConfigurations(true /* exclude_system */, true /* exclude_mipmap */);
+  *out_sizes = NULL;
+  if (!configs.has_value())
+    return 0;
+  uint16_t *sizes = (uint16_t *)malloc(configs->size() * 3 * sizeof(uint16_t));
+  if (!sizes)
+    return 0;
+  size_t i = 0;
+  for (const android::ResTable_config &config : *configs) {
+    sizes[i++] = config.screenWidthDp;
+    sizes[i++] = config.screenHeightDp;
+    sizes[i++] = config.smallestScreenWidthDp;
+  }
+  *out_sizes = sizes;
+  return configs->size();
+}
+
 extern "C" int Asset_openFileDescriptor(struct Asset *asset, off64_t* outStart, off64_t* outLength)
 {
   android::Asset *assetPtr = reinterpret_cast<android::Asset *>(asset);
