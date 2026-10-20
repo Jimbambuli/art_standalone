@@ -1850,7 +1850,8 @@ public class WolfSSLSocket extends SSLSocket {
                     }
 
                 } catch (IllegalStateException e) {
-                    throw new IOException(e);
+                    /* session freed by close() on another thread */
+                    throw new SocketException("Socket closed");
                 }
 
                 if (off != 0) {
@@ -1972,8 +1973,9 @@ public class WolfSSLSocket extends SSLSocket {
                 } catch (IllegalStateException e) {
                     WolfSSLDebug.log(getClass(), WolfSSLDebug.INFO,
                                      "got IllegalStateException: " + e +
-                                     ", throwing IOException");
-                    throw new IOException(e);
+                                     ", throwing SocketException");
+                    /* session freed by close() on another thread */
+                    throw new SocketException("Socket closed");
                 }
 
                 WolfSSLDebug.log(getClass(), WolfSSLDebug.INFO,

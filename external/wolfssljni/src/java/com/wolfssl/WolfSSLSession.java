@@ -24,6 +24,7 @@ package com.wolfssl;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.DatagramSocket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.lang.StringBuilder;
 import java.nio.charset.StandardCharsets;
@@ -76,6 +77,17 @@ public class WolfSSLSession {
     /* return values from naitve socketSelect(), should match
      * ones in native/com_wolfssl_WolfSSLSession.c */
     private int WOLFJNI_TIMEOUT = -11;
+    private int WOLFJNI_INTERRUPTED = -15;
+
+    /* Native calls that use sslPtr and may block (read, write, connect,
+     * accept, shutdown) or follow one (getError) are counted in ioUsers.
+     * freeSSL() from another thread (SSLSocket.close()) wakes threads
+     * blocked in select() and frees the native WOLFSSL only after the last
+     * of them has left, like Conscrypt does with SSL_interrupt() and its
+     * read/write locks. Interrupt pipe after wolfssljni 85dc1542 (1.15). */
+    private final Object ioUsersLock = new Object();
+    private int ioUsers = 0;
+    private boolean freePending = false;
 
     /**
      * Creates a new SSL/TLS session.
@@ -197,6 +209,7 @@ public class WolfSSLSession {
     private native int connect(long ssl, int timeout);
     private native int write(long ssl, byte[] data, int length, int timeout);
     private native int read(long ssl, byte[] data, int sz, int timeout);
+    private native void interruptBlockedIO(long ssl);
     private native int accept(long ssl);
     private native void freeSSL(long ssl);
     private native int shutdownSSL(long ssl, int timeout);
@@ -526,10 +539,12 @@ public class WolfSSLSession {
 
         int ret = 0;
 
-        if (this.active == false)
-            throw new IllegalStateException("Object has been freed");
-
-        ret = connect(getSessionPtr(), 0);
+        long ptr = beginIO();
+        try {
+            ret = connect(ptr, 0);
+        } finally {
+            endIO();
+        }
 
         if (ret == WolfSSL.WOLFJNI_TIMEOUT) {
             throw new SocketTimeoutException(
@@ -582,10 +597,12 @@ public class WolfSSLSession {
 
         int ret;
 
-        if (this.active == false)
-            throw new IllegalStateException("Object has been freed");
-
-        ret = connect(getSessionPtr(), timeout);
+        long ptr = beginIO();
+        try {
+            ret = connect(ptr, timeout);
+        } finally {
+            endIO();
+        }
 
         if (ret == WOLFJNI_TIMEOUT) {
             throw new SocketTimeoutException("Socket connect timeout");
@@ -627,10 +644,12 @@ public class WolfSSLSession {
      */
     public int write(byte[] data, int length) throws IllegalStateException {
 
-        if (this.active == false)
-            throw new IllegalStateException("Object has been freed");
-
-        return write(getSessionPtr(), data, length, 0);
+        long ptr = beginIO();
+        try {
+            return write(ptr, data, length, 0);
+        } finally {
+            endIO();
+        }
     }
 
     /**
@@ -672,10 +691,12 @@ public class WolfSSLSession {
 
         int ret;
 
-        if (this.active == false)
-            throw new IllegalStateException("Object has been freed");
-
-        ret = write(getSessionPtr(), data, length, timeout);
+        long ptr = beginIO();
+        try {
+            ret = write(ptr, data, length, timeout);
+        } finally {
+            endIO();
+        }
 
         if (ret == WOLFJNI_TIMEOUT) {
             throw new SocketTimeoutException("Socket write timeout");
@@ -720,10 +741,12 @@ public class WolfSSLSession {
      */
     public int read(byte[] data, int sz) throws IllegalStateException {
 
-        if (this.active == false)
-            throw new IllegalStateException("Object has been freed");
-
-        return read(getSessionPtr(), data, sz, 0);
+        long ptr = beginIO();
+        try {
+            return read(ptr, data, sz, 0);
+        } finally {
+            endIO();
+        }
     }
 
     /**
@@ -763,14 +786,20 @@ public class WolfSSLSession {
      * @throws SocketTimeoutException if socket timeout occurs
      */
     public int read(byte[] data, int sz, int timeout)
-        throws IllegalStateException, SocketTimeoutException {
+        throws IllegalStateException, SocketTimeoutException, SocketException {
 
         int ret;
 
-        if (this.active == false)
-            throw new IllegalStateException("Object has been freed");
+        long ptr = beginIO();
+        try {
+            ret = read(ptr, data, sz, timeout);
+        } finally {
+            endIO();
+        }
 
-        ret = read(getSessionPtr(), data, sz, timeout);
+        if (ret == WOLFJNI_INTERRUPTED) {
+            throw new SocketException("Socket closed");
+        }
 
         if (ret == WOLFJNI_TIMEOUT) {
             throw new SocketTimeoutException("Socket read timeout");
@@ -807,10 +836,12 @@ public class WolfSSLSession {
      */
     public int accept() throws IllegalStateException {
 
-        if (this.active == false)
-            throw new IllegalStateException("Object has been freed");
-
-        return accept(getSessionPtr());
+        long ptr = beginIO();
+        try {
+            return accept(ptr);
+        } finally {
+            endIO();
+        }
     }
 
     /**
@@ -824,14 +855,43 @@ public class WolfSSLSession {
     public synchronized void freeSSL()
         throws IllegalStateException, WolfSSLJNIException {
 
-        if (this.active == false)
-            return;
+        synchronized (ioUsersLock) {
+            if (this.active == false)
+                return;
+
+            /* no new native calls from here on */
+            this.active = false;
+
+            if (this.ioUsers > 0) {
+                /* wake threads blocked in select(), the last one leaving
+                 * frees the native session in endIO() */
+                interruptBlockedIO(getSessionPtr());
+                this.freePending = true;
+                return;
+            }
+        }
 
         /* free native resources */
         freeSSL(getSessionPtr());
+    }
 
-        /* free Java resources */
-        this.active = false;
+    private long beginIO() throws IllegalStateException {
+        synchronized (ioUsersLock) {
+            if (this.active == false)
+                throw new IllegalStateException("Object has been freed");
+            this.ioUsers++;
+            return getSessionPtr();
+        }
+    }
+
+    private void endIO() {
+        synchronized (ioUsersLock) {
+            this.ioUsers--;
+            if (this.ioUsers > 0 || this.freePending == false)
+                return;
+            this.freePending = false;
+        }
+        freeSSL(getSessionPtr());
     }
 
     /**
@@ -865,10 +925,12 @@ public class WolfSSLSession {
      */
     public int shutdownSSL() throws IllegalStateException {
 
-        if (this.active == false)
-            throw new IllegalStateException("Object has been freed");
-
-        return shutdownSSL(getSessionPtr(), 0);
+        long ptr = beginIO();
+        try {
+            return shutdownSSL(ptr, 0);
+        } finally {
+            endIO();
+        }
     }
 
     /**
@@ -907,10 +969,12 @@ public class WolfSSLSession {
 
         int ret;
 
-        if (this.active == false)
-            throw new IllegalStateException("Object has been freed");
-
-        ret = shutdownSSL(getSessionPtr(), timeout);
+        long ptr = beginIO();
+        try {
+            ret = shutdownSSL(ptr, timeout);
+        } finally {
+            endIO();
+        }
 
         if (ret == WOLFJNI_TIMEOUT) {
             throw new SocketTimeoutException("Socket read timeout");
@@ -939,10 +1003,12 @@ public class WolfSSLSession {
      */
     public int getError(int ret) throws IllegalStateException {
 
-        if (this.active == false)
-            throw new IllegalStateException("Object has been freed");
-
-        return getError(getSessionPtr(), ret);
+        long ptr = beginIO();
+        try {
+            return getError(ptr, ret);
+        } finally {
+            endIO();
+        }
     }
 
     /**

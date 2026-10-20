@@ -105,6 +105,14 @@ JNIEXPORT jint JNICALL Java_com_wolfssl_WolfSSLSession_read
 
 /*
  * Class:     com_wolfssl_WolfSSLSession
+ * Method:    interruptBlockedIO
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_wolfssl_WolfSSLSession_interruptBlockedIO
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     com_wolfssl_WolfSSLSession
  * Method:    accept
  * Signature: (J)I
  */

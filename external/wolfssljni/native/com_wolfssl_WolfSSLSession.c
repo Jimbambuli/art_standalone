@@ -22,6 +22,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/time.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include <arpa/inet.h>
 #include <wolfssl/options.h>
@@ -43,13 +45,31 @@ static jobject g_crlCbIfaceObj;
  * function calls. Stored inside WOLFSSL app data, set with
  * wolfSSL_set_app_data(), retrieved with wolfSSL_get_app_data().
  * Global callback objects are created with NewGlobalRef(), then freed
- * inside freeSSL() with DeleteGlobalRef(). */
+ * inside freeSSL() with DeleteGlobalRef().
+ *
+ * interruptFds[2] is a pipe() that socketSelect() also waits on, so that
+ * SSLSocket.close() on another thread can wake a thread blocked in select()
+ * (interruptBlockedIO(), after wolfssljni 85dc1542). It is never drained:
+ * once written, every later select() returns at once. */
 typedef struct SSLAppData {
+    int interruptFds[2];             /* pipe for interrupting socketSelect() */
     wolfSSL_Mutex* jniSessLock;      /* WOLFSSL session lock */
     jobject* g_verifySSLCbIfaceObj;  /* Java verify callback [global ref] */
 } SSLAppData;
 
 /* custom native fn prototypes */
+
+static void closeInterruptPipe(SSLAppData* appData)
+{
+    if (appData->interruptFds[0] != -1) {
+        close(appData->interruptFds[0]);
+        appData->interruptFds[0] = -1;
+    }
+    if (appData->interruptFds[1] != -1) {
+        close(appData->interruptFds[1]);
+        appData->interruptFds[1] = -1;
+    }
+}
 void NativeMissingCRLCallback(const char* url);
 int  NativeSSLVerifyCallback(int preverify_ok, WOLFSSL_X509_STORE_CTX* store);
 
@@ -225,11 +245,22 @@ JNIEXPORT jlong JNICALL Java_com_wolfssl_WolfSSLSession_newSSL
         wc_InitMutex(jniSessLock);
         appData->jniSessLock = jniSessLock;
 
+        /* without the pipe, close() just cannot wake a blocked reader */
+        if (pipe(appData->interruptFds) != 0) {
+            appData->interruptFds[0] = -1;
+            appData->interruptFds[1] = -1;
+        } else {
+            fcntl(appData->interruptFds[0], F_SETFD, FD_CLOEXEC);
+            fcntl(appData->interruptFds[1], F_SETFD, FD_CLOEXEC);
+            fcntl(appData->interruptFds[1], F_SETFL, O_NONBLOCK);
+        }
+
         /* cache associated WolfSSLSession jobject in native WOLFSSL */
         ret = wolfSSL_set_jobject((WOLFSSL*)(uintptr_t)sslPtr, g_cachedSSLObj);
         if (ret != SSL_SUCCESS) {
             printf("error storing jobject in wolfSSL native session\n");
             (*jenv)->DeleteGlobalRef(jenv, *g_cachedSSLObj);
+            closeInterruptPipe(appData);
             XFREE(appData, NULL, DYNAMIC_TYPE_TMP_BUFFER);
             XFREE(g_cachedSSLObj, NULL, DYNAMIC_TYPE_TMP_BUFFER);
             wolfSSL_free((WOLFSSL*)(uintptr_t)sslPtr);
@@ -241,6 +272,7 @@ JNIEXPORT jlong JNICALL Java_com_wolfssl_WolfSSLSession_newSSL
                 (WOLFSSL*)(uintptr_t)sslPtr, appData) != SSL_SUCCESS) {
             printf("error setting WOLFSSL app data in newSSL\n");
             (*jenv)->DeleteGlobalRef(jenv, *g_cachedSSLObj);
+            closeInterruptPipe(appData);
             XFREE(jniSessLock, NULL, DYNAMIC_TYPE_TMP_BUFFER);
             XFREE(appData, NULL, DYNAMIC_TYPE_TMP_BUFFER);
             XFREE(g_cachedSSLObj, NULL, DYNAMIC_TYPE_TMP_BUFFER);
@@ -557,7 +589,8 @@ enum {
     WOLFJNI_TIMEOUT     = -11,  /* also in WolfSSL.java */
     WOLFJNI_RECV_READY  = -12,
     WOLFJNI_SEND_READY  = -13,
-    WOLFJNI_ERROR_READY = -14
+    WOLFJNI_ERROR_READY = -14,
+    WOLFJNI_INTERRUPTED = -15   /* also in WolfSSLSession.java */
 };
 
 /* perform a select() call on underlying socket to wait for socket to be ready
@@ -567,12 +600,14 @@ enum {
  * The Java socket timeout value representing no timeout is NULL, not 0 like
  * C. We adjust for this when handling timeout_ms here. timeout_ms is in
  * milliseconds. */
-static int socketSelect(int sockfd, int timeout_ms, int rx)
+static int socketSelect(SSLAppData* appData, int sockfd, int timeout_ms,
+    int rx)
 {
-    fd_set fds, errfds;
+    fd_set fds, errfds, intfds;
     fd_set* recvfds = NULL;
     fd_set* sendfds = NULL;
     int nfds = sockfd + 1;
+    int intfd = -1;
     int result;
     struct timeval timeout;
 
@@ -583,11 +618,22 @@ static int socketSelect(int sockfd, int timeout_ms, int rx)
     FD_SET(sockfd, &fds);
     FD_ZERO(&errfds);
     FD_SET(sockfd, &errfds);
+    FD_ZERO(&intfds);
 
     if (rx) {
         recvfds = &fds;
     } else {
         sendfds = &fds;
+        recvfds = &intfds;
+    }
+
+    /* the interrupt pipe is watched for readability in either case */
+    if (appData != NULL && appData->interruptFds[0] != -1) {
+        intfd = appData->interruptFds[0];
+        FD_SET(intfd, recvfds);
+        if (intfd >= nfds) {
+            nfds = intfd + 1;
+        }
     }
 
     if (timeout_ms == 0) {
@@ -599,7 +645,10 @@ static int socketSelect(int sockfd, int timeout_ms, int rx)
     if (result == 0) {
         return WOLFJNI_TIMEOUT;
     } else if (result > 0) {
-        if (FD_ISSET(sockfd, &fds)) {
+        if (intfd != -1 && FD_ISSET(intfd, recvfds)) {
+            /* SSLSocket.close() on another thread */
+            return WOLFJNI_INTERRUPTED;
+        } else if (FD_ISSET(sockfd, &fds)) {
             if (rx) {
                 return WOLFJNI_RECV_READY;
             } else {
@@ -670,7 +719,7 @@ JNIEXPORT jint JNICALL Java_com_wolfssl_WolfSSLSession_connect
                 break;
             }
 
-            ret = socketSelect(sockfd, (int)timeout, 1);
+            ret = socketSelect(appData, sockfd, (int)timeout, 1);
             if (ret == WOLFJNI_RECV_READY || ret == WOLFJNI_SEND_READY) {
                 /* I/O ready, continue handshake and try again */
                 continue;
@@ -761,7 +810,7 @@ JNIEXPORT jint JNICALL Java_com_wolfssl_WolfSSLSession_write
                     break;
                 }
 
-                ret = socketSelect(sockfd, (int)timeout, 0);
+                ret = socketSelect(appData, sockfd, (int)timeout, 0);
                 if (ret == WOLFJNI_RECV_READY || ret == WOLFJNI_SEND_READY) {
                     /* loop around and try wolfSSL_write() again */
                     continue;
@@ -844,7 +893,7 @@ JNIEXPORT jint JNICALL Java_com_wolfssl_WolfSSLSession_read(JNIEnv* jenv,
                     break;
                 }
 
-                ret = socketSelect(sockfd, timeout, 1);
+                ret = socketSelect(appData, sockfd, timeout, 1);
                 if (ret == WOLFJNI_RECV_READY || ret == WOLFJNI_SEND_READY) {
                     /* loop around and try wolfSSL_read() again */
                     continue;
@@ -863,6 +912,28 @@ JNIEXPORT jint JNICALL Java_com_wolfssl_WolfSSLSession_read(JNIEnv* jenv,
     }
 
     return size;
+}
+
+/* Wake threads blocked in socketSelect() for this session, for
+ * SSLSocket.close() on another thread. The caller keeps the session alive
+ * until those threads have returned. */
+JNIEXPORT void JNICALL Java_com_wolfssl_WolfSSLSession_interruptBlockedIO
+  (JNIEnv* jenv, jobject jcl, jlong sslPtr)
+{
+    SSLAppData* appData;
+    WOLFSSL* ssl = (WOLFSSL*)(uintptr_t)sslPtr;
+    (void)jenv;
+    (void)jcl;
+
+    if (ssl == NULL) {
+        return;
+    }
+    appData = (SSLAppData*)wolfSSL_get_app_data(ssl);
+    if (appData != NULL && appData->interruptFds[1] != -1) {
+        if (write(appData->interruptFds[1], "1", 1) < 0) {
+            /* pipe full: already interrupted */
+        }
+    }
 }
 
 JNIEXPORT jint JNICALL Java_com_wolfssl_WolfSSLSession_accept
@@ -922,7 +993,7 @@ JNIEXPORT jint JNICALL Java_com_wolfssl_WolfSSLSession_accept
                 break;
             }
 
-            ret = socketSelect(sockfd, 0, 1);
+            ret = socketSelect(appData, sockfd, 0, 1);
             if (ret == WOLFJNI_RECV_READY || ret == WOLFJNI_SEND_READY) {
                 /* I/O ready, continue handshake and try again */
                 continue;
@@ -973,6 +1044,7 @@ JNIEXPORT void JNICALL Java_com_wolfssl_WolfSSLSession_freeSSL
     /* free session mutex lock */
     appData = (SSLAppData*)wolfSSL_get_app_data(ssl);
     if (appData != NULL) {
+        closeInterruptPipe(appData);
         if (appData->jniSessLock != NULL) {
             wc_FreeMutex(appData->jniSessLock);
             XFREE(appData->jniSessLock, NULL, DYNAMIC_TYPE_TMP_BUFFER);
@@ -1148,7 +1220,7 @@ JNIEXPORT jint JNICALL Java_com_wolfssl_WolfSSLSession_shutdownSSL
                 break;
             }
 
-            ret = socketSelect(sockfd, timeout, 1);
+            ret = socketSelect(appData, sockfd, timeout, 1);
             if (ret == WOLFJNI_RECV_READY || ret == WOLFJNI_SEND_READY) {
                 /* I/O ready, continue handshake and try again */
                 continue;
