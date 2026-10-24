@@ -159,7 +159,11 @@ class OatFileAssistant {
   // After this call, no other methods of the OatFileAssistant should be
   // called, because access to the loaded oat file has been taken away from
   // the OatFileAssistant object.
-  std::unique_ptr<OatFile> GetBestOatFile();
+  //
+  // If the oat file is missing or out of date, the dex file is compiled first. With a
+  // class loader context, the dex file is compiled for that context, and an oat file
+  // compiled for a different context is compiled again.
+  std::unique_ptr<OatFile> GetBestOatFile(ClassLoaderContext* context = nullptr);
 
   // Returns a human readable description of the status of the code for the
   // dex file. The returned description is for debugging purposes only.
@@ -327,6 +331,10 @@ class OatFileAssistant {
     // the OatFileInfo object.
     std::unique_ptr<OatFile> ReleaseFileForUse();
 
+    // Returns true if the oat file was compiled for the given class loader
+    // context (or there is no context or no oat file to check).
+    bool ClassLoaderContextIsOkay(ClassLoaderContext* context, const std::vector<int>& context_fds);
+
    private:
     // Returns true if the compiler filter used to generate the file is at
     // least as good as the given target filter. profile_changed should be
@@ -335,8 +343,6 @@ class OatFileAssistant {
     // downgrade should be true if the purpose of dexopt is to downgrade the
     // compiler filter.
     bool CompilerFilterIsOkay(CompilerFilter::Filter target, bool profile_changed, bool downgrade);
-
-    bool ClassLoaderContextIsOkay(ClassLoaderContext* context, const std::vector<int>& context_fds);
 
     // Release the loaded oat file.
     // Returns null if the oat file hasn't been loaded.

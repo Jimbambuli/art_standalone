@@ -204,10 +204,15 @@ bool OatFileAssistant::IsUpToDate() {
   return GetBestInfo().Status() == kOatUpToDate;
 }
 
-std::unique_ptr<OatFile> OatFileAssistant::GetBestOatFile() {
+std::unique_ptr<OatFile> OatFileAssistant::GetBestOatFile(ClassLoaderContext* context) {
   // framework-res.apk contains no dex files.
   bool is_framework_res = dex_location_.compare(dex_location_.size() - (sizeof("framework-res.apk")-1), sizeof("framework-res.apk")-1, "framework-res.apk") == 0;
-  if (!IsUpToDate() && !is_framework_res) {
+  // Like installd on Android, compile for the class loader context the dex file is loaded
+  // with. The runtime then verifies the context and takes the oat file, instead of falling
+  // back to a duplicate class check against the parent class loaders, which rejects the oat
+  // file if the app ships a class that a parent class loader also defines.
+  bool context_okay = GetBestInfo().ClassLoaderContextIsOkay(context, std::vector<int>());
+  if ((!IsUpToDate() || !context_okay) && !is_framework_res) {
     // Compile the dex file.
     std::vector<std::string> arg_vector;
 
@@ -224,6 +229,11 @@ std::unique_ptr<OatFile> OatFileAssistant::GetBestOatFile() {
     }
 
     arg_vector.push_back(std::string("--boot-image=") + Runtime::Current()->GetImageLocation());
+
+    if (context != nullptr) {
+      arg_vector.push_back(std::string("--class-loader-context=") +
+                           context->EncodeContextForDex2oat(/*base_dir=*/ ""));
+    }
 
     std::string command_line(android::base::Join(arg_vector, ' '));
     LOG(INFO) << "Compiling dex file: " << command_line;
