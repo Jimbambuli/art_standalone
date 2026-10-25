@@ -60,7 +60,11 @@ using android::base::StringAppendV;
 
 static constexpr size_t kGlobalsMax = 51200;  // Arbitrary sanity check. (Must fit in 16 bits.)
 
-static constexpr size_t kWeakGlobalsMax = 51200;  // Arbitrary sanity check. (Must fit in 16 bits.)
+// Arbitrary sanity check. Android/ATL: unlike on Android, every live View and Drawable holds one weak global (the
+// native widget/paintable calls back into its Java object), so an app that keeps old pages alive reaches 51200 long
+// before its Java heap is full. 204800 covers a full 512 MB heap (about 210 live View/Drawable per MB). The index is
+// encoded above the kind and serial bits of a 64-bit IndirectRef, so 16 bits are no longer a limit.
+static constexpr size_t kWeakGlobalsMax = 204800;
 
 bool JavaVMExt::IsBadJniVersion(int version) {
   // We don't support JNI_VERSION_1_1. These are the only other valid versions.
