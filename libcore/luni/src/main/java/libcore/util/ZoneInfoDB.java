@@ -55,6 +55,9 @@ public final class ZoneInfoDB {
     // Each index entry takes up this number of bytes.
     public static final int SIZEOF_INDEX_ENTRY = SIZEOF_TZNAME + 3 * SIZEOF_TZINT;
 
+    // The host's compiled zone files, one tzfile per id.
+    private static final String HOST_ZONEINFO_DIR = "/usr/share/zoneinfo/";
+
     /**
      * {@code true} if {@link #close()} has been called meaning the instance cannot provide any
      * data.
@@ -301,10 +304,34 @@ public final class ZoneInfoDB {
     ZoneInfo makeTimeZoneUncached(String id) throws IOException {
       BufferIterator it = getBufferIterator(id);
       if (it == null) {
-        return null;
+        return (mappedFile == null) ? makeHostTimeZone(id) : null;
       }
 
       return ZoneInfo.readTimeZone(id, it, System.currentTimeMillis());
+    }
+
+    /**
+     * Without a tzdata file (a standalone runtime on a desktop host), read the zone from the
+     * host's tzfile, the format tzdata stores for each zone.
+     */
+    private static ZoneInfo makeHostTimeZone(String id) {
+      if (id.isEmpty() || id.startsWith("/") || id.contains("..")) {
+        return null;
+      }
+      MemoryMappedFile file = null;
+      try {
+        file = MemoryMappedFile.mmapRO(HOST_ZONEINFO_DIR + id);
+        return ZoneInfo.readTimeZone(id, file.bigEndianIterator(), System.currentTimeMillis());
+      } catch (ErrnoException | IOException e) {
+        return null;
+      } finally {
+        if (file != null) {
+          try {
+            file.close();
+          } catch (ErrnoException ignored) {
+          }
+        }
+      }
     }
 
     public String[] getAvailableIDs() {
