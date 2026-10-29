@@ -1334,6 +1334,21 @@ public class WolfSSLSocket extends SSLSocket {
     }
 
     /**
+     * Sets the peer hostname used for SNI and session resumption, like
+     * Conscrypt's SSLSocket extension method of the same name, which
+     * frameworks such as okhttp call through reflection on Android.
+     *
+     * @param hostname peer hostname
+     */
+    synchronized public void setHostname(String hostname) {
+
+        WolfSSLDebug.log(getClass(), WolfSSLDebug.INFO,
+            "entered setHostname(" + hostname + ")");
+
+        EngineHelper.setHostname(hostname);
+    }
+
+    /**
      * Enables use of session tickets with this session. Disabled by default.
      *
      * @param useTickets true to enable session tickets, otherwise false

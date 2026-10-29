@@ -241,6 +241,10 @@ public class WolfSSLKeyX509 implements X509KeyManager{
         WolfSSLDebug.log(getClass(), WolfSSLDebug.INFO,
             "entered getPrivateKey(), alias: " + alias);
 
+        if (alias == null) {
+            return null;
+        }
+
         try {
             key = (PrivateKey)store.getKey(alias, password);
         } catch (Exception e) {

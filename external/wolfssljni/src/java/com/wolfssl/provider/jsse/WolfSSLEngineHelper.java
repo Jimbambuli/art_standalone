@@ -118,6 +118,15 @@ public class WolfSSLEngineHelper {
     }
 
     /**
+     * Set hostname, used for session lookup and SNI
+     *
+     * @param hostname peer hostname String
+     */
+    protected void setHostname(String hostname) {
+        this.hostname = hostname;
+    }
+
+    /**
      * Set hostname and port
      * Used internally by SSLSocket.connect(SocketAddress)
      *
