@@ -80,9 +80,13 @@ bool JvmtiMethodInspectionCallback::IsMethodSafeToJit(art::ArtMethod* method) {
   return !manager_->MethodHasBreakpoints(method);
 }
 
-bool JvmtiMethodInspectionCallback::MethodNeedsDebugVersion(
-    art::ArtMethod* method ATTRIBUTE_UNUSED) {
-  return true;
+bool JvmtiMethodInspectionCallback::MethodNeedsDebugVersion(art::ArtMethod* method) {
+  // Attached late to a non-debuggable runtime, as long as the boot image keeps its compiled code (no breakpoint
+  // in it yet, see DeoptManager::FinishSetup) only inspected methods need the interpreter or debuggable code:
+  // anything else would put every class initialized from now on into the interpreter. Otherwise everything does.
+  return !manager_->IsBootImageDeoptPending() ||
+      manager_->HaveLocalsChanged() ||
+      manager_->MethodHasBreakpoints(method);
 }
 
 DeoptManager::DeoptManager()
@@ -96,7 +100,8 @@ DeoptManager::DeoptManager()
     breakpoint_status_lock_("JVMTI_BreakpointStatusLock",
                             static_cast<art::LockLevel>(art::LockLevel::kAbortLock + 1)),
     inspection_callback_(this),
-    set_local_variable_called_(false) { }
+    set_local_variable_called_(false),
+    boot_image_deopt_pending_(false) { }
 
 void DeoptManager::Setup() {
   art::ScopedThreadStateChange stsc(art::Thread::Current(),
@@ -178,6 +183,7 @@ void DeoptManager::FinishSetup() {
       DCHECK(runtime->GetJit() == nullptr) << "Jit should not be running yet!";
       runtime->AddCompilerOption("--debuggable");
       runtime->SetJavaDebuggable(true);
+      runtime->DeoptimizeBootImage();
     } else {
       LOG(WARNING) << "Openjdkjvmti plugin was loaded on a non-debuggable Runtime. Plugin was "
                    << "loaded too late to change runtime state to DEBUGGABLE. Only kArtTiVersion "
@@ -202,8 +208,12 @@ void DeoptManager::FinishSetup() {
                        << "'setenforce 0' and restarting this process.";
         }
       }
+      // Late attach: the boot image is deoptimized only once a breakpoint is set in one of its methods (see
+      // PerformLimitedDeoptimization). Until then its compiled code stays in use, so an agent that only
+      // watches exceptions, GCs or stacks does not slow the app down by running the boot classes in the
+      // interpreter. Breakpoints elsewhere deoptimize their own method; full deoptimization covers everything.
+      boot_image_deopt_pending_.store(true);
     }
-    runtime->DeoptimizeBootImage();
   }
 }
 
@@ -389,6 +399,12 @@ void DeoptManager::RemoveDeoptimizeAllMethodsLocked(art::Thread* self) {
 
 void DeoptManager::PerformLimitedDeoptimization(art::Thread* self, art::ArtMethod* method) {
   ScopedDeoptimizationContext sdc(self, this);
+  if (boot_image_deopt_pending_.load() &&
+      art::Runtime::Current()->GetHeap()->ObjectIsInBootImageSpace(method->GetDeclaringClass())) {
+    // Boot image code is not debuggable and may have this method inlined: interpret all of it from now on.
+    boot_image_deopt_pending_.store(false);
+    art::Runtime::Current()->DeoptimizeBootImage();
+  }
   art::Runtime::Current()->GetInstrumentation()->Deoptimize(method);
 }
 

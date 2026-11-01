@@ -127,6 +127,10 @@ class DeoptManager {
     return set_local_variable_called_.load();
   }
 
+  bool IsBootImageDeoptPending() const {
+    return boot_image_deopt_pending_.load();
+  }
+
   void SetLocalsUpdated() {
     set_local_variable_called_.store(true);
   }
@@ -193,6 +197,11 @@ class DeoptManager {
   // Set to true if anything calls SetLocalVariables on any thread since we need to be careful about
   // OSR after this.
   std::atomic<bool> set_local_variable_called_;
+
+  // Late attach to a non-debuggable runtime: the boot image still runs its compiled code and is deoptimized
+  // with the first breakpoint in a boot image method. Set in FinishSetup, cleared while performing a
+  // deoptimization (all threads suspended); read by the inspection callback from any thread.
+  std::atomic<bool> boot_image_deopt_pending_;
 
   // Helper for setting up/tearing-down for deoptimization.
   friend class ScopedDeoptimizationContext;
