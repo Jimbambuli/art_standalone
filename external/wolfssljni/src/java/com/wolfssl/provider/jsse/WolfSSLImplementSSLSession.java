@@ -380,8 +380,20 @@ public class WolfSSLImplementSSLSession implements SSLSession {
 
     @Override
     public Certificate[] getLocalCertificates() {
+        return getLocalCertificateChain();
+    }
+
+    /* The chain of the local certificate, or null when none was sent: a
+     * context initialised without a key manager (the usual client, okhttp
+     * asks every session for its local certificates) has none, and there is
+     * no alias without a client certificate. */
+    private java.security.cert.X509Certificate[] getLocalCertificateChain() {
         X509KeyManager km = authStore.getX509KeyManager();
-        return km.getCertificateChain(authStore.getCertAlias());
+        String alias = authStore.getCertAlias();
+        if (km == null || alias == null) {
+            return null;
+        }
+        return km.getCertificateChain(alias);
     }
 
     @Override
@@ -438,9 +450,8 @@ public class WolfSSLImplementSSLSession implements SSLSession {
     @Override
     public Principal getLocalPrincipal() {
 
-        X509KeyManager km = authStore.getX509KeyManager();
         java.security.cert.X509Certificate[] certs =
-                km.getCertificateChain(authStore.getCertAlias());
+                getLocalCertificateChain();
         Principal localPrincipal = null;
 
         if (certs == null) {
