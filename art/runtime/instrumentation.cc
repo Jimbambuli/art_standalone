@@ -345,9 +345,13 @@ static void InstrumentationInstallStack(Thread* thread, void* arg)
 
         const InstrumentationStackFrame& frame =
             (*instrumentation_stack_)[instrumentation_stack_depth_];
-        CHECK_EQ(m->GetNonObsoleteMethod(), frame.method_->GetNonObsoleteMethod())
-            << "Expected " << ArtMethod::PrettyMethod(m)
-            << ", Found " << ArtMethod::PrettyMethod(frame.method_);
+        // Trampolines get replaced with their actual method in the stack,
+        // so don't do the check below for runtime methods.
+        if (!frame.method_->IsRuntimeMethod()) {
+          CHECK_EQ(m->GetNonObsoleteMethod(), frame.method_->GetNonObsoleteMethod())
+              << "Expected " << ArtMethod::PrettyMethod(m)
+              << ", Found " << ArtMethod::PrettyMethod(frame.method_);
+        }
         return_pc = frame.return_pc_;
         if (kVerboseInstrumentation) {
           LOG(INFO) << "Ignoring already instrumented " << frame.Dump();
