@@ -125,6 +125,7 @@ public final class Linux implements Os {
     public native void msync(long address, long byteCount, int flags) throws ErrnoException;
     public native void munlock(long address, long byteCount) throws ErrnoException;
     public native void munmap(long address, long byteCount) throws ErrnoException;
+    public native FileDescriptor memfd_create(String name, int flags) throws ErrnoException;
     public native FileDescriptor open(String path, int flags, int mode) throws ErrnoException;
     public native FileDescriptor[] pipe2(int flags) throws ErrnoException;
     public native int poll(StructPollfd[] fds, int timeoutMs) throws ErrnoException;

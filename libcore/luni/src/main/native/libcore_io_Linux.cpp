@@ -1821,6 +1821,15 @@ static void Linux_munmap(JNIEnv* env, jobject, jlong address, jlong byteCount) {
     throwIfMinusOne(env, "munmap", TEMP_FAILURE_RETRY(munmap(ptr, byteCount)));
 }
 
+static jobject Linux_memfd_create(JNIEnv* env, jobject, jstring javaName, jint flags) {
+    ScopedUtfChars name(env, javaName);
+    if (name.c_str() == NULL) {
+        return NULL;
+    }
+    int fd = throwIfMinusOne(env, "memfd_create", memfd_create(name.c_str(), flags));
+    return fd != -1 ? jniCreateFileDescriptor(env, fd) : NULL;
+}
+
 static jobject Linux_open(JNIEnv* env, jobject, jstring javaPath, jint flags, jint mode) {
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
@@ -2534,6 +2543,7 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(Linux, msync, "(JJI)V"),
     NATIVE_METHOD(Linux, munlock, "(JJ)V"),
     NATIVE_METHOD(Linux, munmap, "(JJ)V"),
+    NATIVE_METHOD(Linux, memfd_create, "(Ljava/lang/String;I)Ljava/io/FileDescriptor;"),
     NATIVE_METHOD(Linux, open, "(Ljava/lang/String;II)Ljava/io/FileDescriptor;"),
     NATIVE_METHOD(Linux, pipe2, "(I)[Ljava/io/FileDescriptor;"),
     NATIVE_METHOD(Linux, poll, "([Landroid/system/StructPollfd;I)I"),
