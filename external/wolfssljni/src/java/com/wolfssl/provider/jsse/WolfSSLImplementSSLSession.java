@@ -561,7 +561,18 @@ public class WolfSSLImplementSSLSession implements SSLSession {
      * @param in timeout in seconds
      */
     protected void setNativeTimeout(long in) {
-        ssl.setSessTimeout(in);
+        /* A cached session outlives the WolfSSLSession of its socket, which
+         * is freed when the socket is closed: then only the Java side has a
+         * timeout (SSLSessionContext.setSessionTimeout() goes through all
+         * cached sessions, F-Droid sets it for every connection). */
+        if (ssl == null) {
+            return;
+        }
+        try {
+            ssl.setSessTimeout(in);
+        } catch (IllegalStateException e) {
+            /* native session already freed */
+        }
     }
 
 
