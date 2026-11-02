@@ -120,6 +120,7 @@ public interface Os {
     public void msync(long address, long byteCount, int flags) throws ErrnoException;
     public void munlock(long address, long byteCount) throws ErrnoException;
     public void munmap(long address, long byteCount) throws ErrnoException;
+    public FileDescriptor memfd_create(String name, int flags) throws ErrnoException;
     public FileDescriptor open(String path, int flags, int mode) throws ErrnoException;
     public FileDescriptor[] pipe2(int flags) throws ErrnoException;
     /* TODO: if we used the non-standard ppoll(2) behind the scenes, we could take a long timeout. */

@@ -353,6 +353,11 @@ public final class Os {
   /**
    * See <a href="http://man7.org/linux/man-pages/man2/open.2.html">open(2)</a>.
    */
+  /**
+   * See <a href="http://man7.org/linux/man-pages/man2/memfd_create.2.html">memfd_create(2)</a>.
+   */
+  public static FileDescriptor memfd_create(String name, int flags) throws ErrnoException { return Libcore.os.memfd_create(name, flags); }
+
   public static FileDescriptor open(String path, int flags, int mode) throws ErrnoException { return Libcore.os.open(path, flags, mode); }
 
   /**
