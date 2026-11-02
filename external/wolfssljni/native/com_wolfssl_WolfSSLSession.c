@@ -1282,6 +1282,28 @@ JNIEXPORT jlong JNICALL Java_com_wolfssl_WolfSSLSession_getSession
     return (jlong)(uintptr_t)wolfSSL_get_session(ssl);
 }
 
+JNIEXPORT jlong JNICALL Java_com_wolfssl_WolfSSLSession_get1Session
+  (JNIEnv* jenv, jobject jcl, jlong sslPtr)
+{
+    WOLFSSL* ssl = (WOLFSSL*)(uintptr_t)sslPtr;
+    (void)jenv;
+    (void)jcl;
+
+    /* a reference of our own: wolfSSL_get_session() points into the WOLFSSL
+     * or into a slot of the shared client cache that later sessions reuse */
+    return (jlong)(uintptr_t)wolfSSL_get1_session(ssl);
+}
+
+JNIEXPORT void JNICALL Java_com_wolfssl_WolfSSLSession_freeNativeSession
+  (JNIEnv* jenv, jclass jcl, jlong sessionPtr)
+{
+    (void)jenv;
+    (void)jcl;
+
+    /* wolfSSL checks session for NULL */
+    wolfSSL_SESSION_free((WOLFSSL_SESSION*)(uintptr_t)sessionPtr);
+}
+
 JNIEXPORT jbyteArray JNICALL Java_com_wolfssl_WolfSSLSession_getSessionID
   (JNIEnv* jenv, jobject jcl, jlong sessionPtr)
 {

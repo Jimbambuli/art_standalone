@@ -216,6 +216,8 @@ public class WolfSSLSession {
     private native int getError(long ssl, int ret);
     private native int setSession(long ssl, long session);
     private native long getSession(long ssl);
+    private native long get1Session(long ssl);
+    private static native void freeNativeSession(long session);
     private native byte[] getSessionID(long session);
     private native int setTimeout(long ssl, long t);
     private native long getTimeout(long ssl);
@@ -1067,6 +1069,32 @@ public class WolfSSLSession {
             throw new IllegalStateException("Object has been freed");
 
         return getSession(getSessionPtr());
+    }
+
+    /**
+     * Returns a reference of the caller's own to the current session, valid
+     * after this object and the client session cache slot have moved on;
+     * release it with {@link #freeSession(long)}.
+     *
+     * @throws IllegalStateException WolfSSLContext has been freed
+     * @return pointer to the native WOLFSSL_SESSION, 0 if none
+     */
+    public long get1Session() throws IllegalStateException {
+
+        if (this.active == false)
+            throw new IllegalStateException("Object has been freed");
+
+        return get1Session(getSessionPtr());
+    }
+
+    /**
+     * Releases a session reference from {@link #get1Session()}.
+     * @param session pointer to the native WOLFSSL_SESSION, 0 is ignored
+     */
+    public static void freeSession(long session) {
+        if (session != 0) {
+            freeNativeSession(session);
+        }
     }
 
     /**

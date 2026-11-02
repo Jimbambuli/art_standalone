@@ -30,6 +30,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateEncodingException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.logging.Level;
@@ -66,6 +67,11 @@ public class WolfSSLImplementSSLSession implements SSLSession {
     protected boolean fromTable = false;
 
     private long sesPtr = 0;
+    /* peer certificates of the full handshake: a resumed connection gets no
+     * Certificate message, and the WolfSSLSession may be freed meanwhile */
+    private Certificate[] peerCerts = null;
+    /* protocol of the connection that saved this session for resumption */
+    private String savedProtocol = null;
     private String nullCipher = "SSL_NULL_WITH_NULL_NULL";
     private String nullProtocol = "NONE";
 
@@ -311,6 +317,9 @@ public class WolfSSLImplementSSLSession implements SSLSession {
         try {
             numCerts = this.ssl.getPeerCertificateNum();
         } catch (IllegalStateException | WolfSSLJNIException ex) {
+            if (peerCerts != null) {
+                return peerCerts.clone();       /* connection already freed */
+            }
             Logger.getLogger(
                     WolfSSLImplementSSLSession.class.getName()).log(
                         Level.SEVERE, null, ex);
@@ -318,6 +327,9 @@ public class WolfSSLImplementSSLSession implements SSLSession {
         }
         /* if no peer cert, throw SSLPeerUnverifiedException */
         if (numCerts == 0) {
+            if (peerCerts != null) {
+                return peerCerts.clone();       /* resumed: no Certificate message */
+            }
             throw new SSLPeerUnverifiedException("No peer certificate");
         }
         Certificate[] certs = new Certificate[numCerts];
@@ -375,7 +387,8 @@ public class WolfSSLImplementSSLSession implements SSLSession {
             certs[i] = exportCert;
         }
 
-        return certs;
+        peerCerts = certs;
+        return certs.clone();
     }
 
     @Override
@@ -541,8 +554,52 @@ public class WolfSSLImplementSSLSession implements SSLSession {
      */
     protected synchronized void setResume() {
         if (ssl != null) {
-            this.sesPtr = ssl.getSession();
+            WolfSSLSession.freeSession(this.sesPtr);
+            this.sesPtr = ssl.get1Session();
+            try {
+                savedProtocol = ssl.getVersion();
+            } catch (IllegalStateException | WolfSSLJNIException e) {
+                savedProtocol = null;
+            }
+            if (peerCerts == null) {
+                try {
+                    getPeerCertificates();      /* keep them for resumption */
+                } catch (SSLPeerUnverifiedException e) {
+                    /* no peer certificates: not resumable */
+                }
+            }
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    protected void finalize() throws Throwable {
+        WolfSSLSession.freeSession(this.sesPtr);
+        this.sesPtr = 0;
+        super.finalize();
+    }
+
+    /**
+     * A session can resume another connection once its handshake is done
+     * and the peer's certificates are known.
+     * @return true if resumable
+     */
+    protected synchronized boolean isResumable() {
+        return this.sesPtr != 0 && peerCerts != null;
+    }
+
+    /**
+     * Whether the protocol of this session is enabled for a new connection:
+     * offering a TLS 1.3 session in a TLS 1.2 ClientHello (or the other way
+     * round) breaks the handshake (-373, out of order message).
+     * @param protocols protocols enabled for the new connection, null = all
+     * @return true if this session may resume that connection
+     */
+    protected synchronized boolean protocolEnabled(String[] protocols) {
+        if (protocols == null) {
+            return true;
+        }
+        return savedProtocol != null && Arrays.asList(protocols).contains(savedProtocol);
     }
 
     /**

@@ -697,7 +697,7 @@ public class WolfSSLEngineHelper {
 
         /* create non null session */
         this.session = this.authStore.getSession(ssl, this.port, this.hostname,
-            this.clientMode);
+            this.clientMode, this.params.getProtocols());
 
         if (this.session != null && this.clientMode) {
             this.session.setSessionContext(authStore.getClientContext());
@@ -719,12 +719,6 @@ public class WolfSSLEngineHelper {
             this.ssl.shutdownSSL();
 
             throw new SSLHandshakeException("Session creation not allowed");
-        }
-
-        if (this.session != null && this.sessionCreation) {
-            /* can only add new sessions to the resumption table if session
-             * creation is allowed */
-            this.authStore.addSession(this.session);
         }
 
         this.setLocalParams();
@@ -810,6 +804,12 @@ public class WolfSSLEngineHelper {
     protected void saveSession() {
         if (this.session != null && this.session.isValid()) {
             this.session.setResume();
+            /* only a finished handshake with the peer's certificates is
+             * worth resuming; cached on close, as Conscrypt does after the
+             * handshake, so it is never handed out while still in use */
+            if (this.sessionCreation && this.session.isResumable()) {
+                this.authStore.addSession(this.session);
+            }
         }
     }
 }

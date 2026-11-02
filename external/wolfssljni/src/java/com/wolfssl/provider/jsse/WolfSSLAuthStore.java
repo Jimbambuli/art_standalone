@@ -283,6 +283,20 @@ public class WolfSSLAuthStore {
      */
     protected WolfSSLImplementSSLSession getSession(WolfSSLSession ssl,
         int port, String host, boolean clientMode) {
+        return getSession(ssl, port, host, clientMode, null);
+    }
+
+    /** As {@link #getSession(WolfSSLSession, int, String, boolean)}, resuming
+     * only a session whose protocol is among the enabled ones.
+     * @param ssl WOLFSSL class to set in session
+     * @param port port number connecting to
+     * @param host host connecting to
+     * @param clientMode if is client side then true
+     * @param protocols protocols enabled for this connection, null = all
+     * @return a new or reused SSLSession on success, null on failure
+     */
+    protected WolfSSLImplementSSLSession getSession(WolfSSLSession ssl,
+        int port, String host, boolean clientMode, String[] protocols) {
 
         WolfSSLImplementSSLSession ses;
         String toHash;
@@ -299,10 +313,16 @@ public class WolfSSLAuthStore {
                 "attempting to look up session (" +
                 "host: " + host + ", port: " + port + ")");
 
-        /* check if is in table */
+        /* check if is in table; a cached session resumes one connection only:
+         * it is taken out, so parallel connections never share one session
+         * object (and its WolfSSLSession), and the new connection's session
+         * is cached again when it is closed */
         toHash = host.concat(Integer.toString(port));
-        ses = store.get(toHash.hashCode());
-        if (ses != null && !ses.isValid())
+        synchronized (this) {
+            ses = store.remove(toHash.hashCode());
+        }
+        if (ses != null && (!ses.isValid() || !ses.isResumable() ||
+                !ses.protocolEnabled(protocols)))
             ses = null;
         if (ses == null) {
             WolfSSLDebug.log(getClass(), WolfSSLDebug.INFO,
@@ -357,13 +377,15 @@ public class WolfSSLAuthStore {
                 hashCode = Arrays.toString(session.getId()).hashCode();
         }
 
-        if (hashCode != 0 && store.containsKey(hashCode) != true) {
+        if (hashCode != 0) {
             WolfSSLDebug.log(getClass(), WolfSSLDebug.INFO,
                     "stored session in cache table (host: " +
                     session.getPeerHost() + ", port: " +
                     session.getPeerPort() + ") " +
                     "hashCode = " + hashCode + " side = " + session.getSide());
+            synchronized (this) {
                 store.put(hashCode, session);
+            }
         }
         return WolfSSL.SSL_SUCCESS;
     }
