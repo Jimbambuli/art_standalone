@@ -22,7 +22,9 @@
 package com.wolfssl.provider.jsse;
 
 import java.io.ByteArrayOutputStream;
+import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
+import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.CertificateEncodingException;
@@ -34,6 +36,7 @@ import java.util.List;
 import java.util.Collections;
 
 import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContextSpi;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
@@ -41,6 +44,7 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSessionContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
@@ -214,10 +218,13 @@ public class WolfSSLContext extends SSLContextSpi {
                         "skipped loading CA, JNI exception");
             }
 
-            WolfSSLDebug.log(getClass(), WolfSSLDebug.INFO,
+            /* formatting the subject name is costly, only for debug output */
+            if (WolfSSLDebug.DEBUG) {
+                WolfSSLDebug.log(getClass(), WolfSSLDebug.INFO,
                     "loaded trusted root cert (" + caList[i].getSigAlgName()
                     + "): " + caList[i].getSubjectX500Principal().getName(
                     X500Principal.RFC1779));
+            }
         }
 
         if (caList.length > 0 && loadedCACount == 0) {
@@ -641,6 +648,37 @@ public class WolfSSLContext extends SSLContextSpi {
      * in native wolfSSL. Downgrades to native minimum downgrade level.
      */
     public static final class DEFAULT_Context extends WolfSSLContext {
+        /* Like Conscrypt's DefaultSSLContextImpl: the default key and trust
+         * managers are made once and shared by all default contexts. The
+         * default SSLSocketFactory makes a DEFAULT_Context per socket, and
+         * loading the trusted CA certificates again for each one took
+         * seconds with many sockets at once - long enough for servers to
+         * drop the idle TCP connection before the TLS handshake. */
+        private static KeyManager[] KEY_MANAGERS;
+        private static TrustManager[] TRUST_MANAGERS;
+
+        private static synchronized KeyManager[] getKeyManagers()
+            throws GeneralSecurityException {
+            if (KEY_MANAGERS == null) {
+                KeyManagerFactory kmf = KeyManagerFactory.getInstance(
+                    KeyManagerFactory.getDefaultAlgorithm());
+                kmf.init(null, null);
+                KEY_MANAGERS = kmf.getKeyManagers();
+            }
+            return KEY_MANAGERS;
+        }
+
+        private static synchronized TrustManager[] getTrustManagers()
+            throws GeneralSecurityException {
+            if (TRUST_MANAGERS == null) {
+                TrustManagerFactory tmf = TrustManagerFactory.getInstance(
+                    TrustManagerFactory.getDefaultAlgorithm());
+                tmf.init((KeyStore)null);
+                TRUST_MANAGERS = tmf.getTrustManagers();
+            }
+            return TRUST_MANAGERS;
+        }
+
         /**
          * Create new DEFAULT_Context, calls parent WolfSSLContext constructor
          * with TLS_VERSION.SSLv23
@@ -654,7 +692,7 @@ public class WolfSSLContext extends SSLContextSpi {
                 "creating new WolfSSLContext using DEFAULT_Context");
 
             try {
-                this.engineInit(null, null, null);
+                this.engineInit(getKeyManagers(), getTrustManagers(), null);
             } catch (Exception e) {
 				synchronized (System.out){
 					System.out.println("---↓");
