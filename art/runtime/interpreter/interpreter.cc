@@ -254,6 +254,13 @@ static inline JValue Execute(
   DCHECK(!shadow_frame.GetMethod()->IsAbstract());
   DCHECK(!shadow_frame.GetMethod()->IsNative());
 
+  // We cache the result of NeedsDexPcEvents in the shadow frame so we don't need to call
+  // NeedsDexPcEvents on every instruction for better performance. NeedsDexPcEvents only gets
+  // updated asynchronoulsy in a SuspendAll scope and any existing shadow frames are updated with
+  // new value. So it is safe to cache it here.
+  shadow_frame.SetNotifyDexPcMoveEvents(
+      Runtime::Current()->GetInstrumentation()->NeedsDexPcEvents(shadow_frame.GetMethod(), self));
+
   // Check that we are using the right interpreter.
   if (kIsDebugBuild && self->UseMterp() != CanUseMterp()) {
     // The flag might be currently being updated on all threads. Retry with lock.

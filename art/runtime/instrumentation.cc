@@ -266,6 +266,17 @@ void Instrumentation::InstallStubsForMethod(ArtMethod* method) {
 // deoptimization of quick frames to interpreter frames.
 // Since we may already have done this previously, we need to push new instrumentation frame before
 // existing instrumentation frames.
+bool Instrumentation::NeedsDexPcEvents(ArtMethod* method, Thread* thread) {
+  return (InterpretOnly(method) || thread->IsForceInterpreter()) && HasDexPcListeners();
+}
+
+bool Instrumentation::InterpretOnly(ArtMethod* method) REQUIRES_SHARED(Locks::mutator_lock_) {
+  if (method->IsNative()) {
+    return false;
+  }
+  return InterpretOnly() || IsDeoptimized(method);
+}
+
 static void InstrumentationInstallStack(Thread* thread, void* arg)
     REQUIRES_SHARED(Locks::mutator_lock_) {
   struct InstallStackVisitor final : public StackVisitor {
@@ -287,6 +298,15 @@ static void InstrumentationInstallStack(Thread* thread, void* arg)
         return true;  // Ignore upcalls.
       }
       if (GetCurrentQuickFrame() == nullptr) {
+        // Since we are updating the instrumentation related information we have to recalculate
+        // NeedsDexPcEvents. For example, when a new method or thread is deoptimized / interpreter
+        // stubs are installed the NeedsDexPcEvents could change for the shadow frames on the stack.
+        // If we don't update it here we would miss reporting dex pc events which is incorrect.
+        ShadowFrame* shadow_frame = GetCurrentShadowFrame();
+        if (shadow_frame != nullptr) {
+          shadow_frame->SetNotifyDexPcMoveEvents(
+              Runtime::Current()->GetInstrumentation()->NeedsDexPcEvents(m, GetThread()));
+        }
         bool interpreter_frame = true;
         InstrumentationStackFrame instrumentation_frame(GetThisObject(), m, 0, GetFrameId(),
                                                         interpreter_frame);
@@ -547,6 +567,28 @@ static void PotentiallyAddListenerTo(Instrumentation::InstrumentationEvent event
   Runtime::DoAndMaybeSwitchInterpreter([=](){ *has_listener = true; });
 }
 
+static void UpdateNeedsDexPcEventsOnStack(Thread* thread) REQUIRES(Locks::mutator_lock_) {
+  Locks::mutator_lock_->AssertExclusiveHeld(Thread::Current());
+
+  struct InstallStackVisitor final : public StackVisitor {
+    InstallStackVisitor(Thread* thread_in, Context* context)
+        : StackVisitor(thread_in, context, kInstrumentationStackWalk) {}
+
+    bool VisitFrame() override REQUIRES_SHARED(Locks::mutator_lock_) {
+      ShadowFrame* shadow_frame = GetCurrentShadowFrame();
+      if (shadow_frame != nullptr) {
+        shadow_frame->SetNotifyDexPcMoveEvents(
+            Runtime::Current()->GetInstrumentation()->NeedsDexPcEvents(GetMethod(), GetThread()));
+      }
+      return true;
+    }
+  };
+
+  std::unique_ptr<Context> context(Context::Create());
+  InstallStackVisitor visitor(thread, context.get());
+  visitor.WalkStack(true);
+}
+
 void Instrumentation::AddListener(InstrumentationListener* listener, uint32_t events) {
   Locks::mutator_lock_->AssertExclusiveHeld(Thread::Current());
   PotentiallyAddListenerTo(kMethodEntered,
@@ -600,6 +642,12 @@ void Instrumentation::AddListener(InstrumentationListener* listener, uint32_t ev
                            listener,
                            &have_exception_handled_listeners_);
   UpdateInterpreterHandlerTable();
+  if (HasEvent(kDexPcMoved, events)) {
+    MutexLock mu(Thread::Current(), *Locks::thread_list_lock_);
+    for (Thread* thread : Runtime::Current()->GetThreadList()->GetList()) {
+      UpdateNeedsDexPcEventsOnStack(thread);
+    }
+  }
 }
 
 static void PotentiallyRemoveListenerFrom(Instrumentation::InstrumentationEvent event,
@@ -682,6 +730,12 @@ void Instrumentation::RemoveListener(InstrumentationListener* listener, uint32_t
                                 listener,
                                 &have_exception_handled_listeners_);
   UpdateInterpreterHandlerTable();
+  if (HasEvent(kDexPcMoved, events)) {
+    MutexLock mu(Thread::Current(), *Locks::thread_list_lock_);
+    for (Thread* thread : Runtime::Current()->GetThreadList()->GetList()) {
+      UpdateNeedsDexPcEventsOnStack(thread);
+    }
+  }
 }
 
 Instrumentation::InstrumentationLevel Instrumentation::GetCurrentInstrumentationLevel() const {

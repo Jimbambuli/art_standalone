@@ -101,6 +101,10 @@ public class Providers {
         // by EC itself. So it's still safe to be listed here.
         "sun.security.ec.SunEC",
         */
+        // Like Conscrypt's OpenSSLProvider on Android: the native provider of the
+        // Android Translation Layer (digests on libcrypto) comes first, so the
+        // digests of every jar entry are not computed in Java by BouncyCastle.
+        "android.atl.crypto.OpenSSLProvider",
         "com.android.org.bouncycastle.jce.provider.BouncyCastleProvider",
         "org.apache.harmony.security.provider.crypto.CryptoProvider", // we need SecureRandom
         "com.wolfssl.provider.jsse.WolfSSLProvider",
@@ -112,17 +116,21 @@ public class Providers {
     // This method should only be called by
     // sun.security.util.ManifestEntryVerifier and java.security.SecureRandom.
     public static Provider getSunProvider() {
-        try {
-            Class<?> clazz = Class.forName(jarVerificationProviders[0]);
-            return (Provider)clazz.newInstance();
-        } catch (Exception e) {
+        // BEGIN Android-changed: the first provider of the list that loads. On Android
+        // Conscrypt is always there; the native provider above exists only in ATL.
+        Exception first = null;
+        for (String className : jarVerificationProviders) {
             try {
-                Class<?> clazz = Class.forName(BACKUP_PROVIDER_CLASSNAME);
+                Class<?> clazz = Class.forName(className);
                 return (Provider)clazz.newInstance();
-            } catch (Exception ee) {
-                throw new RuntimeException("Sun provider not found", e);
+            } catch (Exception e) {
+                if (first == null) {
+                    first = e;
+                }
             }
         }
+        throw new RuntimeException("Sun provider not found", first);
+        // END Android-changed: the first provider of the list that loads.
     }
 
     /**

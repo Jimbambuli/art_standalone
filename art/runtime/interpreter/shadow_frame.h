@@ -57,6 +57,8 @@ class ShadowFrame {
     kForcePopFrame  = 1 << 1,
     // We have been asked to re-execute the last instruction.
     kForceRetryInst = 1 << 2,
+    // Notify instrumentation listeners when the dex pc moves (Instrumentation::NeedsDexPcEvents()).
+    kNotifyDexPcMoveEvents = 1 << 3,
   };
 
  public:
@@ -356,6 +358,14 @@ class ShadowFrame {
 
   void SetNotifyPop(bool notify) {
     UpdateFrameFlag(notify, FrameFlags::kNotifyFramePop);
+  }
+
+  bool GetNotifyDexPcMoveEvents() const {
+    return GetFrameFlag(FrameFlags::kNotifyDexPcMoveEvents);
+  }
+
+  void SetNotifyDexPcMoveEvents(bool enable) {
+    UpdateFrameFlag(enable, FrameFlags::kNotifyDexPcMoveEvents);
   }
 
   bool GetForcePopFrame() const {
