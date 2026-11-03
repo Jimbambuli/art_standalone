@@ -2686,6 +2686,15 @@ extern "C" TwoWordReturn artInvokeInterfaceTrampoline(ArtMethod* interface_metho
   }
 
   DCHECK(!interface_method->IsRuntimeMethod());
+  // The compiler makes sure the conflict trampoline is never called on a method that resolves to
+  // j.l.Object (Android 11). Code compiled before that (an old boot image or odex) still does: use the
+  // vtable of the receiver and keep the method out of the conflict table, which other classes share.
+  if (UNLIKELY(interface_method->GetDeclaringClass()->IsObjectClass())) {
+    method = cls->GetVTableEntry(interface_method->GetMethodIndex(), kRuntimePointerSize);
+    return GetTwoWordSuccessValue(
+        reinterpret_cast<uintptr_t>(method->GetEntryPointFromQuickCompiledCode()),
+        reinterpret_cast<uintptr_t>(method));
+  }
   // Look whether we have a match in the ImtConflictTable.
   uint32_t imt_index = interface_method->GetImtIndex();
   ArtMethod* conflict_method = imt->Get(imt_index, kRuntimePointerSize);
