@@ -69,6 +69,7 @@ non_openjdk_javadoc_files := \
   dalvik/src/main/java/dalvik/system/VMDebug.java \
   libart/src/main/java/dalvik/system/VMRuntime.java \
   libart/src/main/java/dalvik/system/VMStack.java \
+  dalvik/src/main/java/dalvik/system/ZipPathValidator.java \
   dalvik/src/main/java/dalvik/system/ZygoteHooks.java \
   libart/src/main/java/java/lang/AndroidHardcodedSystemProperties.java \
   libart/src/main/java/java/lang/Daemons.java \
