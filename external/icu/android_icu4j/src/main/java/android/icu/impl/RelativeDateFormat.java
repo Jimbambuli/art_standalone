@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2007-2016, International Business Machines Corporation and
@@ -35,6 +35,7 @@ public class RelativeDateFormat extends DateFormat {
 
     /**
      * @author srl
+     * @hide Only a subset of ICU is exposed in Android
      *
      */
     public static class URelativeString {

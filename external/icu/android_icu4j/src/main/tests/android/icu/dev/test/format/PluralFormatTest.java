@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2007-2014, International Business Machines Corporation and    *
@@ -10,30 +10,37 @@
 package android.icu.dev.test.format;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.impl.Utility;
 import android.icu.text.CurrencyPluralInfo;
+import android.icu.text.NumberFormat;
 import android.icu.text.PluralFormat;
 import android.icu.util.ULocale;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author tschumann (Tim Schumann)
  *
  */
+@MainTestShard
+@RunWith(JUnit4.class)
 public class PluralFormatTest extends TestFmwk {
   private void helperTestRules(String localeIDs, String testPattern, Map<Integer,String> changes) {
     String[] locales = Utility.split(localeIDs, ',');
-    
+
     // Create example outputs for all supported locales.
     /*
     System.out.println("\n" + localeIDs);
     String lastValue = (String) changes.get(new Integer(0));
-    int  lastNumber = 0; 
-    
+    int  lastNumber = 0;
+
     for (int i = 1; i < 199; ++i) {
         if (changes.get(new Integer(i)) != null) {
             if (lastNumber == i-1) {
@@ -52,7 +59,7 @@ public class PluralFormatTest extends TestFmwk {
       try {
         PluralFormat plf = new PluralFormat(new ULocale(locales[i]), testPattern);
         log("plf: " + plf);
-        String expected = (String) changes.get(new Integer(0));
+        String expected = changes.get(new Integer(0));
         for (int n = 0; n < 200; ++n) {
           String value = changes.get(n);
           if (value != null) {
@@ -66,7 +73,7 @@ public class PluralFormatTest extends TestFmwk {
       }
     }
   }
-  
+
   @Test
   public void TestOneFormLocales() {
     String localeIDs = "ja,ko,tr,vi";
@@ -75,10 +82,10 @@ public class PluralFormatTest extends TestFmwk {
     changes.put(new Integer(0), "other");
     helperTestRules(localeIDs, testPattern, changes);
   }
-  
+
   @Test
   public void TestSingular1Locales() {
-    String localeIDs = "bem,da,de,el,en,eo,es,et,fi,fo,he,it,nb,nl,nn,no,pt_PT,sv,af,bg,ca,eu,fur,fy,ha,ku,lb,ml," +
+    String localeIDs = "bem,da,de,el,en,eo,es,et,fi,fo,he,it,mr,nb,nl,nn,no,pt_PT,sv,af,bg,ca,eu,fur,fy,ha,ku,lb,ml," +
         "nah,ne,om,or,pap,ps,so,sq,sw,ta,te,tk,ur,mn,gsw,rm";
     String testPattern = "one{one} other{other}";
     Map changes = new HashMap();
@@ -87,17 +94,17 @@ public class PluralFormatTest extends TestFmwk {
     changes.put(new Integer(2), "other");
     helperTestRules(localeIDs, testPattern, changes);
   }
-  
+
   @Test
   public void TestSingular01Locales() {
-    String localeIDs = "ff,fr,kab,gu,mr,pa,pt,zu,bn";
+    String localeIDs = "ff,fr,kab,gu,pa,pt,zu,bn";
     String testPattern = "one{one} other{other}";
     Map changes = new HashMap();
     changes.put(new Integer(0), "one");
     changes.put(new Integer(2), "other");
     helperTestRules(localeIDs, testPattern, changes);
   }
-  
+
   @Test
   public void TestZeroSingularLocales() {
     String localeIDs = "lv";
@@ -122,7 +129,7 @@ public class PluralFormatTest extends TestFmwk {
     }
     helperTestRules(localeIDs, testPattern, changes);
   }
-  
+
   @Test
   public void TestSingularDual() {
       String localeIDs = "ga";
@@ -134,7 +141,7 @@ public class PluralFormatTest extends TestFmwk {
       changes.put(new Integer(3), "other");
       helperTestRules(localeIDs, testPattern, changes);
   }
-  
+
   @Test
   public void TestSingularZeroSome() {
       String localeIDs = "ro";
@@ -145,10 +152,11 @@ public class PluralFormatTest extends TestFmwk {
       changes.put(new Integer(2), "few");
       changes.put(new Integer(20), "other");
       changes.put(new Integer(101), "few");
+      changes.put(new Integer(102), "few");
       changes.put(new Integer(120), "other");
       helperTestRules(localeIDs, testPattern, changes);
   }
-  
+
   @Test
   public void TestSpecial12_19() {
       String localeIDs = "lt";
@@ -168,7 +176,7 @@ public class PluralFormatTest extends TestFmwk {
       }
       helperTestRules(localeIDs, testPattern, changes);
   }
-  
+
   @Test
   public void TestPaucalExcept11_14() {
       String localeIDs = "hr,sr,uk";
@@ -188,7 +196,7 @@ public class PluralFormatTest extends TestFmwk {
       }
       helperTestRules(localeIDs, testPattern, changes);
   }
-  
+
   @Test
   public void TestPaucalRu() {
       String localeIDs = "ru";
@@ -206,7 +214,7 @@ public class PluralFormatTest extends TestFmwk {
       }
       helperTestRules(localeIDs, testPattern, changes);
   }
-  
+
   public <T> void put(int base, int start, int end, T value, Map<Integer, T> m) {
       for (int i = start; i <= end; ++i) {
           if (m.containsKey(base + i)) {
@@ -215,11 +223,11 @@ public class PluralFormatTest extends TestFmwk {
           m.put(base + i, value);
       }
   }
-  
+
   public <T> void put(int base, int start, T value, Map<Integer, T> m) {
       put(base, start, start, value, m);
   }
-  
+
   @Test
   public void TestSingularPaucal() {
       String localeIDs = "cs,sk";
@@ -231,7 +239,7 @@ public class PluralFormatTest extends TestFmwk {
       changes.put(new Integer(5), "other");
       helperTestRules(localeIDs, testPattern, changes);
   }
-  
+
   @Test
   public void TestPaucal1_234() {
       String localeIDs = "pl";
@@ -250,7 +258,7 @@ public class PluralFormatTest extends TestFmwk {
       }
       helperTestRules(localeIDs, testPattern, changes);
   }
-  
+
   @Test
   public void TestPaucal1_2_34() {
       String localeIDs = "sl";
@@ -267,7 +275,7 @@ public class PluralFormatTest extends TestFmwk {
       changes.put(new Integer(105), "other");
       helperTestRules(localeIDs, testPattern, changes);
   }
-  
+
     /* Tests the method public PluralRules getPluralRules() */
     @Test
     public void TestGetPluralRules() {
@@ -290,7 +298,7 @@ public class PluralFormatTest extends TestFmwk {
             errln("CurrencyPluralInfo.getLocale() was not suppose to return true " + "when passing a different ULocale");
         }
     }
-    
+
     /* Tests the method public void setLocale(ULocale loc) */
     @Test
     public void TestSetLocale() {
@@ -303,7 +311,7 @@ public class PluralFormatTest extends TestFmwk {
             errln("CurrencyPluralInfo.setLocale() was not suppose to return true when passing a different ULocale");
         }
     }
-    
+
     /* Tests the method public boolean equals(Object a) */
     @Test
     public void TestEquals(){
@@ -317,5 +325,15 @@ public class PluralFormatTest extends TestFmwk {
         if(cpi.equals("0")){
             errln("CurrencyPluralInfo.equals(Object) was not suppose to return true when comparing to an invalid object for string 0.");
         }
+    }
+
+    /* Test for https://unicode-org.atlassian.net/browse/ICU-13151 */
+    @Test
+    public void TestFractionRounding() {
+        NumberFormat nf = NumberFormat.getInstance(Locale.ENGLISH);
+        nf.setMaximumFractionDigits(0);
+        PluralFormat pf = new PluralFormat(ULocale.ENGLISH, "one{#kg}other{#kgs}");
+        pf.setNumberFormat(nf);
+        assertEquals("1.2kg", "1kg", pf.format(1.2));
     }
 }

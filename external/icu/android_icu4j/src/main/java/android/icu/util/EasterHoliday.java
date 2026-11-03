@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 1996-2014, International Business Machines Corporation and    *
@@ -140,8 +140,7 @@ class EasterRule implements DateRule {
     public EasterRule(int daysAfterEaster, boolean isOrthodox) {
         this.daysAfterEaster = daysAfterEaster;
         if (isOrthodox) {
-            orthodox.setGregorianChange(new Date(Long.MAX_VALUE));
-            calendar = orthodox;
+            calendar.setGregorianChange(new Date(Long.MAX_VALUE));
         }
     }
 
@@ -274,9 +273,6 @@ class EasterRule implements DateRule {
         }
     }
 
-    private static GregorianCalendar gregorian = new GregorianCalendar(/* new SimpleTimeZone(0, "UTC") */);
-    private static GregorianCalendar orthodox = new GregorianCalendar(/* new SimpleTimeZone(0, "UTC") */);
-
     private int               daysAfterEaster;
-    private GregorianCalendar calendar = gregorian;
+    private GregorianCalendar calendar = new GregorianCalendar();
 }

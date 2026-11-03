@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2011-2012, Google, International Business Machines Corporation and
@@ -12,7 +12,9 @@ package android.icu.dev.util;
 import android.icu.text.DecimalFormat;
 import android.icu.text.NumberFormat;
 import android.icu.util.ULocale;
+import android.icu.testsharding.MainTestShard;
 
+@MainTestShard
 public final class Timer {
     public static final long SECONDS = 100000000;
 

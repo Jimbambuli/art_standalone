@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2002-2010, International Business Machines Corporation and         *
@@ -8,30 +8,35 @@
  *******************************************************************************
  */
 
-/** 
+/**
  * Port From:   ICU4C v2.1 : Collate/CollationTurkishTest
  * Source File: $ICU4CRoot/source/test/intltest/trcoll.cpp
  **/
- 
+
 package android.icu.dev.test.collator;
- 
+
 import java.util.Locale;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.text.Collator;
 import android.icu.text.RuleBasedCollator;
- 
+import android.icu.testsharding.MainTestShard;
+
+@MainTestShard
+@RunWith(JUnit4.class)
 public class CollationChineseTest extends TestFmwk{
-    public CollationChineseTest() 
+    public CollationChineseTest()
     {
     }
-    
+
     @Test
-    public void TestPinYin() 
+    public void TestPinYin()
     {
-        String seq[] 
+        String seq[]
             = {"\u963f", "\u554a", "\u54ce", "\u6371", "\u7231", "\u9f98",
                "\u4e5c", "\u8baa", "\u4e42", "\u53c8"};
         RuleBasedCollator collator = null;

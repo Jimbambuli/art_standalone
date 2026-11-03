@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *********************************************************************************
  * Copyright (C) 2004-2016, International Business Machines Corporation and    *
@@ -47,7 +47,7 @@ import android.icu.math.BigDecimal;
  * datetime time scale.
  *
  * <p>For more details and background, see the
- * <a href="http://www.icu-project.org/userguide/universalTimeScale.html">Universal Time Scale</a>
+ * <a href="https://unicode-org.github.io/icu/userguide/datetime/universaltimescale">Universal Time Scale</a>
  * chapter in the ICU User Guide.
  */
 
@@ -116,7 +116,10 @@ public final class UniversalTimeScale
     
     /**
      * This is the first unused time scale value.
+     *
+     * @deprecated ICU 59
      */
+    @Deprecated
     public static final int MAX_SCALE = 10;
     
     /**

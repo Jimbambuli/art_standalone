@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /**
 *******************************************************************************
 * Copyright (C) 1996-2016, International Business Machines Corporation and
@@ -18,9 +18,8 @@ package android.icu.lang;
  * <p>The properties APIs are intended to reflect Unicode properties as
  * defined in the Unicode Character Database (UCD) and Unicode Technical
  * Reports (UTR).
- * <p>For details about the properties see <a href=http://www.unicode.org>
- * http://www.unicode.org</a>.
- * <p>For names of Unicode properties see the UCD file PropertyAliases.txt.
+ * <p>For details about the properties see
+ * <a href="http://www.unicode.org/reports/tr44/">UAX #44: Unicode Character Database</a>.
  *
  * <p>Important: If ICU is built with UCD files from Unicode versions below
  * 3.2, then properties marked with "new" are not or not fully
@@ -458,31 +457,76 @@ public interface UProperty
     /**
      * Binary property Emoji.
      * See http://www.unicode.org/reports/tr51/#Emoji_Properties
-     *
-     * @hide draft / provisional / internal are hidden on Android
      */
     public static final int EMOJI=57;
     /**
      * Binary property Emoji_Presentation.
      * See http://www.unicode.org/reports/tr51/#Emoji_Properties
-     *
-     * @hide draft / provisional / internal are hidden on Android
      */
     public static final int EMOJI_PRESENTATION=58;
     /**
      * Binary property Emoji_Modifier.
      * See http://www.unicode.org/reports/tr51/#Emoji_Properties
-     *
-     * @hide draft / provisional / internal are hidden on Android
      */
     public static final int EMOJI_MODIFIER=59;
     /**
      * Binary property Emoji_Modifier_Base.
      * See http://www.unicode.org/reports/tr51/#Emoji_Properties
-     *
-     * @hide draft / provisional / internal are hidden on Android
      */
     public static final int EMOJI_MODIFIER_BASE=60;
+    /**
+     * Binary property Emoji_Component.
+     * See http://www.unicode.org/reports/tr51/#Emoji_Properties
+     */
+    public static final int EMOJI_COMPONENT=61;
+    /**
+     * Binary property Regional_Indicator.
+     */
+    public static final int REGIONAL_INDICATOR=62;
+    /**
+     * Binary property Prepended_Concatenation_Mark.
+     */
+    public static final int PREPENDED_CONCATENATION_MARK=63;
+    /**
+     * Binary property Extended_Pictographic.
+     * See http://www.unicode.org/reports/tr51/#Emoji_Properties
+     */
+    public static final int EXTENDED_PICTOGRAPHIC=64;
+    /**
+     * Binary property of strings Basic_Emoji.
+     * See https://www.unicode.org/reports/tr51/#Emoji_Sets
+     */
+    public static final int BASIC_EMOJI=65;
+    /**
+     * Binary property of strings Emoji_Keycap_Sequence.
+     * See https://www.unicode.org/reports/tr51/#Emoji_Sets
+     */
+    public static final int EMOJI_KEYCAP_SEQUENCE=66;
+    /**
+     * Binary property of strings RGI_Emoji_Modifier_Sequence.
+     * See https://www.unicode.org/reports/tr51/#Emoji_Sets
+     */
+    public static final int RGI_EMOJI_MODIFIER_SEQUENCE=67;
+    /**
+     * Binary property of strings RGI_Emoji_Flag_Sequence.
+     * See https://www.unicode.org/reports/tr51/#Emoji_Sets
+     */
+    public static final int RGI_EMOJI_FLAG_SEQUENCE=68;
+    /**
+     * Binary property of strings RGI_Emoji_Tag_Sequence.
+     * See https://www.unicode.org/reports/tr51/#Emoji_Sets
+     */
+    public static final int RGI_EMOJI_TAG_SEQUENCE=69;
+    /**
+     * Binary property of strings RGI_Emoji_ZWJ_Sequence.
+     * See https://www.unicode.org/reports/tr51/#Emoji_Sets
+     */
+    public static final int RGI_EMOJI_ZWJ_SEQUENCE=70;
+    /**
+     * Binary property of strings RGI_Emoji.
+     * See https://www.unicode.org/reports/tr51/#Emoji_Sets
+     */
+    public static final int RGI_EMOJI=71;
 
     /**
      * One more than the last constant for binary Unicode properties.
@@ -490,7 +534,7 @@ public interface UProperty
      * @hide unsupported on Android
      */
     @Deprecated
-    public static final int BINARY_LIMIT = 61;
+    public static final int BINARY_LIMIT = 72;
 
     /**
      * Enumerated property Bidi_Class.
@@ -648,12 +692,34 @@ public interface UProperty
     public static final int BIDI_PAIRED_BRACKET_TYPE = 0x1015;
 
     /**
+     * Enumerated property Indic_Positional_Category.
+     * New in Unicode 6.0 as provisional property Indic_Matra_Category;
+     * renamed and changed to informative in Unicode 8.0.
+     * See http://www.unicode.org/reports/tr44/#IndicPositionalCategory.txt
+     */
+    public static final int INDIC_POSITIONAL_CATEGORY = 0x1016;
+
+    /**
+     * Enumerated property Indic_Syllabic_Category.
+     * New in Unicode 6.0 as provisional; informative since Unicode 8.0.
+     * See http://www.unicode.org/reports/tr44/#IndicSyllabicCategory.txt
+     */
+    public static final int INDIC_SYLLABIC_CATEGORY = 0x1017;
+
+    /**
+     * Enumerated property Vertical_Orientation.
+     * Used for UAX #50 Unicode Vertical Text Layout (https://www.unicode.org/reports/tr50/).
+     * New as a UCD property in Unicode 10.0.
+     */
+    public static final int VERTICAL_ORIENTATION = 0x1018;
+
+    /**
      * One more than the last constant for enumerated/integer Unicode properties.
      * @deprecated ICU 58 The numeric value may change over time, see ICU ticket #12420.
      * @hide unsupported on Android
      */
     @Deprecated
-    public static final int INT_LIMIT = 0x1016;
+    public static final int INT_LIMIT = 0x1019;
 
     /**
      * Bitmask property General_Category_Mask.

@@ -1,13 +1,13 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*****************************************************************************************
  *
  *   Copyright (C) 1996-2015, International Business Machines
  *   Corporation and others.  All Rights Reserved.
  **/
 
-/** 
+/**
  * Port From:   JDK 1.4b1 : java.text.Format.IntlTestDateFormatAPI
  * Source File: java/text/format/IntlTestDateFormatAPI.java
  **/
@@ -26,15 +26,19 @@ import java.util.Date;
 import java.util.Locale;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
-import android.icu.dev.test.TestUtil;
-import android.icu.dev.test.TestUtil.JavaVendor;
+import android.icu.dev.test.TestFmwk;
 import android.icu.text.DateFormat;
 import android.icu.text.NumberFormat;
 import android.icu.util.Calendar;
 import android.icu.util.TimeZone;
+import android.icu.testsharding.MainTestShard;
 
-public class IntlTestDateFormatAPI extends android.icu.dev.test.TestFmwk
+@MainTestShard
+@RunWith(JUnit4.class)
+public class IntlTestDateFormatAPI extends TestFmwk
 {
     // Test that the equals method works correctly.
     @Test
@@ -155,15 +159,16 @@ public class IntlTestDateFormatAPI extends android.icu.dev.test.TestFmwk
         long count = locales.length;
         logln("Got " + count + " locales" );
 
-        // Ticket #6280, #8078 and #11674
-        // These locales should be included in the result
-        boolean missingLocaleNotFatal =
-                TestUtil.getJavaVendor() == JavaVendor.Android || TestUtil.getJavaVersion() >= 7;
+        // These test cases used to check Locales without a script tag.
+        // Java 6 Locale did not support script tags, such as zh_CN and zh_TW.
+        // Because ICU 63+ supports Java 7 as minimum Java version, sample
+        // Locales below were updated with ones with script tags.
+        // See ticket #6280, #8078 and #11674 for the history.
         final Locale[] samples = {
-                new Locale("zh", "CN"),
-                new Locale("zh", "TW"),
-                new Locale("zh", "HK"),
-                new Locale("sr", "RS"),
+                Locale.forLanguageTag("zh-Hans-CN"),
+                Locale.forLanguageTag("zh-Hant-TW"),
+                Locale.forLanguageTag("zh-Hant-HK"),
+                Locale.forLanguageTag("sr-Cyrl-RS"),
         };
         boolean[] available = new boolean[samples.length];
         for(int i = 0; i < count; i++) {
@@ -179,13 +184,7 @@ public class IntlTestDateFormatAPI extends android.icu.dev.test.TestFmwk
         }
         for (int i = 0; i < available.length; i++) {
             if (!available[i]) {
-                if (missingLocaleNotFatal) {
-                    // Java 7 supports script field, so zh_Hans_CN is included
-                    // in the available locale list.
-                    logln("INFO: missing Locale: " + samples[i]);
-                } else {
-                    errln("ERROR: missing Locale: " + samples[i]);
-                }
+                errln("ERROR: missing Locale: " + samples[i]);
             }
         }
 

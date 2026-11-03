@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2009-2015, International Business Machines Corporation and
@@ -26,6 +26,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.dev.test.TestUtil;
@@ -38,7 +40,10 @@ import android.icu.text.SpoofChecker.CheckResult;
 import android.icu.text.SpoofChecker.RestrictionLevel;
 import android.icu.text.UnicodeSet;
 import android.icu.util.ULocale;
+import android.icu.testsharding.MainTestShard;
 
+@MainTestShard
+@RunWith(JUnit4.class)
 public class SpoofCheckerTest extends TestFmwk {
     /*
      * Identifiers for verifying that spoof checking is minimally alive and working.
@@ -470,9 +475,12 @@ public class SpoofCheckerTest extends TestFmwk {
         // The spoof checker should only return those tests that the user requested.  This test makes sure that
         // the checker doesn't return anything the user doesn't want.  This test started passing in ICU 58.
 
-        String latn = "desordenado";
-        String cyrl = "ԁеѕогԁепаԁо";
-        String mixed = "dеѕогdenаdo";
+        // NOTE: These strings are the same ones as in the documentation.  If the confusables data changes
+        // and this test breaks, pick a new confusables pair, update it here, and also update it in the
+        // documentation of SpoofChecker.java.
+        String latn = "desparejado";
+        String cyrl = "ԁеѕрагејаԁо";
+        String mixed = "dеsраrејаdо";
 
         Object[][] tests = {
                 // string 1, string 2, checks for spoof checker, expected output
@@ -839,5 +847,52 @@ public class SpoofCheckerTest extends TestFmwk {
                 .build();
         SpoofChecker sc2 = new SpoofChecker.Builder(sc1).build();
         assertEquals("Copy constructor should produce identical instances", sc1, sc2);
+    }
+
+    @Test
+    public void testBug13328_MixedCombiningMarks() {
+        SpoofChecker sc = new SpoofChecker.Builder().build();
+        CheckResult checkResult = new CheckResult();
+        sc.failsChecks("\u0061\u0F84", checkResult);
+        assertEquals("The mismatched combining marks string fails spoof",
+                SpoofChecker.RESTRICTION_LEVEL,
+                checkResult.checks);
+    }
+
+    @Test
+    public void testCombiningDot() {
+        SpoofChecker sc = new SpoofChecker.Builder().setChecks(SpoofChecker.HIDDEN_OVERLAY).build();
+
+        Object[][] cases = new Object[][] {
+                {false, "i"},
+                {false, "j"},
+                {false, "l"},
+                {true, "i\u0307"},
+                {true, "j\u0307"},
+                {true, "l\u0307"},
+                {true, "ı\u0307"},
+                {true, "ȷ\u0307"},
+                {true, "𝚤\u0307"},
+                {true, "𝑗\u0307"},
+                {false, "m\u0307"},
+                {true, "1\u0307"},
+                {true, "ĳ\u0307"},
+                {true, "i\u0307\u0307"},
+                {true, "abci\u0307def"},
+                {false, "i\u0301\u0307"}, // U+0301 has combining class ABOVE (230)
+                {true, "i\u0320\u0307"}, // U+0320 has combining class BELOW
+                {true, "i\u0320\u0321\u0307"}, // U+0321 also has combining class BELOW
+                {false, "i\u0320\u0301\u0307"},
+                {false, "iz\u0307"},
+        };
+
+        for (Object[] cas : cases) {
+            boolean shouldFail = (Boolean) cas[0];
+            String input = (String) cas[1];
+            CheckResult result = new CheckResult();
+            sc.failsChecks(input, result);
+            int expected = shouldFail ? SpoofChecker.HIDDEN_OVERLAY : 0;
+            assertEquals(input, expected, result.checks);
+        }
     }
 }

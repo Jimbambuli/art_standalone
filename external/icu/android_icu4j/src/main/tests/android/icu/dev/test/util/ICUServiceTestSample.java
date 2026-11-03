@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /**
  *******************************************************************************
  * Copyright (C) 2001-2010, International Business Machines Corporation and    *
@@ -20,7 +20,9 @@ import java.util.SortedMap;
 import android.icu.impl.ICULocaleService;
 import android.icu.impl.ICUService;
 import android.icu.util.ULocale;
+import android.icu.testsharding.MainTestShard;
 
+@MainTestShard
 public class ICUServiceTestSample {
     static public void main(String[] args) {
         new HelloServiceClient();

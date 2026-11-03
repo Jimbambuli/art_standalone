@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  * Created on May 5, 2004
  *
@@ -16,13 +16,18 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
+import android.icu.dev.test.TestUtil;
+import android.icu.impl.ICUConfig;
 import android.icu.impl.Utility;
 import android.icu.lang.UCharacter;
 import android.icu.text.BreakIterator;
-import android.icu.text.UTF16;
+import android.icu.text.RuleBasedBreakIterator;
 import android.icu.util.ULocale;
+import android.icu.testsharding.MainTestShard;
 
 
 /**
@@ -32,6 +37,8 @@ import android.icu.util.ULocale;
  *      See the data file for a description of the tests.
  *
  */
+@MainTestShard
+@RunWith(JUnit4.class)
 public class RBBITestExtended extends TestFmwk {
 public RBBITestExtended() {
     }
@@ -40,23 +47,26 @@ public RBBITestExtended() {
 
 static class TestParams {
     BreakIterator   bi;
-    StringBuffer    dataToBreak    = new StringBuffer();
-    int[]           expectedBreaks = new int[1000];
-    int[]           srcLine        = new int[1000];
-    int[]           srcCol         = new int[1000];
+    StringBuilder   dataToBreak    = new StringBuilder();
+    int[]           expectedBreaks = new int[4000];
+    int[]           srcLine        = new int[4000];
+    int[]           srcCol         = new int[4000];
     ULocale         currentLocale  = new ULocale("en_US");
 }
 
 
 @Test
 public void TestExtended() {
+    // The expectations in this test heavily depends on the Thai dictionary.
+    // Therefore, we skip this test under the LSTM configuration.
+    org.junit.Assume.assumeTrue(!TestUtil.skipDictionaryTest());
     TestParams     tp = new TestParams();
 
 
     //
     //  Open and read the test data file.
     //
-    StringBuffer testFileBuf = new StringBuffer();
+    StringBuilder testFileBuf = new StringBuilder();
     InputStream is = null;
     try {
         is = RBBITestExtended.class.getResourceAsStream("rbbitst.txt");
@@ -79,7 +89,7 @@ public void TestExtended() {
                     continue;
                 }
 
-                UTF16.append(testFileBuf, c);
+                testFileBuf.appendCodePoint(c);
             }
         } finally {
             isr.close();
@@ -100,19 +110,11 @@ public void TestExtended() {
     final int  PARSE_TAG     = 2;
     final int  PARSE_DATA    = 3;
     final int  PARSE_NUM     = 4;
+    final int  PARSE_RULES   = 5;
 
     int parseState = PARSE_TAG;
 
     int savedState = PARSE_TAG;
-
-    final char CH_LF        = 0x0a;
-    final char CH_CR        = 0x0d;
-    final char CH_HASH      = 0x23;
-    /*static const UChar CH_PERIOD    = 0x2e;*/
-    final char CH_LT        = 0x3c;
-    final char CH_GT        = 0x3e;
-    final char CH_BACKSLASH = 0x5c;
-    final char CH_BULLET    = 0x2022;
 
     int    lineNum  = 1;
     int    colStart = 0;
@@ -121,17 +123,22 @@ public void TestExtended() {
     int    i;
 
     int    tagValue = 0;       // The numeric value of a <nnn> tag.
+
+    StringBuilder   rules = new StringBuilder();     // Holds rules from a <rules> ... </rules> block
+    int             rulesFirstLine = 0;              // Line number of the start of current <rules> block
+
     int    len = testString.length();
+    boolean skipTest = false;
 
     for (charIdx = 0; charIdx < len; ) {
-        int  c = UTF16.charAt(testString, charIdx);
+        int c = testString.codePointAt(charIdx);
         charIdx++;
-        if (c == CH_CR && charIdx<len && testString.charAt(charIdx) == CH_LF) {
+        if (c == '\r' && charIdx<len && testString.charAt(charIdx) == '\n') {
             // treat CRLF as a unit
-            c = CH_LF;
+            c = '\n';
             charIdx++;
         }
-        if (c == CH_LF || c == CH_CR) {
+        if (c == '\n' || c == '\r') {
             lineNum++;
             colStart = charIdx;
         }
@@ -146,7 +153,7 @@ public void TestExtended() {
 
         case PARSE_TAG:
             {
-            if (c == CH_HASH) {
+            if (c == '#') {
                 parseState = PARSE_COMMENT;
                 savedState = PARSE_TAG;
                 break;
@@ -155,6 +162,7 @@ public void TestExtended() {
                 break;
             }
            if (testString.startsWith("<word>", charIdx-1)) {
+                skipTest = false;
                 tp.bi = BreakIterator.getWordInstance(tp.currentLocale);
                 charIdx += 5;
                 break;
@@ -165,20 +173,53 @@ public void TestExtended() {
                 break;
             }
             if (testString.startsWith("<line>", charIdx-1)) {
+                skipTest = false;
                 tp.bi = BreakIterator.getLineInstance(tp.currentLocale);
+                if (Boolean.parseBoolean(
+                        ICUConfig.get("android.icu.impl.breakiter.useMLPhraseBreaking", "false"))) {
+                    if (tp.currentLocale.getName().equals("ja@lw=phrase")) {
+                        // skip <line> test cases of JP's phrase breaking when ML is enabled.
+                        skipTest = true;
+                    }
+                }
                 charIdx += 5;
                 break;
             }
+            if (testString.startsWith("<lineML>", charIdx-1)) {
+                skipTest = false;
+                tp.bi = BreakIterator.getLineInstance(tp.currentLocale);
+                if (!Boolean.parseBoolean(
+                        ICUConfig.get("android.icu.impl.breakiter.useMLPhraseBreaking", "false"))) {
+                    if (tp.currentLocale.getName().equals("ja@lw=phrase")) {
+                        // skip <lineML> test cases of JP's phrase breaking when ML is disabled.
+                        skipTest = true;
+                    }
+                }
+                charIdx += 7;
+                break;
+            }
             if (testString.startsWith("<sent>", charIdx-1)) {
+                skipTest = false;
                 tp.bi = BreakIterator.getSentenceInstance(tp.currentLocale);
                 charIdx += 5;
                 break;
             }
             if (testString.startsWith("<title>", charIdx-1)) {
+                skipTest = false;
                 tp.bi = BreakIterator.getTitleInstance(tp.currentLocale);
                 charIdx += 6;
                 break;
             }
+            if (testString.startsWith("<rules>", charIdx-1) ||
+                    testString.startsWith("<badrules>", charIdx-1)) {
+                skipTest = false;
+                charIdx = testString.indexOf('>', charIdx) + 1;
+                parseState = PARSE_RULES;
+                rules.setLength(0);
+                rulesFirstLine = lineNum;
+                break;
+            }
+
             if (testString.startsWith("<locale ", charIdx-1)) {
                 int closeIndex = testString.indexOf(">", charIdx);
                 if (closeIndex < 0) {
@@ -207,9 +248,42 @@ public void TestExtended() {
             //savedState = PARSE_DATA;
             }
 
+        case PARSE_RULES:
+            if (testString.startsWith("</rules>", charIdx-1)) {
+                charIdx += 7;
+                parseState = PARSE_TAG;
+                try {
+                    tp.bi = new RuleBasedBreakIterator(rules.toString());
+                } catch (IllegalArgumentException e) {
+                    errln(String.format("rbbitst.txt:%d  Error creating break iterator from rules.  %s", lineNum, e));
+                }
+            } else if (testString.startsWith("</badrules>", charIdx-1)) {
+                charIdx += 10;
+                parseState = PARSE_TAG;
+                boolean goodRules = true;
+                try {
+                    new RuleBasedBreakIterator(rules.toString());
+                } catch (IllegalArgumentException e) {
+                    goodRules = false;
+                }
+                if (goodRules) {
+                    errln(String.format(
+                            "rbbitst.txt:%d  Expected, but did not get, a failure creating break iterator from rules.",
+                            lineNum));
+                }
+            } else {
+                rules.appendCodePoint(c);
+            }
+            break;
+
         case PARSE_DATA:
-            if (c == CH_BULLET) {
+            if (c == '•') {
                 int  breakIdx = tp.dataToBreak.length();
+                if (tp.expectedBreaks[breakIdx] != 0) {
+                    errln(String.format(
+                            "rbbitst.txt:%d:%d adjacent expected breaks with no intervening test text",
+                            lineNum, column));
+                }
                 tp.expectedBreaks[breakIdx] = -1;
                 tp.srcLine[breakIdx]        = lineNum;
                 tp.srcCol[breakIdx]         = column;
@@ -228,7 +302,9 @@ public void TestExtended() {
                 charIdx += 6;
 
                 // RUN THE TEST!
-                executeTest(tp);
+                if (!skipTest) {
+                    executeTest(tp);
+                }
                 break;
             }
 
@@ -248,7 +324,7 @@ public void TestExtended() {
                 } else {
                     // Named code point was recognized.  Insert it
                     //   into the test data.
-                    UTF16.append(tp.dataToBreak, c);
+                    tp.dataToBreak.appendCodePoint(c);
                     for (i = tp.dataToBreak.length()-1; i>=0 && tp.srcLine[i]==0; i--) {
                         tp.srcLine[i] = lineNum;
                         tp.srcCol[i]  = column;
@@ -270,28 +346,28 @@ public void TestExtended() {
                 break;
             }
 
-            if (c == CH_LT) {
+            if (c == '<') {
                 tagValue   = 0;
                 parseState = PARSE_NUM;
                 break;
             }
 
-            if (c == CH_HASH && column==3) {   // TODO:  why is column off so far?
+            if (c == '#' && column==3) {   // TODO:  why is column off so far?
                 parseState = PARSE_COMMENT;
                 savedState = PARSE_DATA;
                 break;
             }
 
-            if (c == CH_BACKSLASH) {
+            if (c == '\\') {
                 // Check for \ at end of line, a line continuation.
                 //     Advance over (discard) the newline
-                int cp = UTF16.charAt(testString, charIdx);
-                if (cp == CH_CR && charIdx<len && UTF16.charAt(testString, charIdx+1) == CH_LF) {
+                int cp = testString.codePointAt(charIdx);
+                if (cp == '\r' && charIdx<len && testString.codePointAt(charIdx+1) == '\n') {
                     // We have a CR LF
                     //  Need an extra increment of the input ptr to move over both of them
                     charIdx++;
                 }
-                if (cp == CH_LF || cp == CH_CR) {
+                if (cp == '\n' || cp == '\r') {
                     lineNum++;
                     column   = 0;
                     charIdx++;
@@ -300,14 +376,12 @@ public void TestExtended() {
                 }
 
                 // Let unescape handle the back slash.
-                int  charIdxAr[] = new int[1];
-                charIdxAr[0] = charIdx;
-                cp = Utility.unescapeAt(testString, charIdxAr);
-                if (cp != -1) {
+                int cpAndLength = Utility.unescapeAndLengthAt(testString, charIdx);
+                if (cpAndLength >= 0) {
                     // Escape sequence was recognized.  Insert the char
                     //   into the test data.
-                    charIdx = charIdxAr[0];
-                    UTF16.append(tp.dataToBreak, cp);
+                    charIdx += Utility.lengthFromCodePointAndLength(cpAndLength);
+                    tp.dataToBreak.appendCodePoint(Utility.cpFromCodePointAndLength(cpAndLength));
                     for (i=tp.dataToBreak.length()-1; i>=0 && tp.srcLine[i]==0; i--) {
                         tp.srcLine[i] = lineNum;
                         tp.srcCol[i]  = column;
@@ -320,12 +394,12 @@ public void TestExtended() {
                 // Not a recognized backslash escape sequence.
                 // Take the next char as a literal.
                 //  TODO:  Should this be an error?
-                c = UTF16.charAt(testString,charIdx);
-                charIdx = UTF16.moveCodePointOffset(testString, charIdx, 1);
+                c = testString.codePointAt(charIdx);
+                charIdx = testString.offsetByCodePoints(charIdx, 1);
              }
 
             // Normal, non-escaped data char.
-            UTF16.append(tp.dataToBreak, c);
+            tp.dataToBreak.appendCodePoint(c);
 
             // Save the mapping from offset in the data to line/column numbers in
             //   the original input file.  Will be used for better error messages only.
@@ -345,7 +419,7 @@ public void TestExtended() {
                 break;
             }
 
-            if (c == CH_GT) {
+            if (c == '>') {
                 // Finished the number.  Add the info to the expected break data,
                 //   and switch parse state back to doing plain data.
                 parseState = PARSE_DATA;
@@ -353,6 +427,11 @@ public void TestExtended() {
                     tagValue = -1;
                 }
                 int  breakIdx = tp.dataToBreak.length();
+                if (tp.expectedBreaks[breakIdx] != 0) {
+                    errln(String.format(
+                            "rbbitst.txt:%d:%d adjacent expected breaks with no intervening test text",
+                            lineNum, column));
+                }
                 tp.expectedBreaks[breakIdx] = tagValue;
                 tp.srcLine[breakIdx]        = lineNum;
                 tp.srcCol[breakIdx]         = column;
@@ -364,19 +443,25 @@ public void TestExtended() {
                 break;
             }
 
-            errln("Syntax Error in test file at line "+ lineNum +", col %d" + column);
+            errln(String.format("Syntax Error in rbbitst.txt at line %d, col %d", lineNum, column));
             return;
-
-            // parseState = PARSE_COMMENT;   // TODO: unreachable.  Don't stop on errors.
-            // break;
         }
+    }
 
-
-
+    // Reached end of test file. Raise an error if parseState indicates that we are
+    //   within a block that should have been terminated.
+    if (parseState == PARSE_RULES) {
+        errln(String.format("rbbitst.txt:%d <rules> block beginning at line %d is not closed.",
+            lineNum, rulesFirstLine));
+    }
+    if (parseState == PARSE_DATA) {
+        errln(String.format("rbbitst.txt:%d <data> block not closed.", lineNum));
     }
 }
 
 void executeTest(TestParams t) {
+    // TODO: also rerun tests with a break iterator re-created from bi.getRules()
+    //       and from bi.clone(). If in exhaustive mode only.
     int    bp;
     int    prevBP;
     int    i;

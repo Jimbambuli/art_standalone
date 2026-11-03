@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2009-2015, International Business Machines Corporation and
@@ -15,6 +15,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.impl.UnicodeRegex;
@@ -24,10 +26,13 @@ import android.icu.lang.UProperty.NameChoice;
 import android.icu.text.Transliterator;
 import android.icu.text.UTF16;
 import android.icu.text.UnicodeSet;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author markdavis
  */
+@MainTestShard
+@RunWith(JUnit4.class)
 public class RegexUtilitiesTest extends TestFmwk {
     /**
      * Check basic construction.
@@ -50,7 +55,7 @@ public class RegexUtilitiesTest extends TestFmwk {
             String expected = tests[i].length == 1 ? source : tests[i][1];
             String actual = UnicodeRegex.fix(source);
             assertEquals(source, expected, actual);
-        } 
+        }
     }
 
     Transliterator hex = Transliterator.getInstance("hex");
@@ -64,7 +69,8 @@ public class RegexUtilitiesTest extends TestFmwk {
         UnicodeSet requiresQuote = new UnicodeSet("[\\$\\&\\-\\:\\[\\\\\\]\\^\\{\\}[:pattern_whitespace:]]");
         boolean skip = TestFmwk.getExhaustiveness() < 10;
         for (int cp = 0; cp < 0x110000; ++cp) {
-            if (cp > 0xFF && skip && (cp % 37 != 0)) {
+            // Do always test U+1FFFE to cover UnicodeSet escaping a supplementary noncharacter.
+            if (cp > 0xFF && skip && (cp % 37 != 0) && cp != 0x1fffe) {
                 continue;
             }
             String cpString = UTF16.valueOf(cp);
@@ -77,8 +83,15 @@ public class RegexUtilitiesTest extends TestFmwk {
                 errln(e.getMessage());
                 continue;
             }
-            final String expected = "[" + s + "]";
-            assertEquals("Doubled character works" + hex.transform(s), expected, pattern);
+            String expected = "[" + s + "]";  // Try this first for faster testing.
+            boolean ok = pattern.equals(expected);
+            if (!ok) {
+                // Escape like in UnicodeSet, and change supplementary escapes to Java regex syntax.
+                expected = new UnicodeSet(expected).toPattern(false).
+                        replaceAll("\\\\U00([0-9a-fA-F]{6})", "\\\\x{$1}");
+                ok = pattern.equals(expected);
+            }
+            assertTrue("Doubled character works " + hex.transform(s), ok);
 
             // verify that we can create a regex pattern and use as expected
             String shouldNotMatch = UTF16.valueOf((cp + 1) % 0x110000);
@@ -211,6 +224,29 @@ public class RegexUtilitiesTest extends TestFmwk {
                 }
                 continue;
             }
+        }
+    }
+
+    /**
+     * Check {@code \Q} and {@code \E}.
+     */
+    @Test
+    public void TestTransformQuotation() {
+        String[][] tests = {
+                {"a\\Qb", "a\\Qb"},
+                {"a\\Eb", "a\\Eb"},
+                {"\\Q[ba]", "\\Q[ba]"},
+                {"\\\\Q[ba]", "\\\\Q[ab]"},
+                {"\\Q[ba]\\e[ba]", "\\Q[ba]\\e[ba]"},
+                {"\\Q[ba]\\E[ba]", "\\Q[ba]\\E[ab]"},
+                {"\\Q[ba]\\\\E[ba]", "\\Q[ba]\\\\E[ab]"},
+        };
+        UnicodeRegex regex = new UnicodeRegex();
+        for (int i = 0; i < tests.length; ++i) {
+            final String source = tests[i][0];
+            String expected = tests[i][1];
+            String actual = regex.transform(source);
+            assertEquals(source, expected, actual);
         }
     }
 

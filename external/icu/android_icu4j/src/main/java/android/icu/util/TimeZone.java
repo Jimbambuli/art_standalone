@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  * @(#)TimeZone.java    1.51 00/01/19
  *
@@ -85,7 +85,6 @@ import android.icu.util.ULocale.Category;
  *
  * @see          Calendar
  * @see          GregorianCalendar
- * @see          SimpleTimeZone
  * @author       Mark Davis, Deborah Goldsmith, Chen-Lieh Huang, Alan Liu
  */
 abstract public class TimeZone implements Serializable, Cloneable, Freezable<TimeZone> {
@@ -221,19 +220,16 @@ abstract public class TimeZone implements Serializable, Cloneable, Freezable<Tim
     public enum SystemTimeZoneType {
         /**
          * Any system zones.
-         * @hide draft / provisional / internal are hidden on Android
          */
         ANY,
 
         /**
          * Canonical system zones.
-         * @hide draft / provisional / internal are hidden on Android
          */
         CANONICAL,
 
         /**
          * Canonical system zones associated with actual locations.
-         * @hide draft / provisional / internal are hidden on Android
          */
         CANONICAL_LOCATION,
     }
@@ -481,7 +477,7 @@ abstract public class TimeZone implements Serializable, Cloneable, Freezable<Tim
             // Generic format
             TimeZoneFormat tzfmt = TimeZoneFormat.getInstance(locale);
             long date = System.currentTimeMillis();
-            Output<TimeType> timeType = new Output<TimeType>(TimeType.UNKNOWN);
+            Output<TimeType> timeType = new Output<>(TimeType.UNKNOWN);
 
             switch (style) {
             case GENERIC_LOCATION:
@@ -610,7 +606,6 @@ abstract public class TimeZone implements Serializable, Cloneable, Freezable<Tim
      * daylight saving time at any future time.
      * @see #useDaylightTime
      */
-    @SuppressWarnings("javadoc")    // java.util.TimeZone#observesDaylightTime() is introduced in Java 7
     public boolean observesDaylightTime() {
         return useDaylightTime() || inDaylightTime(new Date());
     }
@@ -840,105 +835,141 @@ abstract public class TimeZone implements Serializable, Cloneable, Freezable<Tim
     }
 
     /**
+     * If the locale contains the timezone keyword, creates a copy of that
+     * <code>TimeZone</code>.
+     * Otherwise, create the default <code>TimeZone</code>.
+     * @param locale a locale which may contains 'timezone' keyword/value.
+     * @return A <code>TimeZone</code>. Clients are responsible for deleting the
+     *   <code>TimeZone</code> object returned.
+     * @deprecated This API is ICU internal only.
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    @Deprecated
+    public static TimeZone forULocaleOrDefault(ULocale locale) {
+        String tz = locale.getKeywordValue("timezone");
+        return (tz == null) ? getDefault() : getTimeZone(tz);
+    }
+
+    /**
+     * If the locale contains the timezone keyword, creates a copy of that
+     * <code>TimeZone</code>.
+     * Otherwise, create the default <code>TimeZone</code>.
+     * @param locale a locale which may contains 'timezone' keyword/value.
+     * @return A <code>TimeZone</code>. Clients are responsible for deleting the
+     *   <code>TimeZone</code> object returned.
+     * @deprecated This API is ICU internal only.
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    @Deprecated
+    public static TimeZone forLocaleOrDefault(Locale locale) {
+        return forULocaleOrDefault(ULocale.forLocale(locale));
+    }
+
+    /**
      * Gets the default <code>TimeZone</code> for this host.
      * The source of the default <code>TimeZone</code>
      * may vary with implementation.
      * @return a default <code>TimeZone</code>.
      */
     public static TimeZone getDefault() {
-        // Android patch (http://b/30979219) start.
-        // Avoid race condition by copying defaultZone to a local variable.
-        TimeZone result = defaultZone;
-        if (result == null) {
-            // Android patch (http://b/30937209) start.
-            // Avoid a deadlock by always acquiring monitors in order (1) java.util.TimeZone.class
-            // then (2) icu.util.TimeZone.class and not (2) then (1).
-            // Without the synchronized here there is a possible deadlock between threads calling
-            // this method and other threads calling methods on java.util.TimeZone. e.g.
-            // java.util.TimeZone.setDefault() calls back into
-            // icu.util.TimeZone.clearCachedDefault() so always acquires them in order (1) then (2).
+        // Copy the reference to the current defaultZone,
+        // so it won't be affected by setDefault().
+        TimeZone tmpDefaultZone = defaultZone;
+
+        if (tmpDefaultZone == null) {
             synchronized (java.util.TimeZone.class) {
-                synchronized (TimeZone.class) {
-                    result = defaultZone;
-                    if (result == null) {
+                synchronized(TimeZone.class) {
+                    tmpDefaultZone = defaultZone;
+                    if (tmpDefaultZone == null) {
                         if (TZ_IMPL == TIMEZONE_JDK) {
-                            result = new JavaTimeZone();
+                            tmpDefaultZone = new JavaTimeZone();
                         } else {
                             java.util.TimeZone temp = java.util.TimeZone.getDefault();
-                            result = getFrozenTimeZone(temp.getID());
+                            tmpDefaultZone = getFrozenTimeZone(temp.getID());
                         }
-                        defaultZone = result;
+                        defaultZone = tmpDefaultZone;
                     }
                 }
             }
-            // Android patch (http://b/30937209) end.
         }
-        return result.cloneAsThawed();
-        // Android patch (http://b/30979219) end.
+
+        return tmpDefaultZone.cloneAsThawed();
     }
 
-    // Android patch (http://b/28949992) start.
-    // ICU TimeZone.setDefault() not supported on Android.
     /**
-     * Clears the cached default time zone.
-     * This causes {@link #getDefault()} to re-request the default time zone
-     * from {@link java.util.TimeZone}.
-     * @hide unsupported on Android
-     */
-    public static synchronized void clearCachedDefault() {
-        defaultZone = null;
-    }
-    // Android patch (http://b/28949992) end.
-
-    /**
-     * Sets the <code>TimeZone</code> that is
-     * returned by the <code>getDefault</code> method.  If <code>zone</code>
-     * is null, reset the default to the value it had originally when the
-     * VM first started.
+     * Sets the <code>TimeZone</code> that is returned by the <code>getDefault</code>
+     * method. This method also sets a Java TimeZone equivalent to the input <code>tz</code>
+     * as the JVM's default time zone if not null. If <code>tz</code> is null, next
+     * {@link #getDefault()} method invocation will reset the default time zone
+     * synchronized with the JVM's default at that time.
+     *
      * @param tz the new default time zone
      * @hide unsupported on Android
      */
     public static synchronized void setDefault(TimeZone tz) {
-        defaultZone = tz;
-        java.util.TimeZone jdkZone = null;
-        if (defaultZone instanceof JavaTimeZone) {
-            jdkZone = ((JavaTimeZone)defaultZone).unwrap();
-        } else {
+        // Set default ICU time zone, used by #getDefault()
+        setICUDefault(tz);
+
+        if (tz != null) {
             // Keep java.util.TimeZone default in sync so java.util.Date
             // can interoperate with android.icu.util classes.
-
-            if (tz != null) {
-                if (tz instanceof android.icu.impl.OlsonTimeZone) {
-                    // Because of the lack of APIs supporting historic
-                    // zone offset/dst saving in JDK TimeZone,
-                    // wrapping ICU TimeZone with JDK TimeZone will
-                    // cause historic offset calculation in Calendar/Date.
-                    // JDK calendar implementation calls getRawOffset() and
-                    // getDSTSavings() when the instance of JDK TimeZone
-                    // is not an instance of JDK internal TimeZone subclass
-                    // (sun.util.calendar.ZoneInfo).  Ticket#6459
-                    String icuID = tz.getID();
+            java.util.TimeZone jdkZone = null;
+            if (tz instanceof JavaTimeZone) {
+                jdkZone = ((JavaTimeZone)tz).unwrap();
+            } else if (tz instanceof android.icu.impl.OlsonTimeZone) {
+                // Because of the lack of APIs supporting historic
+                // zone offset/dst saving in JDK TimeZone,
+                // wrapping ICU TimeZone with JDK TimeZone will
+                // cause historic offset calculation in Calendar/Date.
+                // JDK calendar implementation calls getRawOffset() and
+                // getDSTSavings() when the instance of JDK TimeZone
+                // is not an instance of JDK internal TimeZone subclass
+                // (sun.util.calendar.ZoneInfo).  Ticket#6459
+                String icuID = tz.getID();
+                jdkZone = java.util.TimeZone.getTimeZone(icuID);
+                if (!icuID.equals(jdkZone.getID())) {
+                    // If the ID was unknown, retry with the canonicalized
+                    // ID instead. This will ensure that JDK 1.1.x
+                    // compatibility IDs supported by ICU (but not
+                    // necessarily supported by the platform) work.
+                    // Ticket#11483
+                    icuID = getCanonicalID(icuID);
                     jdkZone = java.util.TimeZone.getTimeZone(icuID);
                     if (!icuID.equals(jdkZone.getID())) {
-                        // If the ID was unknown, retry with the canonicalized
-                        // ID instead. This will ensure that JDK 1.1.x
-                        // compatibility IDs supported by ICU (but not
-                        // necessarily supported by the platform) work.
-                        // Ticket#11483
-                        icuID = getCanonicalID(icuID);
-                        jdkZone = java.util.TimeZone.getTimeZone(icuID);
-                        if (!icuID.equals(jdkZone.getID())) {
-                            // JDK does not know the ID..
-                            jdkZone = null;
-                        }
+                        // JDK does not know the ID..
+                        jdkZone = null;
                     }
                 }
-                if (jdkZone == null) {
-                    jdkZone = TimeZoneAdapter.wrap(tz);
-                }
             }
+            if (jdkZone == null) {
+                jdkZone = TimeZoneAdapter.wrap(tz);
+            }
+            java.util.TimeZone.setDefault(jdkZone);
         }
-        java.util.TimeZone.setDefault(jdkZone);
+    }
+
+    /**
+     * Sets the <code>TimeZone</code> that is returned by the <code>getDefault</code>
+     * method. If <code>tz</code> is null, next {@link #getDefault()} method invocation
+     * will reset the default time zone synchronized with the JVM's default at that time.
+     * Unlike {@link #setDefault(TimeZone)}, this method does not change the JVM's
+     * default time zone.
+     *
+     * @param tz the new default time zone
+     * @deprecated This API is ICU internal only.
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    @Deprecated
+    public static synchronized void setICUDefault(TimeZone tz) {
+        if (tz == null) {
+            defaultZone = null;
+        } else if (tz.isFrozen()) {
+            // No need to create a defensive copy
+            defaultZone = tz;
+        } else {
+            // Creates a defensive copy and freeze it
+            defaultZone = ((TimeZone)tz.clone()).freeze();
+        }
     }
 
     /**
@@ -968,6 +999,7 @@ abstract public class TimeZone implements Serializable, Cloneable, Freezable<Tim
 
     /**
      * Overrides equals.
+     * @return <code>true</code> if this object is the same as the obj argument; <code>false</code> otherwise.
      */
     @Override
     public boolean equals(Object obj){
@@ -978,6 +1010,7 @@ abstract public class TimeZone implements Serializable, Cloneable, Freezable<Tim
 
     /**
      * Overrides hashCode.
+     * @return a hash code value for this object.
      */
     @Override
     public int hashCode(){
@@ -1080,7 +1113,7 @@ abstract public class TimeZone implements Serializable, Cloneable, Freezable<Tim
      *
      * <p>This implementation utilizes <a href="http://unicode.org/cldr/charts/supplemental/zone_tzid.html">
      * Zone-Tzid mapping data</a>. The mapping data is updated time to time. To get the latest changes,
-     * please read the ICU user guide section <a href="http://userguide.icu-project.org/datetime/timezone#TOC-Updating-the-Time-Zone-Data">
+     * please read the ICU user guide section <a href="https://unicode-org.github.io/icu/userguide/datetime/timezone#updating-the-time-zone-data">
      * Updating the Time Zone Data</a>.
      *
      * @param id A system time zone ID
@@ -1138,7 +1171,7 @@ abstract public class TimeZone implements Serializable, Cloneable, Freezable<Tim
      *
      * <p>This implementation utilizes <a href="http://unicode.org/cldr/charts/supplemental/zone_tzid.html">
      * Zone-Tzid mapping data</a>. The mapping data is updated time to time. To get the latest changes,
-     * please read the ICU user guide section <a href="http://userguide.icu-project.org/datetime/timezone#TOC-Updating-the-Time-Zone-Data">
+     * please read the ICU user guide section <a href="https://unicode-org.github.io/icu/userguide/datetime/timezone#updating-the-time-zone-data">
      * Updating the Time Zone Data</a>.
      *
      * @param winid A Windows time zone ID

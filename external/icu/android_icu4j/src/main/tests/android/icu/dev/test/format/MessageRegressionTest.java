@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 **********************************************************************
 * Copyright (c) 2005-2011, International Business Machines
@@ -47,12 +47,18 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+import android.icu.dev.test.TestFmwk;
 import android.icu.text.MessageFormat;
 import android.icu.text.NumberFormat;
 import android.icu.util.ULocale;
+import android.icu.testsharding.MainTestShard;
 
-public class MessageRegressionTest extends android.icu.dev.test.TestFmwk {
+@MainTestShard
+@RunWith(JUnit4.class)
+public class MessageRegressionTest extends TestFmwk {
     /* @bug 4074764
      * Null exception when formatting pattern with MessageFormat
      * with no parameters.
@@ -87,7 +93,7 @@ public class MessageRegressionTest extends android.icu.dev.test.TestFmwk {
 
              tempBuffer = messageFormatter.format(paramArray);
              if (!tempBuffer.equals("Message without param"))
-                errln("Formatted with arguments > subsitution failed. result = " + tempBuffer.toString());
+                errln("Formatted with arguments > substitution failed. result = " + tempBuffer.toString());
              logln("Formatted with extra params : " + tempBuffer);
             //This statement gives an exception while formatting...
             //If we use pattern[1] for the message with param,
@@ -179,7 +185,7 @@ public class MessageRegressionTest extends android.icu.dev.test.TestFmwk {
         pos.setErrorIndex(4);
         if (pos.getErrorIndex() != 4)
             errln("setErrorIndex failed, got " + pos.getErrorIndex() + " instead of 4");
-        
+
         if (objs != null) {
             errln("objs should be null");
         }
@@ -209,7 +215,7 @@ public class MessageRegressionTest extends android.icu.dev.test.TestFmwk {
         ChoiceFormat cf = new ChoiceFormat(limits, formats);
         try {
             log("Compares to null is always false, returned : ");
-            logln(cf.equals(null) ? "TRUE" : "FALSE");
+            logln(cf.equals(null) ? "true" : "false");
         } catch (Exception foo) {
             errln("ChoiceFormat.equals(null) throws exception.");
         }
@@ -527,8 +533,8 @@ public class MessageRegressionTest extends android.icu.dev.test.TestFmwk {
      */
     @Test
     public void Test4142938() {
-        String pat = "''Vous'' {0,choice,0#n''|1#}avez s\u00E9lectionne\u00E9 " + 
-            "{0,choice,0#aucun|1#{0}} client{0,choice,0#s|1#|2#s} " + 
+        String pat = "''Vous'' {0,choice,0#n''|1#}avez s\u00E9lectionne\u00E9 " +
+            "{0,choice,0#aucun|1#{0}} client{0,choice,0#s|1#|2#s} " +
             "personnel{0,choice,0#s|1#|2#s}.";
         MessageFormat mf = new MessageFormat(pat);
 
@@ -536,13 +542,13 @@ public class MessageRegressionTest extends android.icu.dev.test.TestFmwk {
             "'Vous' n'avez s\u00E9lectionne\u00E9 aucun clients personnels.",
             "'Vous' avez s\u00E9lectionne\u00E9 ",
             "'Vous' avez s\u00E9lectionne\u00E9 "
-        };  
+        };
         String[] SUFFIX = {
             null,
             " client personnel.",
             " clients personnels."
         };
-    
+
         for (int i=0; i<3; i++) {
             String out = mf.format(new Object[]{new Integer(i)});
             if (SUFFIX[i] == null) {
@@ -647,7 +653,7 @@ public class MessageRegressionTest extends android.icu.dev.test.TestFmwk {
             throw new RuntimeException("didn't get exception for invalid input");
         }
     }
-    
+
     @Test
     public void test4293229() {
         MessageFormat format = new MessageFormat("'''{'0}'' '''{0}'''");
@@ -659,12 +665,12 @@ public class MessageRegressionTest extends android.icu.dev.test.TestFmwk {
                     expected + "\", got \"" + result + "\"");
         }
     }
-     
+
     // This test basically ensures that the tests defined above also work with
     // valid named arguments.
     @Test
     public void testBugTestsWithNamesArguments() {
-        
+
       { // Taken from Test4031438().
         String pattern1 = "Impossible {arg1} has occurred -- status code is {arg0} and message is {arg2}.";
         String pattern2 = "Double '' Quotes {ARG_ZERO} test and quoted '{ARG_ONE}' test plus 'other {ARG_TWO} stuff'.";
@@ -813,7 +819,7 @@ public class MessageRegressionTest extends android.icu.dev.test.TestFmwk {
             logln("\"" + mf.format(objs3) + "\"");
         } catch (Exception e) {
             errln("Exception thrown for null argument tests.");
-        } 
+        }
     }{ // Taken from Test4118594().
         String argName = "something_stupid";
         MessageFormat mf = new MessageFormat("{"+ argName + "}, {" + argName + "}, {" + argName + "}");
@@ -871,7 +877,7 @@ public class MessageRegressionTest extends android.icu.dev.test.TestFmwk {
             ostream.writeObject(original);
             ostream.flush();
             byte bytes[] = baos.toByteArray();
-    
+
             ObjectInputStream istream = new ObjectInputStream(new ByteArrayInputStream(bytes));
             MessageFormat reconstituted = (MessageFormat)istream.readObject();
             return reconstituted;
@@ -891,7 +897,7 @@ public class MessageRegressionTest extends android.icu.dev.test.TestFmwk {
         format2 = serializeAndDeserialize(format1);
         assertEquals("MessageFormats (empty pattern) before and after serialization are not equal", format1, format2);
 
-        format1.applyPattern("ab{1}cd{0,number}ef{3,date}gh");
+        format1.applyPattern("ab{1}cd{0,number}ef{3,date}gh{4,number,::percent}ij");
         format1.setFormat(2, null);
         format1.setFormatByArgumentIndex(1, NumberFormat.getInstance(ULocale.ENGLISH));
         format2 = serializeAndDeserialize(format1);
@@ -899,7 +905,7 @@ public class MessageRegressionTest extends android.icu.dev.test.TestFmwk {
         assertEquals(
                 "MessageFormat (with custom formats) does not "+
                 "format correctly after serialization",
-                "ab3.3cd4,4ef***gh",
-                format2.format(new Object[] { 4.4, 3.3, "+++", "***" }));
+                "ab3.3cd4,4ef***gh50\u00A0%ij",
+                format2.format(new Object[] { 4.4, 3.3, "+++", "***", 50 }));
     }
 }

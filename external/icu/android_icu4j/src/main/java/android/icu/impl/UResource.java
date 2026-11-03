@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2015-2016, International Business Machines Corporation and
@@ -27,6 +27,7 @@ public final class UResource {
      * Avoids object creations as much as possible.
      * Mutable, not thread-safe.
      * For permanent storage, use clone() or toString().
+     * @hide Only a subset of ICU is exposed in Android
      */
     public static final class Key implements CharSequence, Cloneable, Comparable<Key> {
         // Stores a reference to the resource bundle key string bytes array,
@@ -272,6 +273,7 @@ public final class UResource {
     /**
      * Interface for iterating over a resource bundle array resource.
      * Does not use Java Iterator to reduce object creations.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public interface Array {
         /**
@@ -289,25 +291,33 @@ public final class UResource {
     /**
      * Interface for iterating over a resource bundle table resource.
      * Does not use Java Iterator to reduce object creations.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public interface Table {
         /**
-         * @return The number of items in the array resource.
+         * @return The number of items in the table resource.
          */
         public int getSize();
         /**
-         * @param i Array item index.
+         * @param i Table item index.
          * @param key Output-only, receives the key of the i'th item.
          * @param value Output-only, receives the value of the i'th item.
          * @return true if i is non-negative and less than getSize().
          */
         public boolean getKeyAndValue(int i, Key key, Value value);
+        /**
+         * @param key Key string to find in the table.
+         * @param value Output-only, receives the value of the item with that key.
+         * @return true if the table contains the key.
+         */
+        public boolean findValue(CharSequence key, Value value);
     }
 
     /**
      * Represents a resource bundle item's value.
      * Avoids object creations as much as possible.
      * Mutable, not thread-safe.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public static abstract class Value {
         protected Value() {}
@@ -449,6 +459,7 @@ public final class UResource {
 
     /**
      * Sink for ICU resource bundle contents.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public static abstract class Sink {
         /**

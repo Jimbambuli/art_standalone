@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2007, International Business Machines Corporation and         *
@@ -10,13 +10,18 @@
 package android.icu.dev.test.util;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author srl
  *
  */
+@MainTestShard
+@RunWith(JUnit4.class)
 public class DebugUtilitiesTest extends TestFmwk {
 
     @Test

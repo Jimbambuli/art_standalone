@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /**
  *******************************************************************************
  * Copyright (C) 2001-2010, International Business Machines Corporation and    *
@@ -11,7 +11,9 @@ package android.icu.dev.test.calendar;
 import java.util.Date;
 
 import android.icu.util.Calendar;
+import android.icu.testsharding.MainTestShard;
 
+@MainTestShard
 public class ChineseTestCase extends TestCase {
 
     /**
@@ -35,7 +37,7 @@ public class ChineseTestCase extends TestCase {
                            boolean isLeapMonth, int dayOfMonth, int dayOfWeek) {
 
         setTime(new Date(JULIAN_EPOCH + (long)(ONE_DAY * julian)));
-        
+
         set(Calendar.ERA, era);
         set(Calendar.YEAR, year);
         set(Calendar.MONTH, month - 1);
@@ -47,6 +49,7 @@ public class ChineseTestCase extends TestCase {
     /**
      * Return a String representation of this test case's time.
      */
+    @Override
     public String toString() {
         return dowToString(get(Calendar.DAY_OF_WEEK)) +
             get(Calendar.YEAR) + "of" + get(Calendar.ERA) +

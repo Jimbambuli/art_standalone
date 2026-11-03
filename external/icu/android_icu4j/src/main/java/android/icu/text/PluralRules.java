@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2007-2016, International Business Machines Corporation and
@@ -16,20 +16,26 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import android.icu.impl.PluralRulesLoader;
+import android.icu.impl.StandardPlural;
+import android.icu.impl.number.DecimalQuantity;
+import android.icu.impl.number.DecimalQuantity_DualStorageBCD;
+import android.icu.impl.number.range.StandardPluralRanges;
+import android.icu.number.FormattedNumber;
+import android.icu.number.FormattedNumberRange;
+import android.icu.number.NumberFormatter;
 import android.icu.util.Output;
 import android.icu.util.ULocale;
 
@@ -49,8 +55,8 @@ import android.icu.util.ULocale;
  * </p>
  * <p>
  * For more information, details, and tips for writing rules, see the <a
- * href="http://www.unicode.org/draft/reports/tr35/tr35.html#Language_Plural_Rules">LDML spec, C.11 Language Plural
- * Rules</a>
+ * href="https://www.unicode.org/reports/tr35/tr35-numbers.html#Language_Plural_Rules">LDML spec,
+ * Part 3.5 Language Plural Rules</a>
  * </p>
  * <p>
  * Examples:
@@ -171,30 +177,23 @@ public class PluralRules implements Serializable {
     static final UnicodeSet ALLOWED_ID = new UnicodeSet("[a-z]").freeze();
 
     // TODO Remove RulesList by moving its API and fields into PluralRules.
+
     /**
-     * @deprecated This API is ICU internal only.
      * @hide original deprecated declaration
-     * @hide draft / provisional / internal are hidden on Android
      */
-    @Deprecated
-    public static final String CATEGORY_SEPARATOR = ";  ";
-    /**
-     * @deprecated This API is ICU internal only.
-     * @hide original deprecated declaration
-     * @hide draft / provisional / internal are hidden on Android
-     */
-    @Deprecated
-    public static final String KEYWORD_RULE_SEPARATOR = ": ";
+    private static final String CATEGORY_SEPARATOR = ";  ";
 
     private static final long serialVersionUID = 1;
 
     private final RuleList rules;
     private final transient Set<String> keywords;
+    private final transient StandardPluralRanges standardPluralRanges;
 
     /**
      * Provides a factory for returning plural rules
      *
      * @deprecated This API is ICU internal only.
+     * @hide Only a subset of ICU is exposed in Android
      * @hide original deprecated declaration
      * @hide draft / provisional / internal are hidden on Android
      */
@@ -215,7 +214,8 @@ public class PluralRules implements Serializable {
          *
          * <p>
          * ICU defines plural rules for many locales based on CLDR <i>Language Plural Rules</i>. For these predefined
-         * rules, see CLDR page at http://unicode.org/repos/cldr-tmp/trunk/diff/supplemental/language_plural_rules.html
+         * rules, see CLDR page at
+         * https://unicode-org.github.io/cldr-staging/charts/latest/supplemental/language_plural_rules.html
          *
          * @param locale
          *            The locale for which a <code>PluralRules</code> object is returned.
@@ -258,7 +258,7 @@ public class PluralRules implements Serializable {
          * Returns the 'functionally equivalent' locale with respect to plural rules. Calling PluralRules.forLocale with
          * the functionally equivalent locale, and with the provided locale, returns rules that behave the same. <br>
          * All locales with the same functionally equivalent locale have plural rules that behave the same. This is not
-         * exaustive; there may be other locales whose plural rules behave the same that do not have the same equivalent
+         * exhaustive; there may be other locales whose plural rules behave the same that do not have the same equivalent
          * locale.
          *
          * @param locale
@@ -335,6 +335,16 @@ public class PluralRules implements Serializable {
     public static final double NO_UNIQUE_VALUE = -0.00123456777;
 
     /**
+     * Value returned by {@link #getUniqueKeywordDecimalQuantityValue} when there is no
+     * unique value to return.
+     * @deprecated This API is ICU internal only.
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    @Deprecated
+    public static final DecimalQuantity NO_UNIQUE_VALUE_DECIMAL_QUANTITY =
+        new DecimalQuantity_DualStorageBCD(-0.00123456777);
+
+    /**
      * Type of plurals and PluralRules.
      */
     public enum PluralType {
@@ -355,7 +365,7 @@ public class PluralRules implements Serializable {
         private static final long serialVersionUID = 9163464945387899416L;
 
         @Override
-        public boolean isFulfilled(FixedDecimal n) {
+        public boolean isFulfilled(IFixedDecimal n) {
             return true;
         }
 
@@ -383,9 +393,7 @@ public class PluralRules implements Serializable {
      */
     public static PluralRules parseDescription(String description)
             throws ParseException {
-
-        description = description.trim();
-        return description.length() == 0 ? DEFAULT : new PluralRules(parseRuleChain(description));
+        return newInternal(description, null);
     }
 
     /**
@@ -403,86 +411,219 @@ public class PluralRules implements Serializable {
     }
 
     /**
+     * @deprecated This API is ICU internal only.
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    @Deprecated
+    public static PluralRules newInternal(String description, StandardPluralRanges ranges)
+            throws ParseException {
+        description = description.trim();
+        return description.length() == 0
+            ? DEFAULT
+            : new PluralRules(parseRuleChain(description), ranges);
+    }
+
+    /**
      * The default rules that accept any number and return
      * {@link #KEYWORD_OTHER}.
      */
-    public static final PluralRules DEFAULT = new PluralRules(new RuleList().addRule(DEFAULT_RULE));
+    public static final PluralRules DEFAULT = new PluralRules(
+        new RuleList().addRule(DEFAULT_RULE), StandardPluralRanges.DEFAULT);
 
-    private enum Operand {
+    /**
+     * @deprecated This API is ICU internal only.
+     * @hide Only a subset of ICU is exposed in Android
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    @Deprecated
+    public static enum Operand {
+        /**
+         * The double value of the entire number.
+         *
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
         n,
+
+        /**
+         * The integer value, with the fraction digits truncated off.
+         *
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
         i,
+
+        /**
+         * All visible fraction digits as an integer, including trailing zeros.
+         *
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
         f,
+
+        /**
+         * Visible fraction digits as an integer, not including trailing zeros.
+         *
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
         t,
+
+        /**
+         * Number of visible fraction digits.
+         *
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
         v,
+
+        /**
+         * Number of visible fraction digits, not including trailing zeros.
+         *
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
         w,
-        /* deprecated */
+
+        /**
+         * Suppressed exponent for scientific notation (exponent needed in
+         * scientific notation to approximate i).
+         *
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
+        e,
+
+        /**
+         * This operand is currently treated as an alias for `PLURAL_OPERAND_E`.
+         * In the future, it will represent:
+         *
+         * Suppressed exponent for compact notation (exponent needed in
+         * compact notation to approximate i).
+         *
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
+        c,
+
+        /**
+         * THIS OPERAND IS DEPRECATED AND HAS BEEN REMOVED FROM THE SPEC.
+         *
+         * <p>Returns the integer value, but will fail if the number has fraction digits.
+         * That is, using "j" instead of "i" is like implicitly adding "v is 0".
+         *
+         * <p>For example, "j is 3" is equivalent to "i is 3 and v is 0": it matches
+         * "3" but not "3.1" or "3.0".
+         *
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
         j;
     }
 
     /**
+     * An interface to FixedDecimal, allowing for other implementations.
+     *
      * @deprecated This API is ICU internal only.
+     * @hide Only a subset of ICU is exposed in Android
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    @Deprecated
+    public static interface IFixedDecimal {
+        /**
+         * Returns the value corresponding to the specified operand (n, i, f, t, v, or w).
+         * If the operand is 'n', returns a double; otherwise, returns an integer.
+         *
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
+        public double getPluralOperand(Operand operand);
+
+        /**
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
+        public boolean isNaN();
+
+        /**
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
+        public boolean isInfinite();
+
+        /**
+         * Whether the number has no nonzero fraction digits.
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
+        public boolean isHasIntegerValue();
+    }
+
+    /**
+     * @deprecated This API is ICU internal only.
+     * @hide Only a subset of ICU is exposed in Android
      * @hide original deprecated declaration
      * @hide draft / provisional / internal are hidden on Android
      */
     @Deprecated
-    public static class FixedDecimal extends Number implements Comparable<FixedDecimal> {
+    public static class FixedDecimal extends Number implements Comparable<FixedDecimal>, IFixedDecimal {
         private static final long serialVersionUID = -4756200506571685661L;
+
         /**
-         * @deprecated This API is ICU internal only.
          * @hide original deprecated declaration
-         * @hide draft / provisional / internal are hidden on Android
          */
-        @Deprecated
-        public final double source;
+        final double source;
+
         /**
-         * @deprecated This API is ICU internal only.
          * @hide original deprecated declaration
-         * @hide draft / provisional / internal are hidden on Android
          */
-        @Deprecated
-        public final int visibleDecimalDigitCount;
+        final int visibleDecimalDigitCount;
+
         /**
-         * @deprecated This API is ICU internal only.
          * @hide original deprecated declaration
-         * @hide draft / provisional / internal are hidden on Android
          */
-        @Deprecated
-        public final int visibleDecimalDigitCountWithoutTrailingZeros;
+        final int visibleDecimalDigitCountWithoutTrailingZeros;
+
         /**
-         * @deprecated This API is ICU internal only.
          * @hide original deprecated declaration
-         * @hide draft / provisional / internal are hidden on Android
          */
-        @Deprecated
-        public final long decimalDigits;
+        final long decimalDigits;
+
         /**
-         * @deprecated This API is ICU internal only.
          * @hide original deprecated declaration
-         * @hide draft / provisional / internal are hidden on Android
          */
-        @Deprecated
-        public final long decimalDigitsWithoutTrailingZeros;
+        final long decimalDigitsWithoutTrailingZeros;
+
         /**
-         * @deprecated This API is ICU internal only.
          * @hide original deprecated declaration
-         * @hide draft / provisional / internal are hidden on Android
          */
-        @Deprecated
-        public final long integerValue;
+        final long integerValue;
+
         /**
-         * @deprecated This API is ICU internal only.
          * @hide original deprecated declaration
-         * @hide draft / provisional / internal are hidden on Android
          */
-        @Deprecated
-        public final boolean hasIntegerValue;
+        final boolean hasIntegerValue;
+
         /**
-         * @deprecated This API is ICU internal only.
          * @hide original deprecated declaration
-         * @hide draft / provisional / internal are hidden on Android
          */
-        @Deprecated
-        public final boolean isNegative;
+        final boolean isNegative;
+
+        final int exponent;
+
         private final int baseFactor;
 
         /**
@@ -551,6 +692,7 @@ public class PluralRules implements Serializable {
          * @hide draft / provisional / internal are hidden on Android
          */
         @Deprecated
+        @Override
         public boolean isHasIntegerValue() {
             return hasIntegerValue;
         }
@@ -583,18 +725,22 @@ public class PluralRules implements Serializable {
          * @param v number of digits to the right of the decimal place. e.g 1.00 = 2 25. = 0
          * @param f Corresponds to f in the plural rules grammar.
          *   The digits to the right of the decimal place as an integer. e.g 1.10 = 10
-         * @hide original deprecated declaration
+         * @param e Suppressed exponent for scientific notation
+         * @param c Currently: an alias for param `e`
          * @hide draft / provisional / internal are hidden on Android
          */
         @Deprecated
-        public FixedDecimal(double n, int v, long f) {
+        public FixedDecimal(double n, int v, long f, int e, int c) {
             isNegative = n < 0;
             source = isNegative ? -n : n;
             visibleDecimalDigitCount = v;
             decimalDigits = f;
-            integerValue = n > MAX
-                    ? MAX
-                            : (long)n;
+            integerValue = n > MAX ? MAX : (long) source;
+            int initExpVal = e;
+            if (initExpVal == 0) {
+                initExpVal = c;
+            }
+            exponent = initExpVal;
             hasIntegerValue = source == integerValue;
             // check values. TODO make into unit test.
             //
@@ -623,6 +769,34 @@ public class PluralRules implements Serializable {
                 visibleDecimalDigitCountWithoutTrailingZeros = trimmedCount;
             }
             baseFactor = (int) Math.pow(10, v);
+        }
+
+        /**
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
+        public FixedDecimal(double n, int v, long f, int e) {
+            this(n, v, f, e, e);
+        }
+
+        /**
+         * @deprecated This API is ICU internal only.
+         * @hide original deprecated declaration
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
+        public FixedDecimal(double n, int v, long f) {
+            this(n, v, f, 0);
+        }
+
+        /**
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
+        public static FixedDecimal createWithExponent(double n, int v, int e) {
+            return new FixedDecimal(n,v,getFractionalDigits(n, v), e);
         }
 
         /**
@@ -722,40 +896,47 @@ public class PluralRules implements Serializable {
         }
 
         /**
-         * @deprecated This API is ICU internal only.
-         * @hide original deprecated declaration
+         * @deprecated This API is ICU internal only
          * @hide draft / provisional / internal are hidden on Android
          */
         @Deprecated
-        public FixedDecimal (String n) {
-            // Ugly, but for samples we don't care.
-            this(Double.parseDouble(n), getVisibleFractionCount(n));
-        }
-
-        private static int getVisibleFractionCount(String value) {
-            value = value.trim();
-            int decimalPos = value.indexOf('.') + 1;
-            if (decimalPos == 0) {
-                return 0;
-            } else {
-                return value.length() - decimalPos;
-            }
+        private FixedDecimal (FixedDecimal other) {
+            // Ugly, but necessary, because constructors must only call other
+            // constructors in the first line of the body, and
+            // FixedDecimal(String) was refactored to support exponents.
+            this.source = other.source;
+            this.visibleDecimalDigitCount = other.visibleDecimalDigitCount;
+            this.visibleDecimalDigitCountWithoutTrailingZeros =
+                    other.visibleDecimalDigitCountWithoutTrailingZeros;
+            this.decimalDigits = other.decimalDigits;
+            this.decimalDigitsWithoutTrailingZeros =
+                    other.decimalDigitsWithoutTrailingZeros;
+            this.integerValue = other.integerValue;
+            this.hasIntegerValue = other.hasIntegerValue;
+            this.isNegative = other.isNegative;
+            this.exponent = other.exponent;
+            this.baseFactor = other.baseFactor;
         }
 
         /**
+         * {@inheritDoc}
+         *
          * @deprecated This API is ICU internal only.
-         * @hide original deprecated declaration
          * @hide draft / provisional / internal are hidden on Android
          */
+        @Override
         @Deprecated
-        public double get(Operand operand) {
+        public double getPluralOperand(Operand operand) {
             switch(operand) {
-            default: return source;
-            case i: return integerValue;
+            case n: return (exponent == 0 ? source : source * Math.pow(10, exponent));
+            case i: return intValue();
             case f: return decimalDigits;
             case t: return decimalDigitsWithoutTrailingZeros;
             case v: return visibleDecimalDigitCount;
             case w: return visibleDecimalDigitCountWithoutTrailingZeros;
+            case e: return exponent;
+            case c: return exponent;
+            default: return doubleValue();
             }
         }
 
@@ -778,6 +959,9 @@ public class PluralRules implements Serializable {
         @Override
         @Deprecated
         public int compareTo(FixedDecimal other) {
+            if (exponent != other.exponent) {
+                return doubleValue() < other.doubleValue() ? -1 : 1;
+            }
             if (integerValue != other.integerValue) {
                 return integerValue < other.integerValue ? -1 : 1;
             }
@@ -812,7 +996,8 @@ public class PluralRules implements Serializable {
                 return false;
             }
             FixedDecimal other = (FixedDecimal)arg0;
-            return source == other.source && visibleDecimalDigitCount == other.visibleDecimalDigitCount && decimalDigits == other.decimalDigits;
+            return source == other.source && visibleDecimalDigitCount == other.visibleDecimalDigitCount && decimalDigits == other.decimalDigits
+                    && exponent == other.exponent;
         }
 
         /**
@@ -835,7 +1020,12 @@ public class PluralRules implements Serializable {
         @Deprecated
         @Override
         public String toString() {
-            return String.format("%." + visibleDecimalDigitCount + "f", source);
+            String baseString = String.format(Locale.ROOT, "%." + visibleDecimalDigitCount + "f", source);
+            if (exponent != 0) {
+                return baseString + "e" + exponent;
+            } else {
+                return baseString;
+            }
         }
 
         /**
@@ -857,7 +1047,7 @@ public class PluralRules implements Serializable {
         @Override
         public int intValue() {
             // TODO Auto-generated method stub
-            return (int)integerValue;
+            return (int) longValue();
         }
 
         /**
@@ -868,7 +1058,11 @@ public class PluralRules implements Serializable {
         @Deprecated
         @Override
         public long longValue() {
-            return integerValue;
+            if (exponent == 0) {
+                return integerValue;
+            } else {
+                return (long) (Math.pow(10, exponent) * integerValue);
+            }
         }
 
         /**
@@ -879,7 +1073,7 @@ public class PluralRules implements Serializable {
         @Deprecated
         @Override
         public float floatValue() {
-            return (float) source;
+            return (float) (source * Math.pow(10, exponent));
         }
 
         /**
@@ -890,17 +1084,7 @@ public class PluralRules implements Serializable {
         @Deprecated
         @Override
         public double doubleValue() {
-            return isNegative ? -source : source;
-        }
-
-        /**
-         * @deprecated This API is ICU internal only.
-         * @hide original deprecated declaration
-         * @hide draft / provisional / internal are hidden on Android
-         */
-        @Deprecated
-        public long getShiftedValue() {
-            return integerValue * baseFactor + decimalDigits;
+            return (isNegative ? -source : source) * Math.pow(10, exponent);
         }
 
         private void writeObject(
@@ -913,11 +1097,36 @@ public class PluralRules implements Serializable {
                 ) throws IOException, ClassNotFoundException {
             throw new NotSerializableException();
         }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
+        @Override
+        public boolean isNaN() {
+            return Double.isNaN(source);
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
+        @Override
+        public boolean isInfinite() {
+            return Double.isInfinite(source);
+        }
     }
 
     /**
      * Selection parameter for either integer-only or decimal-only.
      * @deprecated This API is ICU internal only.
+     * @hide Only a subset of ICU is exposed in Android
      * @hide original deprecated declaration
      * @hide draft / provisional / internal are hidden on Android
      */
@@ -938,35 +1147,33 @@ public class PluralRules implements Serializable {
     }
 
     /**
-     * A range of NumberInfo that includes all values with the same visibleFractionDigitCount.
+     * A range of DecimalQuantity representing PluralRules samples that includes
+     * all values with the same visibleFractionDigitCount.
      * @deprecated This API is ICU internal only.
-     * @hide original deprecated declaration
+     * @hide Only a subset of ICU is exposed in Android
      * @hide draft / provisional / internal are hidden on Android
      */
     @Deprecated
-    public static class FixedDecimalRange {
+    public static class DecimalQuantitySamplesRange {
         /**
          * @deprecated This API is ICU internal only.
-         * @hide original deprecated declaration
          * @hide draft / provisional / internal are hidden on Android
          */
         @Deprecated
-        public final FixedDecimal start;
+        public final DecimalQuantity start;
         /**
          * @deprecated This API is ICU internal only.
-         * @hide original deprecated declaration
          * @hide draft / provisional / internal are hidden on Android
          */
         @Deprecated
-        public final FixedDecimal end;
+        public final DecimalQuantity end;
         /**
          * @deprecated This API is ICU internal only.
-         * @hide original deprecated declaration
          * @hide draft / provisional / internal are hidden on Android
          */
         @Deprecated
-        public FixedDecimalRange(FixedDecimal start, FixedDecimal end) {
-            if (start.visibleDecimalDigitCount != end.visibleDecimalDigitCount) {
+        public DecimalQuantitySamplesRange(DecimalQuantity start, DecimalQuantity end) {
+            if (start.getPluralOperand(Operand.v)!= end.getPluralOperand(Operand.v)) {
                 throw new IllegalArgumentException("Ranges must have the same number of visible decimals: " + start + "~" + end);
             }
             this.start = start;
@@ -974,41 +1181,38 @@ public class PluralRules implements Serializable {
         }
         /**
          * @deprecated This API is ICU internal only.
-         * @hide original deprecated declaration
          * @hide draft / provisional / internal are hidden on Android
          */
         @Deprecated
         @Override
         public String toString() {
-            return start + (end == start ? "" : "~" + end);
+            return start.toExponentString() + (end == start ? "" : "~" + end.toExponentString());
         }
     }
 
     /**
-     * A list of NumberInfo that includes all values with the same visibleFractionDigitCount.
+     * A list of DecimalQuantity representing PluralRules that includes all
+     * values with the same visibleFractionDigitCount.
      * @deprecated This API is ICU internal only.
-     * @hide original deprecated declaration
+     * @hide Only a subset of ICU is exposed in Android
      * @hide draft / provisional / internal are hidden on Android
      */
     @Deprecated
-    public static class FixedDecimalSamples {
+    public static class DecimalQuantitySamples {
         /**
          * @deprecated This API is ICU internal only.
-         * @hide original deprecated declaration
          * @hide draft / provisional / internal are hidden on Android
          */
         @Deprecated
         public final SampleType sampleType;
         /**
          * @deprecated This API is ICU internal only.
-         * @hide original deprecated declaration
          * @hide draft / provisional / internal are hidden on Android
          */
         @Deprecated
-        public final Set<FixedDecimalRange> samples;
+        public final Set<DecimalQuantitySamplesRange> samples;
         /**
          * @deprecated This API is ICU internal only.
-         * @hide original deprecated declaration
          * @hide draft / provisional / internal are hidden on Android
          */
         @Deprecated
@@ -1018,7 +1222,7 @@ public class PluralRules implements Serializable {
          * @param sampleType
          * @param samples
          */
-        private FixedDecimalSamples(SampleType sampleType, Set<FixedDecimalRange> samples, boolean bounded) {
+        private DecimalQuantitySamples(SampleType sampleType, Set<DecimalQuantitySamplesRange> samples, boolean bounded) {
             super();
             this.sampleType = sampleType;
             this.samples = samples;
@@ -1027,11 +1231,11 @@ public class PluralRules implements Serializable {
         /*
          * Parse a list of the form described in CLDR. The source must be trimmed.
          */
-        static FixedDecimalSamples parse(String source) {
+        static DecimalQuantitySamples parse(String source) {
             SampleType sampleType2;
             boolean bounded2 = true;
             boolean haveBound = false;
-            Set<FixedDecimalRange> samples2 = new LinkedHashSet<FixedDecimalRange>();
+            Set<DecimalQuantitySamplesRange> samples2 = new LinkedHashSet<>();
 
             if (source.startsWith("integer")) {
                 sampleType2 = SampleType.INTEGER;
@@ -1042,7 +1246,7 @@ public class PluralRules implements Serializable {
             }
             source = source.substring(7).trim(); // remove both
 
-            for (String range : COMMA_SEPARATED.split(source)) {
+            for (String range : COMMA_SEPARATED.split(source, 0)) {
                 if (range.equals("…") || range.equals("...")) {
                     bounded2 = false;
                     haveBound = true;
@@ -1051,54 +1255,107 @@ public class PluralRules implements Serializable {
                 if (haveBound) {
                     throw new IllegalArgumentException("Can only have … at the end of samples: " + range);
                 }
-                String[] rangeParts = TILDE_SEPARATED.split(range);
+                String[] rangeParts = TILDE_SEPARATED.split(range, 0);
                 switch (rangeParts.length) {
                 case 1:
-                    FixedDecimal sample = new FixedDecimal(rangeParts[0]);
+                    DecimalQuantity sample =
+                        DecimalQuantity_DualStorageBCD.fromExponentString(rangeParts[0]);
                     checkDecimal(sampleType2, sample);
-                    samples2.add(new FixedDecimalRange(sample, sample));
+                    samples2.add(new DecimalQuantitySamplesRange(sample, sample));
                     break;
                 case 2:
-                    FixedDecimal start = new FixedDecimal(rangeParts[0]);
-                    FixedDecimal end = new FixedDecimal(rangeParts[1]);
+                    DecimalQuantity start =
+                            DecimalQuantity_DualStorageBCD.fromExponentString(rangeParts[0]);
+                    DecimalQuantity end =
+                            DecimalQuantity_DualStorageBCD.fromExponentString(rangeParts[1]);
                     checkDecimal(sampleType2, start);
                     checkDecimal(sampleType2, end);
-                    samples2.add(new FixedDecimalRange(start, end));
+                    samples2.add(new DecimalQuantitySamplesRange(start, end));
                     break;
                 default: throw new IllegalArgumentException("Ill-formed number range: " + range);
                 }
             }
-            return new FixedDecimalSamples(sampleType2, Collections.unmodifiableSet(samples2), bounded2);
+            return new DecimalQuantitySamples(sampleType2, Collections.unmodifiableSet(samples2), bounded2);
         }
 
-        private static void checkDecimal(SampleType sampleType2, FixedDecimal sample) {
-            if ((sampleType2 == SampleType.INTEGER) != (sample.getVisibleDecimalDigitCount() == 0)) {
+        private static void checkDecimal(SampleType sampleType2, DecimalQuantity sample) {
+            // TODO(CLDR-15452): Remove the need for the fallback check for exponent notation integers classified
+            // as "@decimal" type samples, if/when changes are made to
+            // resolve https://unicode-org.atlassian.net/browse/CLDR-15452
+            if ((sampleType2 == SampleType.INTEGER && sample.getPluralOperand(Operand.v) != 0)
+                    || (sampleType2 == SampleType.DECIMAL && sample.getPluralOperand(Operand.v) == 0
+                        && sample.getPluralOperand(Operand.e) == 0)) {
                 throw new IllegalArgumentException("Ill-formed number range: " + sample);
             }
         }
 
         /**
          * @deprecated This API is ICU internal only.
-         * @hide original deprecated declaration
          * @hide draft / provisional / internal are hidden on Android
          */
         @Deprecated
-        public Set<Double> addSamples(Set<Double> result) {
-            for (FixedDecimalRange item : samples) {
-                // we have to convert to longs so we don't get strange double issues
-                long startDouble = item.start.getShiftedValue();
-                long endDouble = item.end.getShiftedValue();
-
-                for (long d = startDouble; d <= endDouble; d += 1) {
-                    result.add(d/(double)item.start.baseFactor);
-                }
-            }
+        public Collection<Double> addSamples(Collection<Double> result) {
+            addSamples(result, null);
             return result;
         }
 
         /**
          * @deprecated This API is ICU internal only.
-         * @hide original deprecated declaration
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
+        public Collection<DecimalQuantity> addDecimalQuantitySamples(Collection<DecimalQuantity> result) {
+            addSamples(null, result);
+            return result;
+        }
+
+        /**
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
+        public void addSamples(Collection<Double> doubleResult, Collection<DecimalQuantity> dqResult) {
+            if ((doubleResult == null && dqResult == null)
+                    || (doubleResult != null && dqResult != null)) {
+                return;
+            }
+            boolean isDouble = doubleResult != null;
+            for (DecimalQuantitySamplesRange range : samples) {
+                DecimalQuantity start = range.start;
+                DecimalQuantity end = range.end;
+                int lowerDispMag = start.getLowerDisplayMagnitude();
+                int exponent = start.getExponent();
+                int incrementScale = lowerDispMag + exponent;
+                BigDecimal incrementBd = BigDecimal.ONE.movePointRight(incrementScale);
+
+                for (DecimalQuantity dq = start.createCopy(); dq.toDouble() <= end.toDouble(); ) {
+                    if (isDouble) {
+                        double dblValue = dq.toDouble();
+                        // Hack Alert: don't return any decimal samples with integer values that
+                        //    originated from a format with trailing decimals.
+                        //    This API is returning doubles, which can't distinguish having displayed
+                        //    zeros to the right of the decimal.
+                        //    This results in test failures with values mapping back to a different keyword.
+                        if (!(dblValue == Math.floor(dblValue)) && dq.getPluralOperand(Operand.v) > 0) {
+                            doubleResult.add(dblValue);
+                        }
+                    } else {
+                        dqResult.add(dq);
+                    }
+
+                    // Increment dq for next iteration
+                    java.math.BigDecimal dqBd = dq.toBigDecimal();
+                    java.math.BigDecimal newDqBd = dqBd.add(incrementBd);
+                    dq = new DecimalQuantity_DualStorageBCD(newDqBd);
+                    dq.setMinFraction(-lowerDispMag);
+                    dq.adjustMagnitude(-exponent);
+                    dq.adjustExponent(exponent);
+                }
+            }
+        }
+
+        /**
+         * @deprecated This API is ICU internal only.
          * @hide draft / provisional / internal are hidden on Android
          */
         @Deprecated
@@ -1106,7 +1363,7 @@ public class PluralRules implements Serializable {
         public String toString() {
             StringBuilder b = new StringBuilder("@").append(sampleType.toString().toLowerCase(Locale.ENGLISH));
             boolean first = true;
-            for (FixedDecimalRange item : samples) {
+            for (DecimalQuantitySamplesRange item : samples) {
                 if (first) {
                     first = false;
                 } else {
@@ -1122,24 +1379,22 @@ public class PluralRules implements Serializable {
 
         /**
          * @deprecated This API is ICU internal only.
-         * @hide original deprecated declaration
          * @hide draft / provisional / internal are hidden on Android
          */
         @Deprecated
-        public Set<FixedDecimalRange> getSamples() {
+        public Set<DecimalQuantitySamplesRange> getSamples() {
             return samples;
         }
 
         /**
          * @deprecated This API is ICU internal only.
-         * @hide original deprecated declaration
          * @hide draft / provisional / internal are hidden on Android
          */
         @Deprecated
-        public void getStartEndSamples(Set<FixedDecimal> target) {
-            for (FixedDecimalRange item : samples) {
-                target.add(item.start);
-                target.add(item.end);
+        public void getStartEndSamples(Set<DecimalQuantity> target) {
+            for (DecimalQuantitySamplesRange range : samples) {
+                target.add(range.start);
+                target.add(range.end);
             }
         }
     }
@@ -1152,7 +1407,7 @@ public class PluralRules implements Serializable {
          * Returns true if the number fulfills the constraint.
          * @param n the number to test, >= 0.
          */
-        boolean isFulfilled(FixedDecimal n);
+        boolean isFulfilled(IFixedDecimal n);
 
         /*
          * Returns false if an unlimited number of values fulfills the
@@ -1166,7 +1421,7 @@ public class PluralRules implements Serializable {
         static final UnicodeSet BREAK_AND_KEEP = new UnicodeSet('!', '!', '%', '%', ',', ',', '.', '.', '=', '=').freeze();
         static String[] split(String source) {
             int last = -1;
-            List<String> result = new ArrayList<String>();
+            List<String> result = new ArrayList<>();
             for (int i = 0; i < source.length(); ++i) {
                 char ch = source.charAt(i);
                 if (BREAK_AND_IGNORE.contains(ch)) {
@@ -1220,10 +1475,10 @@ public class PluralRules implements Serializable {
             throws ParseException {
 
         Constraint result = null;
-        String[] or_together = OR_SEPARATED.split(description);
+        String[] or_together = OR_SEPARATED.split(description, 0);
         for (int i = 0; i < or_together.length; ++i) {
             Constraint andConstraint = null;
-            String[] and_together = AND_SEPARATED.split(or_together[i]);
+            String[] and_together = AND_SEPARATED.split(or_together[i], 0);
             for (int j = 0; j < and_together.length; ++j) {
                 Constraint newConstraint = NO_CONSTRAINT;
 
@@ -1285,7 +1540,7 @@ public class PluralRules implements Serializable {
                         t = nextToken(tokens, x++, condition);
                     }
 
-                    List<Long> valueList = new ArrayList<Long>();
+                    List<Long> valueList = new ArrayList<>();
 
                     // the token t is always one item ahead
                     while (true) {
@@ -1418,21 +1673,21 @@ public class PluralRules implements Serializable {
         }
 
         description = description.substring(x+1).trim();
-        String[] constraintOrSamples = AT_SEPARATED.split(description);
+        String[] constraintOrSamples = AT_SEPARATED.split(description, 0);
         boolean sampleFailure = false;
-        FixedDecimalSamples integerSamples = null, decimalSamples = null;
+        DecimalQuantitySamples integerSamples = null, decimalSamples = null;
         switch (constraintOrSamples.length) {
         case 1: break;
         case 2:
-            integerSamples = FixedDecimalSamples.parse(constraintOrSamples[1]);
+            integerSamples = DecimalQuantitySamples.parse(constraintOrSamples[1]);
             if (integerSamples.sampleType == SampleType.DECIMAL) {
                 decimalSamples = integerSamples;
                 integerSamples = null;
             }
             break;
         case 3:
-            integerSamples = FixedDecimalSamples.parse(constraintOrSamples[1]);
-            decimalSamples = FixedDecimalSamples.parse(constraintOrSamples[2]);
+            integerSamples = DecimalQuantitySamples.parse(constraintOrSamples[1]);
+            decimalSamples = DecimalQuantitySamples.parse(constraintOrSamples[2]);
             if (integerSamples.sampleType != SampleType.INTEGER || decimalSamples.sampleType != SampleType.DECIMAL) {
                 throw new IllegalArgumentException("Must have @integer then @decimal in " + description);
             }
@@ -1472,7 +1727,7 @@ public class PluralRules implements Serializable {
         if (description.endsWith(";")) {
             description = description.substring(0,description.length()-1);
         }
-        String[] rules = SEMI_SEPARATED.split(description);
+        String[] rules = SEMI_SEPARATED.split(description, 0);
         for (int i = 0; i < rules.length; ++i) {
             Rule rule = parseRule(rules[i].trim());
             result.hasExplicitBoundingInfo |= rule.integerSamples != null || rule.decimalSamples != null;
@@ -1509,10 +1764,10 @@ public class PluralRules implements Serializable {
         }
 
         @Override
-        public boolean isFulfilled(FixedDecimal number) {
-            double n = number.get(operand);
+        public boolean isFulfilled(IFixedDecimal number) {
+            double n = number.getPluralOperand(operand);
             if ((integersOnly && (n - (long)n) != 0.0
-                    || operand == Operand.j && number.visibleDecimalDigitCount != 0)) {
+                    || operand == Operand.j && number.getPluralOperand(Operand.v) != 0)) {
                 return !inRange;
             }
             if (mod != 0) {
@@ -1612,7 +1867,7 @@ public class PluralRules implements Serializable {
         }
 
         @Override
-        public boolean isFulfilled(FixedDecimal n) {
+        public boolean isFulfilled(IFixedDecimal n) {
             return a.isFulfilled(n)
                     && b.isFulfilled(n);
         }
@@ -1640,7 +1895,7 @@ public class PluralRules implements Serializable {
         }
 
         @Override
-        public boolean isFulfilled(FixedDecimal n) {
+        public boolean isFulfilled(IFixedDecimal n) {
             return a.isFulfilled(n)
                     || b.isFulfilled(n);
         }
@@ -1667,10 +1922,10 @@ public class PluralRules implements Serializable {
         private static final long serialVersionUID = 1;
         private final String keyword;
         private final Constraint constraint;
-        private final FixedDecimalSamples integerSamples;
-        private final FixedDecimalSamples decimalSamples;
+        private final DecimalQuantitySamples integerSamples;
+        private final DecimalQuantitySamples decimalSamples;
 
-        public Rule(String keyword, Constraint constraint, FixedDecimalSamples integerSamples, FixedDecimalSamples decimalSamples) {
+        public Rule(String keyword, Constraint constraint, DecimalQuantitySamples integerSamples, DecimalQuantitySamples decimalSamples) {
             this.keyword = keyword;
             this.constraint = constraint;
             this.integerSamples = integerSamples;
@@ -1691,7 +1946,7 @@ public class PluralRules implements Serializable {
             return keyword;
         }
 
-        public boolean appliesTo(FixedDecimal n) {
+        public boolean appliesTo(IFixedDecimal n) {
             return constraint.isFulfilled(n);
         }
 
@@ -1707,10 +1962,8 @@ public class PluralRules implements Serializable {
         }
 
         /**
-         * @deprecated This API is ICU internal only.
-         * @hide draft / provisional / internal are hidden on Android
+         * {@inheritDoc}
          */
-        @Deprecated
         @Override
         public int hashCode() {
             return keyword.hashCode() ^ constraint.hashCode();
@@ -1724,7 +1977,7 @@ public class PluralRules implements Serializable {
     private static class RuleList implements Serializable {
         private boolean hasExplicitBoundingInfo = false;
         private static final long serialVersionUID = 1;
-        private final List<Rule> rules = new ArrayList<Rule>();
+        private final List<Rule> rules = new ArrayList<>();
 
         public RuleList addRule(Rule nextRule) {
             String keyword = nextRule.getKeyword();
@@ -1754,7 +2007,7 @@ public class PluralRules implements Serializable {
             return this;
         }
 
-        private Rule selectRule(FixedDecimal n) {
+        private Rule selectRule(IFixedDecimal n) {
             for (Rule rule : rules) {
                 if (rule.appliesTo(n)) {
                     return rule;
@@ -1763,8 +2016,8 @@ public class PluralRules implements Serializable {
             return null;
         }
 
-        public String select(FixedDecimal n) {
-            if (Double.isInfinite(n.source) || Double.isNaN(n.source)) {
+        public String select(IFixedDecimal n) {
+            if (n.isInfinite() || n.isNaN()) {
                 return KEYWORD_OTHER;
             }
             Rule r = selectRule(n);
@@ -1772,7 +2025,7 @@ public class PluralRules implements Serializable {
         }
 
         public Set<String> getKeywords() {
-            Set<String> result = new LinkedHashSet<String>();
+            Set<String> result = new LinkedHashSet<>();
             for (Rule rule : rules) {
                 result.add(rule.getKeyword());
             }
@@ -1783,7 +2036,7 @@ public class PluralRules implements Serializable {
 
         public boolean isLimited(String keyword, SampleType sampleType) {
             if (hasExplicitBoundingInfo) {
-                FixedDecimalSamples mySamples = getDecimalSamples(keyword, sampleType);
+                DecimalQuantitySamples mySamples = getDecimalSamples(keyword, sampleType);
                 return mySamples == null ? true : mySamples.bounded;
             }
 
@@ -1826,7 +2079,7 @@ public class PluralRules implements Serializable {
             return null;
         }
 
-        public boolean select(FixedDecimal sample, String keyword) {
+        public boolean select(IFixedDecimal sample, String keyword) {
             for (Rule rule : rules) {
                 if (rule.getKeyword().equals(keyword) && rule.appliesTo(sample)) {
                     return true;
@@ -1835,7 +2088,7 @@ public class PluralRules implements Serializable {
             return false;
         }
 
-        public FixedDecimalSamples getDecimalSamples(String keyword, SampleType sampleType) {
+        public DecimalQuantitySamples getDecimalSamples(String keyword, SampleType sampleType) {
             for (Rule rule : rules) {
                 if (rule.getKeyword().equals(keyword)) {
                     return sampleType == SampleType.INTEGER ? rule.integerSamples : rule.decimalSamples;
@@ -1846,9 +2099,9 @@ public class PluralRules implements Serializable {
     }
 
     @SuppressWarnings("unused")
-    private boolean addConditional(Set<FixedDecimal> toAddTo, Set<FixedDecimal> others, double trial) {
+    private boolean addConditional(Set<IFixedDecimal> toAddTo, Set<IFixedDecimal> others, double trial) {
         boolean added;
-        FixedDecimal toAdd = new FixedDecimal(trial);
+        IFixedDecimal toAdd = new FixedDecimal(trial);
         if (!toAddTo.contains(toAdd) && !others.contains(toAdd)) {
             others.add(toAdd);
             added = true;
@@ -1871,7 +2124,7 @@ public class PluralRules implements Serializable {
      *
      * <p>ICU defines plural rules for many locales based on CLDR <i>Language Plural Rules</i>.
      * For these predefined rules, see CLDR page at
-     * http://unicode.org/repos/cldr-tmp/trunk/diff/supplemental/language_plural_rules.html
+     * https://unicode-org.github.io/cldr-staging/charts/latest/supplemental/language_plural_rules.html
      *
      * @param locale The locale for which a <code>PluralRules</code> object is
      *   returned.
@@ -1892,7 +2145,7 @@ public class PluralRules implements Serializable {
      *
      * <p>ICU defines plural rules for many locales based on CLDR <i>Language Plural Rules</i>.
      * For these predefined rules, see CLDR page at
-     * http://unicode.org/repos/cldr-tmp/trunk/diff/supplemental/language_plural_rules.html
+     * https://unicode-org.github.io/cldr-staging/charts/latest/supplemental/language_plural_rules.html
      *
      * @param locale The locale for which a <code>PluralRules</code> object is
      *   returned.
@@ -1912,7 +2165,7 @@ public class PluralRules implements Serializable {
      *
      * <p>ICU defines plural rules for many locales based on CLDR <i>Language Plural Rules</i>.
      * For these predefined rules, see CLDR page at
-     * http://unicode.org/repos/cldr-tmp/trunk/diff/supplemental/language_plural_rules.html
+     * https://unicode-org.github.io/cldr-staging/charts/latest/supplemental/language_plural_rules.html
      *
      * @param locale The locale for which a <code>PluralRules</code> object is
      *   returned.
@@ -1933,7 +2186,7 @@ public class PluralRules implements Serializable {
      *
      * <p>ICU defines plural rules for many locales based on CLDR <i>Language Plural Rules</i>.
      * For these predefined rules, see CLDR page at
-     * http://unicode.org/repos/cldr-tmp/trunk/diff/supplemental/language_plural_rules.html
+     * https://unicode-org.github.io/cldr-staging/charts/latest/supplemental/language_plural_rules.html
      *
      * @param locale The locale for which a <code>PluralRules</code> object is
      *   returned.
@@ -1961,30 +2214,71 @@ public class PluralRules implements Serializable {
     /*
      * Creates a new <code>PluralRules</code> object.  Immutable.
      */
-    private PluralRules(RuleList rules) {
+    private PluralRules(RuleList rules, StandardPluralRanges standardPluralRanges) {
         this.rules = rules;
         this.keywords = Collections.unmodifiableSet(rules.getKeywords());
+        this.standardPluralRanges = standardPluralRanges;
     }
 
     /**
-     * @deprecated This API is ICU internal only.
+     * {@inheritDoc}
      * @hide original deprecated declaration
-     * @hide draft / provisional / internal are hidden on Android
      */
-    @Deprecated
     @Override
     public int hashCode() {
         return rules.hashCode();
     }
+
     /**
-     * Given a number, returns the keyword of the first rule that applies to
-     * the number.
+     * Given a floating-point number, returns the keyword of the first rule
+     * that applies to the number.
      *
      * @param number The number for which the rule has to be determined.
      * @return The keyword of the selected rule.
      */
     public String select(double number) {
         return rules.select(new FixedDecimal(number));
+    }
+
+    /**
+     * Given a formatted number, returns the keyword of the first rule that
+     * applies to the number.
+     *
+     * A FormattedNumber allows you to specify an exponent or trailing zeros,
+     * which can affect the plural category. To get a FormattedNumber, see
+     * {@link NumberFormatter}.
+     *
+     * @param number The number for which the rule has to be determined.
+     * @return The keyword of the selected rule.
+     */
+    public String select(FormattedNumber number) {
+        return rules.select(number.getFixedDecimal());
+    }
+
+    /**
+     * Given a formatted number range, returns the overall plural form of the
+     * range. For example, "3-5" returns "other" in English.
+     *
+     * To get a FormattedNumberRange, see {@link android.icu.number.NumberRangeFormatter}.
+     *
+     * This method only works if PluralRules was created with a locale. If it was created
+     * from PluralRules.createRules(), or if it was deserialized, this method throws
+     * UnsupportedOperationException.
+     *
+     * @param range  The number range onto which the rules will be applied.
+     * @return       The keyword of the selected rule.
+     * @throws UnsupportedOperationException If called on an instance without plural ranges data.
+     */
+    public String select(FormattedNumberRange range) {
+        if (standardPluralRanges == null) {
+            throw new UnsupportedOperationException("Plural ranges are unavailable on this instance");
+        }
+        StandardPlural form1 = StandardPlural.fromString(
+            select(range.getFirstFixedDecimal()));
+        StandardPlural form2 = StandardPlural.fromString(
+            select(range.getSecondFixedDecimal()));
+        StandardPlural result = standardPluralRanges.resolve(form1, form2);
+        return result.getKeyword();
     }
 
     /**
@@ -2009,11 +2303,10 @@ public class PluralRules implements Serializable {
      * @param number The number information for which the rule has to be determined.
      * @return The keyword of the selected rule.
      * @deprecated This API is ICU internal only.
-     * @hide original deprecated declaration
      * @hide draft / provisional / internal are hidden on Android
      */
     @Deprecated
-    public String select(FixedDecimal number) {
+    public String select(IFixedDecimal number) {
         return rules.select(number);
     }
 
@@ -2049,11 +2342,29 @@ public class PluralRules implements Serializable {
      * @return The unique value for the keyword, or NO_UNIQUE_VALUE.
      */
     public double getUniqueKeywordValue(String keyword) {
-        Collection<Double> values = getAllKeywordValues(keyword);
+        DecimalQuantity uniqValDq = getUniqueKeywordDecimalQuantityValue(keyword);
+        if (uniqValDq.equals(NO_UNIQUE_VALUE_DECIMAL_QUANTITY)) {
+            return NO_UNIQUE_VALUE;
+        } else {
+            return uniqValDq.toDouble();
+        }
+    }
+
+    /**
+     * Returns the unique value that this keyword matches, or {@link #NO_UNIQUE_VALUE}
+     * if the keyword matches multiple values or is not defined for this PluralRules.
+     *
+     * @param keyword the keyword to check for a unique value
+     * @deprecated This API is ICU internal only.
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    @Deprecated
+    public DecimalQuantity getUniqueKeywordDecimalQuantityValue(String keyword) {
+        Collection<DecimalQuantity> values = getAllKeywordDecimalQuantityValues(keyword);
         if (values != null && values.size() == 1) {
             return values.iterator().next();
         }
-        return NO_UNIQUE_VALUE;
+        return NO_UNIQUE_VALUE_DECIMAL_QUANTITY;
     }
 
     /**
@@ -2065,6 +2376,31 @@ public class PluralRules implements Serializable {
      * is immutable. It will be empty if the keyword is not defined.
      */
     public Collection<Double> getAllKeywordValues(String keyword) {
+        Collection<DecimalQuantity> samples = getAllKeywordDecimalQuantityValues(keyword);
+        if (samples == null) {
+            return null;
+        } else {
+            Collection<Double> result = new LinkedHashSet<>();
+            for (DecimalQuantity dq : samples) {
+                result.add(dq.toDouble());
+            }
+            return result;
+        }
+    }
+
+    /**
+     * Returns all the values that trigger this keyword, or null if the number of such
+     * values is unlimited.
+     *
+     * @param keyword the keyword
+     * @return the values that trigger this keyword, or null.  The returned collection
+     * is immutable. It will be empty if the keyword is not defined.
+     *
+     * @deprecated This API is ICU internal only.
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    @Deprecated
+    public Collection<DecimalQuantity> getAllKeywordDecimalQuantityValues(String keyword) {
         return getAllKeywordValues(keyword, SampleType.INTEGER);
     }
 
@@ -2082,12 +2418,11 @@ public class PluralRules implements Serializable {
      * @hide draft / provisional / internal are hidden on Android
      */
     @Deprecated
-    public Collection<Double> getAllKeywordValues(String keyword, SampleType type) {
+    public Collection<DecimalQuantity> getAllKeywordValues(String keyword, SampleType type) {
         if (!isLimited(keyword, type)) {
             return null;
         }
-        Collection<Double> samples = getSamples(keyword, type);
-        return samples == null ? null : Collections.unmodifiableCollection(samples);
+        return getDecimalQuantitySamples(keyword, type);
     }
 
     /**
@@ -2101,6 +2436,22 @@ public class PluralRules implements Serializable {
      */
     public Collection<Double> getSamples(String keyword) {
         return getSamples(keyword, SampleType.INTEGER);
+    }
+
+    /**
+     * Returns a list of integer values for which select() would return that keyword,
+     * or null if the keyword is not defined. The returned collection is unmodifiable.
+     * The returned list is not complete, and there might be additional values that
+     * would return the keyword.
+     *
+     * @param keyword the keyword to test
+     * @return a list of values matching the keyword.
+     * @deprecated ICU internal only
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    @Deprecated
+  public Collection<DecimalQuantity> getDecimalQuantitySamples(String keyword) {
+        return getDecimalQuantitySamples(keyword, SampleType.INTEGER);
     }
 
     /**
@@ -2120,15 +2471,43 @@ public class PluralRules implements Serializable {
      */
     @Deprecated
     public Collection<Double> getSamples(String keyword, SampleType sampleType) {
+        Collection<DecimalQuantity> samples = getDecimalQuantitySamples(keyword, sampleType);
+        if (samples == null) {
+            return null;
+        } else {
+            Collection<Double> result = new LinkedHashSet<>();
+            for (DecimalQuantity dq: samples) {
+                result.add(dq.toDouble());
+            }
+            return result;
+        }
+    }
+
+    /**
+     * Returns a list of values for which select() would return that keyword,
+     * or null if the keyword is not defined.
+     * The returned collection is unmodifiable.
+     * The returned list is not complete, and there might be additional values that
+     * would return the keyword. The keyword might be defined, and yet have an empty set of samples,
+     * IF there are samples for the other sampleType.
+     *
+     * @param keyword the keyword to test
+     * @param sampleType the type of samples requested, INTEGER or DECIMAL
+     * @return a list of values matching the keyword.
+     * @deprecated ICU internal only
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    @Deprecated
+    public Collection<DecimalQuantity> getDecimalQuantitySamples(String keyword, SampleType sampleType) {
         if (!keywords.contains(keyword)) {
             return null;
         }
-        Set<Double> result = new TreeSet<Double>();
+        Set<DecimalQuantity> result = new LinkedHashSet<>();
 
         if (rules.hasExplicitBoundingInfo) {
-            FixedDecimalSamples samples = rules.getDecimalSamples(keyword, sampleType);
+            DecimalQuantitySamples samples = rules.getDecimalSamples(keyword, sampleType);
             return samples == null ? Collections.unmodifiableSet(result)
-                    : Collections.unmodifiableSet(samples.addSamples(result));
+                    : Collections.unmodifiableCollection(samples.addDecimalQuantitySamples(result));
         }
 
         // hack in case the rule is created without explicit samples
@@ -2137,34 +2516,31 @@ public class PluralRules implements Serializable {
         switch (sampleType) {
         case INTEGER:
             for (int i = 0; i < 200; ++i) {
-                if (!addSample(keyword, i, maxCount, result)) {
+                if (!addSample(keyword, new DecimalQuantity_DualStorageBCD(i), maxCount, result)) {
                     break;
                 }
             }
-            addSample(keyword, 1000000, maxCount, result); // hack for Welsh
+            addSample(keyword, new DecimalQuantity_DualStorageBCD(1000000), maxCount, result); // hack for Welsh
             break;
         case DECIMAL:
             for (int i = 0; i < 2000; ++i) {
-                if (!addSample(keyword, new FixedDecimal(i/10d, 1), maxCount, result)) {
+                DecimalQuantity_DualStorageBCD nextSample = new DecimalQuantity_DualStorageBCD(i);
+                nextSample.adjustMagnitude(-1);
+                if (!addSample(keyword, nextSample, maxCount, result)) {
                     break;
                 }
             }
-            addSample(keyword, new FixedDecimal(1000000d, 1), maxCount, result); // hack for Welsh
+            addSample(keyword, DecimalQuantity_DualStorageBCD.fromExponentString("1000000.0"), maxCount, result); // hack for Welsh
             break;
         }
+
         return result.size() == 0 ? null : Collections.unmodifiableSet(result);
     }
 
-    /**
-     * @deprecated This API is ICU internal only.
-     * @hide original deprecated declaration
-     * @hide draft / provisional / internal are hidden on Android
-     */
-    @Deprecated
-    public boolean addSample(String keyword, Number sample, int maxCount, Set<Double> result) {
-        String selectedKeyword = sample instanceof FixedDecimal ? select((FixedDecimal)sample) : select(sample.doubleValue());
+    private boolean addSample(String keyword, DecimalQuantity sample, int maxCount, Set<DecimalQuantity> result) {
+        String selectedKeyword = select(sample);
         if (selectedKeyword.equals(keyword)) {
-            result.add(sample.doubleValue());
+            result.add(sample);
             if (--maxCount < 0) {
                 return false;
             }
@@ -2187,7 +2563,7 @@ public class PluralRules implements Serializable {
      * @hide draft / provisional / internal are hidden on Android
      */
     @Deprecated
-    public FixedDecimalSamples getDecimalSamples(String keyword, SampleType sampleType) {
+    public DecimalQuantitySamples getDecimalSamples(String keyword, SampleType sampleType) {
         return rules.getDecimalSamples(keyword, sampleType);
     }
 
@@ -2206,7 +2582,7 @@ public class PluralRules implements Serializable {
      * locale, and with the provided locale, returns rules that behave the same.
      * <br>
      * All locales with the same functionally equivalent locale have
-     * plural rules that behave the same.  This is not exaustive;
+     * plural rules that behave the same.  This is not exhaustive;
      * there may be other locales whose plural rules behave the same
      * that do not have the same equivalent locale.
      *
@@ -2249,6 +2625,7 @@ public class PluralRules implements Serializable {
     /**
      * Status of the keyword for the rules, given a set of explicit values.
      *
+     * @hide Only a subset of ICU is exposed in Android
      * @hide draft / provisional / internal are hidden on Android
      */
     public enum KeywordStatus {
@@ -2293,14 +2670,14 @@ public class PluralRules implements Serializable {
      *            the offset used, or 0.0d if not. Internally, the offset is subtracted from each explicit value before
      *            checking against the keyword values.
      * @param explicits
-     *            a set of Doubles that are used explicitly (eg [=0], "[=1]"). May be empty or null.
+     *            a set of {@code DecimalQuantity}s that are used explicitly (eg [=0], "[=1]"). May be empty or null.
      * @param uniqueValue
      *            If non null, set to the unique value.
      * @return the KeywordStatus
      * @hide draft / provisional / internal are hidden on Android
      */
-    public KeywordStatus getKeywordStatus(String keyword, int offset, Set<Double> explicits,
-            Output<Double> uniqueValue) {
+    public KeywordStatus getKeywordStatus(String keyword, int offset, Set<DecimalQuantity> explicits,
+            Output<DecimalQuantity> uniqueValue) {
         return getKeywordStatus(keyword, offset, explicits, uniqueValue, SampleType.INTEGER);
     }
     /**
@@ -2312,19 +2689,18 @@ public class PluralRules implements Serializable {
      *            the offset used, or 0.0d if not. Internally, the offset is subtracted from each explicit value before
      *            checking against the keyword values.
      * @param explicits
-     *            a set of Doubles that are used explicitly (eg [=0], "[=1]"). May be empty or null.
+     *            a set of {@code DecimalQuantity}s that are used explicitly (eg [=0], "[=1]"). May be empty or null.
      * @param sampleType
      *            request KeywordStatus relative to INTEGER or DECIMAL values
      * @param uniqueValue
      *            If non null, set to the unique value.
      * @return the KeywordStatus
      * @deprecated This API is ICU internal only.
-     * @hide original deprecated declaration
      * @hide draft / provisional / internal are hidden on Android
      */
     @Deprecated
-    public KeywordStatus getKeywordStatus(String keyword, int offset, Set<Double> explicits,
-            Output<Double> uniqueValue, SampleType sampleType) {
+    public KeywordStatus getKeywordStatus(String keyword, int offset,
+            Set<DecimalQuantity> explicits, Output<DecimalQuantity> uniqueValue, SampleType sampleType) {
         if (uniqueValue != null) {
             uniqueValue.value = null;
         }
@@ -2337,7 +2713,7 @@ public class PluralRules implements Serializable {
             return KeywordStatus.UNBOUNDED;
         }
 
-        Collection<Double> values = getSamples(keyword, sampleType);
+        Collection<DecimalQuantity> values = getDecimalQuantitySamples(keyword, sampleType);
 
         int originalSize = values.size();
 
@@ -2359,9 +2735,12 @@ public class PluralRules implements Serializable {
 
         // Compute if the quick test is insufficient.
 
-        HashSet<Double> subtractedSet = new HashSet<Double>(values);
-        for (Double explicit : explicits) {
-            subtractedSet.remove(explicit - offset);
+        ArrayList<DecimalQuantity> subtractedSet = new ArrayList<>(values);
+        for (DecimalQuantity explicit : explicits) {
+            BigDecimal explicitBd = explicit.toBigDecimal();
+            BigDecimal valToRemoveBd = explicitBd.subtract(new BigDecimal(offset));
+            DecimalQuantity_DualStorageBCD valToRemove = new DecimalQuantity_DualStorageBCD(valToRemoveBd);
+            subtractedSet.remove(valToRemove);
         }
         if (subtractedSet.size() == 0) {
             return KeywordStatus.SUPPRESSED;
@@ -2410,12 +2789,9 @@ public class PluralRules implements Serializable {
     }
 
     /**
-     * @deprecated internal
      * @hide original deprecated declaration
-     * @hide draft / provisional / internal are hidden on Android
      */
-    @Deprecated
-    public Boolean isLimited(String keyword) {
+    Boolean isLimited(String keyword) {
         return rules.isLimited(keyword, SampleType.INTEGER);
     }
 

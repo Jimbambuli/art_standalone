@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2004-2013, International Business Machines Corporation and    *
@@ -9,14 +9,21 @@
  */
 package android.icu.dev.test.format;
 
+import java.text.ParseException;
 import java.util.Locale;
 
+import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.text.RuleBasedNumberFormat;
 import android.icu.util.ULocale;
+import android.icu.testsharding.MainTestShard;
 
+@MainTestShard
+@RunWith(JUnit4.class)
 public class RBNFParseTest extends TestFmwk {
     @Test
     public void TestParse() {
@@ -65,7 +72,7 @@ public class RBNFParseTest extends TestFmwk {
             ">>",
             ">>>",
             "10:", // formatting any value with a one's digit will fail
-            "11: << x", // formating a multiple of 10 causes rollback rule to fail
+            "11: << x", // formatting a multiple of 10 causes rollback rule to fail
             "%%foo: 0 foo; 10: =%%bar=; %%bar: 0: bar; 10: =%%foo=;",
         };
 
@@ -125,6 +132,7 @@ public class RBNFParseTest extends TestFmwk {
     }
 
     @Test
+    @Ignore("https://unicode-org.atlassian.net/browse/ICU-13793")
     public void TestLenientParse() throws Exception {
         RuleBasedNumberFormat rbnf_en, rbnf_fr;
 
@@ -139,12 +147,12 @@ public class RBNFParseTest extends TestFmwk {
         logln(n.toString());
 
         String[][] lists = {
-            { "1,2", "twelve", "un virgule deux" },
-            { "1,2 million", "twelve million", "un virgule deux" },
-            { "1,2 millions", "twelve million", "un million deux cent mille" },
-            { "1.2", "one point two", "douze" },
-            { "1.2 million", "one million two hundred thousand", "douze" },
-            { "1.2 millions", "one million two hundred thousand", "douze millions" },
+            { "1,2", "one", "un virgule deux" },
+            { "1,2 million", "one", "un virgule deux" },
+            { "1,2 millions", "one", "un million deux cent mille" },
+            { "1.2", "one point two", "un" },
+            { "1.2 million", "one million two hundred thousand", "un" },
+            { "1.2 millions", "one million two hundred thousand", "un" },
         };
 
         Locale.setDefault(Locale.FRANCE);
@@ -158,5 +166,23 @@ public class RBNFParseTest extends TestFmwk {
         logln("rbnf_en:" + rbnf_en.getDefaultRuleSetName());
         logln("rbnf_fr:" + rbnf_en.getDefaultRuleSetName());
         parseList(rbnf_en, rbnf_fr, lists);
+    }
+
+    @Test
+    public void TestBadParse() {
+        RuleBasedNumberFormat rbnf = new RuleBasedNumberFormat(Locale.JAPAN, RuleBasedNumberFormat.SPELLOUT);
+        String[] testData = {
+                "・・・・・・・・・・・・・・・・・・・・・・・・",
+        };
+
+        for (String testString : testData) {
+            try {
+                rbnf.parse(testString);
+                errln("Unexpected success: " + testString);
+            }
+            catch (ParseException e) {
+                // success!
+            }
+        }
     }
 }

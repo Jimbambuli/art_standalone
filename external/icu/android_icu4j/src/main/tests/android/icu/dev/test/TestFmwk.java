@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 1996-2015, International Business Machines Corporation and    *
@@ -13,16 +13,13 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.Policy;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
-import java.util.TreeMap;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 
@@ -76,20 +73,52 @@ abstract public class TestFmwk extends AbstractTestLog {
     }
 
     @Before
-    public void testInitialize() {
+    public final void testInitialize() {
         Locale.setDefault(defaultLocale);
         TimeZone.setDefault(defaultTimeZone);
 
         if (getParams().testSecurityManager != null) {
             System.setSecurityManager(getParams().testSecurityManager);
         }
+
+        localTestInitialize();
+    }
+
+    /**
+     * This method is called at the end of {@link #testInitialize()}.
+     * Because JUnit does not guarantee the order of multiple Before
+     * methods, TestFmwk implementation class should override this
+     * method, instead of annotating Before.
+     */
+    protected void localTestInitialize() {
+    }
+
+    /**
+     * This method is called at the beginning of {@link #testTeardown()}.
+     * TestFmwk implementation class should override this method, instead
+     * of annotating After.
+     */
+    protected void localTestTeardown() {
     }
 
     @After
-    public void testTeardown() {
+    public final void testTeardown() {
+        localTestTeardown();
+
         if (getParams().testSecurityManager != null) {
             System.setSecurityManager(getParams().originalSecurityManager);
         }
+    }
+
+    @AfterClass
+    public final static void testClassTeardown() {
+        getParams().knownIssues.printKnownIssues(new UnicodeKnownIssues.Consumer<String>() {
+            // TODO: make this a Lambda once JDK 1.8 ships
+            public void accept(String t) {
+                System.out.println(t);
+            }
+        });
+        getParams().knownIssues.reset();
     }
 
     private static TestParams getParams() {
@@ -118,9 +147,37 @@ abstract public class TestFmwk extends AbstractTestLog {
         return new Random(getParams().getSeed());
     }
 
-    static final String ICU_TRAC_URL = "http://bugs.icu-project.org/trac/ticket/";
-    static final String CLDR_TRAC_URL = "http://unicode.org/cldr/trac/ticket/";
-    static final String CLDR_TICKET_PREFIX = "cldrbug:";
+    /**
+     * Integer Random number generator, produces positive int values.
+     * Similar to C++ std::minstd_rand, with the same algorithm & constants.
+     * Provided for compatibility with ICU4C.
+     * Get & set of the seed allows for reproducible monkey tests.
+     */
+    protected class ICU_Rand {
+        private int fLast;
+
+        public ICU_Rand(int seed) {
+            seed(seed);
+        }
+
+        public int next() {
+            fLast = (int)((fLast * 48271L) % 2147483647L);
+            return fLast;
+        }
+
+        public void seed(int seed) {
+            if (seed <= 0) {
+                seed = 1;
+            }
+            seed %= 2147483647;   // = 0x7FFFFFFF
+            fLast = seed > 0 ? seed : 1;
+        }
+
+        public int getSeed() {
+            return fLast;
+        }
+
+    }
 
     /**
      * Log the known issue.
@@ -137,38 +194,12 @@ abstract public class TestFmwk extends AbstractTestLog {
         if (!getBooleanProperty("logKnownIssue", true)) {
             return false;
         }
-
-        StringBuffer descBuf = new StringBuffer();
+        // TODO: This method currently does not do very much.
+        // See https://unicode-org.atlassian.net/browse/ICU-12589
         // TODO(junit) : what to do about this?
+        final String path = "";
         //getParams().stack.appendPath(descBuf);
-        if (comment != null && comment.length() > 0) {
-            descBuf.append(" (" + comment + ")");
-        }
-        String description = descBuf.toString();
-
-        String ticketLink = "Unknown Ticket";
-        if (ticket != null && ticket.length() > 0) {
-            boolean isCldr = false;
-            ticket = ticket.toLowerCase(Locale.ENGLISH);
-            if (ticket.startsWith(CLDR_TICKET_PREFIX)) {
-                isCldr = true;
-                ticket = ticket.substring(CLDR_TICKET_PREFIX.length());
-            }
-            ticketLink = (isCldr ? CLDR_TRAC_URL : ICU_TRAC_URL) + ticket;
-        }
-
-        if (getParams().knownIssues == null) {
-            getParams().knownIssues = new TreeMap<String, List<String>>();
-        }
-        List<String> lines = getParams().knownIssues.get(ticketLink);
-        if (lines == null) {
-            lines = new ArrayList<String>();
-            getParams().knownIssues.put(ticketLink, lines);
-        }
-        if (!lines.contains(description)) {
-            lines.add(description);
-        }
-
+        getParams().knownIssues.logKnownIssue(path, ticket, comment);
         return true;
     }
 
@@ -310,7 +341,7 @@ abstract public class TestFmwk extends AbstractTestLog {
         private SecurityManager testSecurityManager;
         private SecurityManager originalSecurityManager;
 
-        private Map<String, List<String>> knownIssues;
+        private UnicodeKnownIssues knownIssues = null;
 
         private Properties props;
 
@@ -322,6 +353,7 @@ abstract public class TestFmwk extends AbstractTestLog {
             TestParams params = new TestParams();
             Properties props = System.getProperties();
             params.parseProperties(props);
+            params.knownIssues = new UnicodeKnownIssues(params.getBooleanProperty("allKnownIssues", false));
             return params;
         }
 

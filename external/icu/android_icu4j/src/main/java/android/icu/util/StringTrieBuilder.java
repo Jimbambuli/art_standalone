@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 *******************************************************************************
 *   Copyright (C) 2011-2014, International Business Machines
@@ -26,6 +26,7 @@ import java.util.HashMap;
 public abstract class StringTrieBuilder {
     /**
      * Build options for BytesTrieBuilder and CharsTrieBuilder.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public enum Option {
         /**

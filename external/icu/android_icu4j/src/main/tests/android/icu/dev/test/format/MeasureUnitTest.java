@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2013-2016, International Business Machines Corporation and
@@ -17,7 +17,10 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.text.FieldPosition;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -28,28 +31,38 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
+import android.icu.dev.test.serializable.FormatHandler;
 import android.icu.dev.test.serializable.SerializableTestUtility;
 import android.icu.impl.Pair;
 import android.icu.impl.Utility;
+import android.icu.impl.units.MeasureUnitImpl;
 import android.icu.math.BigDecimal;
 import android.icu.text.MeasureFormat;
 import android.icu.text.MeasureFormat.FormatWidth;
 import android.icu.text.NumberFormat;
 import android.icu.util.Currency;
+import android.icu.util.CurrencyAmount;
 import android.icu.util.Measure;
 import android.icu.util.MeasureUnit;
+import android.icu.util.NoUnit;
 import android.icu.util.TimeUnit;
 import android.icu.util.TimeUnitAmount;
 import android.icu.util.ULocale;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * See https://sites.google.com/site/icusite/processes/release/tasks/standards?pli=1
  * for information on how to update with each new release.
  * @author markdavis
  */
+@MainTestShard
+@RunWith(JUnit4.class)
 public class MeasureUnitTest extends TestFmwk {
 
     static class OrderedPair<F extends Comparable, S extends Comparable> extends Pair<F, S> implements Comparable<OrderedPair<F, S>> {
@@ -62,7 +75,7 @@ public class MeasureUnitTest extends TestFmwk {
             if (first == null || second == null) {
                 throw new IllegalArgumentException("OrderedPair.of requires non null values.");
             }
-            return new OrderedPair<F, S>(first, second);
+            return new OrderedPair<>(first, second);
         }
 
         @Override
@@ -75,11 +88,11 @@ public class MeasureUnitTest extends TestFmwk {
         }
     }
 
-    private static final String[] DRAFT_VERSIONS = {"57", "58"};
+    private static final String[] DRAFT_VERSIONS = {"71", "72"};
 
-    private static final HashSet<String> DRAFT_VERSION_SET = new HashSet<String>();
+    private static final HashSet<String> DRAFT_VERSION_SET = new HashSet<>();
 
-    private static final HashSet<String> TIME_CODES = new HashSet<String>();
+    private static final HashSet<String> TIME_CODES = new HashSet<>();
 
     private static final String[][] JAVA_VERSIONS = {
         {"G_FORCE", "53"},
@@ -216,13 +229,68 @@ public class MeasureUnitTest extends TestFmwk {
         {"PART_PER_MILLION", "57"},
         {"MILE_PER_GALLON_IMPERIAL", "57"},
         {"GALLON_IMPERIAL", "57"},
-        {"EAST", "58"},
-        {"NORTH", "58"},
-        {"SOUTH", "58"},
-        {"WEST", "58"},
+        {"POINT", "59"},
+        {"PERCENT", "63"},
+        {"PERMILLE", "63"},
+        {"PETABYTE", "63"},
+        {"ATMOSPHERE", "63"},
+        {"DUNAM", "64"},
+        {"MOLE", "64"},
+        {"PERMYRIAD", "64"},
+        {"DAY_PERSON", "64"},
+        {"MONTH_PERSON", "64"},
+        {"WEEK_PERSON", "64"},
+        {"YEAR_PERSON", "64"},
+        {"BRITISH_THERMAL_UNIT", "64"},
+        {"ELECTRONVOLT", "64"},
+        {"NEWTON", "64"},
+        {"POUND_FORCE", "64"},
+        {"SOLAR_RADIUS", "64"},
+        {"SOLAR_LUMINOSITY", "64"},
+        {"DALTON", "64"},
+        {"EARTH_MASS", "64"},
+        {"SOLAR_MASS", "64"},
+        {"KILOPASCAL", "64"},
+        {"MEGAPASCAL", "64"},
+        {"NEWTON_METER", "64"},
+        {"POUND_FOOT", "64"},
+        {"BARREL", "64"},
+        {"FLUID_OUNCE_IMPERIAL", "64"},
+        {"DECADE", "65"},
+        {"THERM_US", "65"},
+        {"DOT_PER_CENTIMETER", "65"},
+        {"DOT_PER_INCH", "65"},
+        {"EM", "65"},
+        {"MEGAPIXEL", "65"},
+        {"PIXEL", "65"},
+        {"PIXEL_PER_CENTIMETER", "65"},
+        {"PIXEL_PER_INCH", "65"},
+        {"BAR", "65"},
+        {"PASCAL", "65"},
+        {"DOT", "68"},
+        {"EARTH_RADIUS", "68"},
+        {"CANDELA", "68"},
+        {"LUMEN", "68"},
+        {"GRAIN", "68"},
+        {"DESSERT_SPOON", "68"},
+        {"DESSERT_SPOON_IMPERIAL", "68"},
+        {"DRAM", "68"},
+        {"DROP", "68"},
+        {"JIGGER", "68"},
+        {"PINCH", "68"},
+        {"QUART_IMPERIAL", "68"},
+        {"MILLIGRAM_OFGLUCOSE_PER_DECILITER", "69"},
+        {"ITEM", "70"},
+        {"KILOWATT_HOUR_PER_100_KILOMETER", "70"},
+        {"QUARTER", "72"},
+        {"TONNE", "72"},
     };
 
-    private static final HashMap<String, String> JAVA_VERSION_MAP = new HashMap<String, String>();
+    private static final HashMap<String, String> JAVA_VERSION_MAP = new HashMap<>();
+
+    // modify certain CLDR unit names before generating functions
+    // that create/get the corresponding MeasureUnit objects
+    private static final Map<String,String> CLDR_NAME_REMAP = new HashMap();
 
     static {
         TIME_CODES.add("year");
@@ -238,53 +306,37 @@ public class MeasureUnitTest extends TestFmwk {
         for (String[] funcNameAndVersion : JAVA_VERSIONS) {
             JAVA_VERSION_MAP.put(funcNameAndVersion[0], funcNameAndVersion[1]);
         }
+
+        // CLDR_NAME_REMAP entries
+        // The first two fix overly-generic CLDR unit names
+        CLDR_NAME_REMAP.put("revolution", "revolution-angle");
+        CLDR_NAME_REMAP.put("generic",    "generic-temperature");
+        // The next seven map updated CLDR 37 names back to their
+        // old form in order to preserve the old function names
+        CLDR_NAME_REMAP.put("meter-per-square-second",     "meter-per-second-squared");
+        CLDR_NAME_REMAP.put("permillion",                  "part-per-million");
+        CLDR_NAME_REMAP.put("liter-per-100-kilometer",     "liter-per-100kilometers");
+        CLDR_NAME_REMAP.put("inch-ofhg",                   "inch-hg");
+        CLDR_NAME_REMAP.put("millimeter-ofhg",             "millimeter-of-mercury");
+        CLDR_NAME_REMAP.put("pound-force-per-square-inch", "pound-per-square-inch");
+        CLDR_NAME_REMAP.put("pound-force-foot",            "pound-foot");
     }
 
-    /**
-     * @author markdavis
-     *
-     */
-    // TODO(junit): resolve
-//    public static void main(String[] args) {
-//        //generateConstants(); if (true) return;
-//
-//        // Ticket #12034 deadlock on multi-threaded static init of MeasureUnit.
-//        // The code below reliably deadlocks with ICU 56.
-//        // The test is here in main() rather than in a test function so it can be made to run
-//        // before anything else.
-//        Thread thread = new Thread()  {
-//            @Override
-//            public void run() {
-//                @SuppressWarnings("unused")
-//                Set<String> measureUnitTypes = MeasureUnit.getAvailableTypes();
-//            }
-//        };
-//        thread.start();
-//        @SuppressWarnings("unused")
-//        Currency cur = Currency.getInstance(ULocale.ENGLISH);
-//        try {thread.join();} catch(InterruptedException e) {};
-//        // System.out.println("Done with MeasureUnit thread test.");
-//
-//        new MeasureUnitTest().run(args);
-//    }
-
-/*
     @Test
     public void testZZZ() {
         // various generateXXX calls go here, see
-        // http://site.icu-project.org/design/formatting/measureformat/updating-measure-unit
+        // docs/processes/release/tasks/updating-measure-unit.md
         // use this test to run each of the ollowing in succession
-        //generateConstants("58"); // for MeasureUnit.java, update generated MeasureUnit constants
-        //generateBackwardCompatibilityTest("58.1"); // for MeasureUnitTest.java, create TestCompatible58_1
-        //generateCXXHConstants("58"); // for measunit.h, update generated createXXX methods
+        //generateConstants("72"); // for MeasureUnit.java, update generated MeasureUnit constants
+        //generateBackwardCompatibilityTest("72"); // for MeasureUnitTest.java, create TestCompatible72
+        //generateCXXHConstants("72"); // for measunit.h, update generated createXXX methods
         //generateCXXConstants(); // for measunit.cpp, update generated code
-        //generateCXXBackwardCompatibilityTest("58.1"); // for measfmttest.cpp, create TestCompatible58_1
-        updateJAVAVersions("58"); // for MeasureUnitTest.java, JAVA_VERSIONS
+        //generateCXXBackwardCompatibilityTest("72"); // for measfmttest.cpp, create TestCompatible72
+        //updateJAVAVersions("72"); // for MeasureUnitTest.java, JAVA_VERSIONS
     }
-*/
 
     @Test
-    public void TestCompatible53_1() {
+    public void TestCompatible53() {
         MeasureUnit[] units = {
                 MeasureUnit.G_FORCE,
                 MeasureUnit.DEGREE,
@@ -337,7 +389,7 @@ public class MeasureUnitTest extends TestFmwk {
     }
 
     @Test
-    public void TestCompatible54_1() {
+    public void TestCompatible54() {
         MeasureUnit[] units = {
                 MeasureUnit.G_FORCE,
                 MeasureUnit.METER_PER_SECOND_SQUARED,
@@ -465,7 +517,7 @@ public class MeasureUnitTest extends TestFmwk {
     }
 
     @Test
-    public void TestCompatible55_1() {
+    public void TestCompatible55() {
         MeasureUnit[] units = {
                 MeasureUnit.G_FORCE,
                 MeasureUnit.METER_PER_SECOND_SQUARED,
@@ -594,7 +646,7 @@ public class MeasureUnitTest extends TestFmwk {
     }
 
     @Test
-    public void TestCompatible56_1() {
+    public void TestCompatible56() {
         MeasureUnit[] units = {
                 MeasureUnit.G_FORCE,
                 MeasureUnit.METER_PER_SECOND_SQUARED,
@@ -730,7 +782,7 @@ public class MeasureUnitTest extends TestFmwk {
     }
 
     @Test
-    public void TestCompatible57_1() {
+    public void TestCompatible57() {
         MeasureUnit[] units = {
                 MeasureUnit.G_FORCE,
                 MeasureUnit.METER_PER_SECOND_SQUARED,
@@ -871,7 +923,7 @@ public class MeasureUnitTest extends TestFmwk {
     }
 
     @Test
-    public void TestCompatible58_1() {
+    public void TestCompatible58() {
         MeasureUnit[] units = {
                 MeasureUnit.G_FORCE,
                 MeasureUnit.METER_PER_SECOND_SQUARED,
@@ -897,10 +949,10 @@ public class MeasureUnitTest extends TestFmwk {
                 MeasureUnit.LITER_PER_KILOMETER,
                 MeasureUnit.MILE_PER_GALLON,
                 MeasureUnit.MILE_PER_GALLON_IMPERIAL,
-                MeasureUnit.EAST,
-                MeasureUnit.NORTH,
-                MeasureUnit.SOUTH,
-                MeasureUnit.WEST,
+                // MeasureUnit.EAST,
+                // MeasureUnit.NORTH,
+                // MeasureUnit.SOUTH,
+                // MeasureUnit.WEST,
                 MeasureUnit.BIT,
                 MeasureUnit.BYTE,
                 MeasureUnit.GIGABIT,
@@ -1012,7 +1064,1420 @@ public class MeasureUnitTest extends TestFmwk {
                 MeasureUnit.TABLESPOON,
                 MeasureUnit.TEASPOON,
         };
-        assertEquals("",  138, units.length);
+        assertEquals("",  134, units.length);
+    }
+
+    @Test
+    public void TestCompatible59() {
+        MeasureUnit[] units = {
+                MeasureUnit.G_FORCE,
+                MeasureUnit.METER_PER_SECOND_SQUARED,
+                MeasureUnit.ARC_MINUTE,
+                MeasureUnit.ARC_SECOND,
+                MeasureUnit.DEGREE,
+                MeasureUnit.RADIAN,
+                MeasureUnit.REVOLUTION_ANGLE,
+                MeasureUnit.ACRE,
+                MeasureUnit.HECTARE,
+                MeasureUnit.SQUARE_CENTIMETER,
+                MeasureUnit.SQUARE_FOOT,
+                MeasureUnit.SQUARE_INCH,
+                MeasureUnit.SQUARE_KILOMETER,
+                MeasureUnit.SQUARE_METER,
+                MeasureUnit.SQUARE_MILE,
+                MeasureUnit.SQUARE_YARD,
+                MeasureUnit.KARAT,
+                MeasureUnit.MILLIGRAM_PER_DECILITER,
+                MeasureUnit.MILLIMOLE_PER_LITER,
+                MeasureUnit.PART_PER_MILLION,
+                MeasureUnit.LITER_PER_100KILOMETERS,
+                MeasureUnit.LITER_PER_KILOMETER,
+                MeasureUnit.MILE_PER_GALLON,
+                MeasureUnit.MILE_PER_GALLON_IMPERIAL,
+                MeasureUnit.BIT,
+                MeasureUnit.BYTE,
+                MeasureUnit.GIGABIT,
+                MeasureUnit.GIGABYTE,
+                MeasureUnit.KILOBIT,
+                MeasureUnit.KILOBYTE,
+                MeasureUnit.MEGABIT,
+                MeasureUnit.MEGABYTE,
+                MeasureUnit.TERABIT,
+                MeasureUnit.TERABYTE,
+                MeasureUnit.CENTURY,
+                MeasureUnit.DAY,
+                MeasureUnit.HOUR,
+                MeasureUnit.MICROSECOND,
+                MeasureUnit.MILLISECOND,
+                MeasureUnit.MINUTE,
+                MeasureUnit.MONTH,
+                MeasureUnit.NANOSECOND,
+                MeasureUnit.SECOND,
+                MeasureUnit.WEEK,
+                MeasureUnit.YEAR,
+                MeasureUnit.AMPERE,
+                MeasureUnit.MILLIAMPERE,
+                MeasureUnit.OHM,
+                MeasureUnit.VOLT,
+                MeasureUnit.CALORIE,
+                MeasureUnit.FOODCALORIE,
+                MeasureUnit.JOULE,
+                MeasureUnit.KILOCALORIE,
+                MeasureUnit.KILOJOULE,
+                MeasureUnit.KILOWATT_HOUR,
+                MeasureUnit.GIGAHERTZ,
+                MeasureUnit.HERTZ,
+                MeasureUnit.KILOHERTZ,
+                MeasureUnit.MEGAHERTZ,
+                MeasureUnit.ASTRONOMICAL_UNIT,
+                MeasureUnit.CENTIMETER,
+                MeasureUnit.DECIMETER,
+                MeasureUnit.FATHOM,
+                MeasureUnit.FOOT,
+                MeasureUnit.FURLONG,
+                MeasureUnit.INCH,
+                MeasureUnit.KILOMETER,
+                MeasureUnit.LIGHT_YEAR,
+                MeasureUnit.METER,
+                MeasureUnit.MICROMETER,
+                MeasureUnit.MILE,
+                MeasureUnit.MILE_SCANDINAVIAN,
+                MeasureUnit.MILLIMETER,
+                MeasureUnit.NANOMETER,
+                MeasureUnit.NAUTICAL_MILE,
+                MeasureUnit.PARSEC,
+                MeasureUnit.PICOMETER,
+                MeasureUnit.POINT,
+                MeasureUnit.YARD,
+                MeasureUnit.LUX,
+                MeasureUnit.CARAT,
+                MeasureUnit.GRAM,
+                MeasureUnit.KILOGRAM,
+                MeasureUnit.METRIC_TON,
+                MeasureUnit.MICROGRAM,
+                MeasureUnit.MILLIGRAM,
+                MeasureUnit.OUNCE,
+                MeasureUnit.OUNCE_TROY,
+                MeasureUnit.POUND,
+                MeasureUnit.STONE,
+                MeasureUnit.TON,
+                MeasureUnit.GIGAWATT,
+                MeasureUnit.HORSEPOWER,
+                MeasureUnit.KILOWATT,
+                MeasureUnit.MEGAWATT,
+                MeasureUnit.MILLIWATT,
+                MeasureUnit.WATT,
+                MeasureUnit.HECTOPASCAL,
+                MeasureUnit.INCH_HG,
+                MeasureUnit.MILLIBAR,
+                MeasureUnit.MILLIMETER_OF_MERCURY,
+                MeasureUnit.POUND_PER_SQUARE_INCH,
+                MeasureUnit.KILOMETER_PER_HOUR,
+                MeasureUnit.KNOT,
+                MeasureUnit.METER_PER_SECOND,
+                MeasureUnit.MILE_PER_HOUR,
+                MeasureUnit.CELSIUS,
+                MeasureUnit.FAHRENHEIT,
+                MeasureUnit.GENERIC_TEMPERATURE,
+                MeasureUnit.KELVIN,
+                MeasureUnit.ACRE_FOOT,
+                MeasureUnit.BUSHEL,
+                MeasureUnit.CENTILITER,
+                MeasureUnit.CUBIC_CENTIMETER,
+                MeasureUnit.CUBIC_FOOT,
+                MeasureUnit.CUBIC_INCH,
+                MeasureUnit.CUBIC_KILOMETER,
+                MeasureUnit.CUBIC_METER,
+                MeasureUnit.CUBIC_MILE,
+                MeasureUnit.CUBIC_YARD,
+                MeasureUnit.CUP,
+                MeasureUnit.CUP_METRIC,
+                MeasureUnit.DECILITER,
+                MeasureUnit.FLUID_OUNCE,
+                MeasureUnit.GALLON,
+                MeasureUnit.GALLON_IMPERIAL,
+                MeasureUnit.HECTOLITER,
+                MeasureUnit.LITER,
+                MeasureUnit.MEGALITER,
+                MeasureUnit.MILLILITER,
+                MeasureUnit.PINT,
+                MeasureUnit.PINT_METRIC,
+                MeasureUnit.QUART,
+                MeasureUnit.TABLESPOON,
+                MeasureUnit.TEASPOON,
+        };
+        assertEquals("",  135, units.length);
+    }
+
+    // Note that TestCompatible60(), TestCompatible61(), TestCompatible62()
+    // would be the same as TestCompatible59(), no need to add them.
+
+    @Test
+    public void TestCompatible63() {
+        MeasureUnit[] units = {
+                MeasureUnit.G_FORCE,
+                MeasureUnit.METER_PER_SECOND_SQUARED,
+                MeasureUnit.ARC_MINUTE,
+                MeasureUnit.ARC_SECOND,
+                MeasureUnit.DEGREE,
+                MeasureUnit.RADIAN,
+                MeasureUnit.REVOLUTION_ANGLE,
+                MeasureUnit.ACRE,
+                MeasureUnit.HECTARE,
+                MeasureUnit.SQUARE_CENTIMETER,
+                MeasureUnit.SQUARE_FOOT,
+                MeasureUnit.SQUARE_INCH,
+                MeasureUnit.SQUARE_KILOMETER,
+                MeasureUnit.SQUARE_METER,
+                MeasureUnit.SQUARE_MILE,
+                MeasureUnit.SQUARE_YARD,
+                MeasureUnit.KARAT,
+                MeasureUnit.MILLIGRAM_PER_DECILITER,
+                MeasureUnit.MILLIMOLE_PER_LITER,
+                MeasureUnit.PART_PER_MILLION,
+                MeasureUnit.PERCENT,
+                MeasureUnit.PERMILLE,
+                MeasureUnit.LITER_PER_100KILOMETERS,
+                MeasureUnit.LITER_PER_KILOMETER,
+                MeasureUnit.MILE_PER_GALLON,
+                MeasureUnit.MILE_PER_GALLON_IMPERIAL,
+                MeasureUnit.BIT,
+                MeasureUnit.BYTE,
+                MeasureUnit.GIGABIT,
+                MeasureUnit.GIGABYTE,
+                MeasureUnit.KILOBIT,
+                MeasureUnit.KILOBYTE,
+                MeasureUnit.MEGABIT,
+                MeasureUnit.MEGABYTE,
+                MeasureUnit.PETABYTE,
+                MeasureUnit.TERABIT,
+                MeasureUnit.TERABYTE,
+                MeasureUnit.CENTURY,
+                MeasureUnit.DAY,
+                MeasureUnit.HOUR,
+                MeasureUnit.MICROSECOND,
+                MeasureUnit.MILLISECOND,
+                MeasureUnit.MINUTE,
+                MeasureUnit.MONTH,
+                MeasureUnit.NANOSECOND,
+                MeasureUnit.SECOND,
+                MeasureUnit.WEEK,
+                MeasureUnit.YEAR,
+                MeasureUnit.AMPERE,
+                MeasureUnit.MILLIAMPERE,
+                MeasureUnit.OHM,
+                MeasureUnit.VOLT,
+                MeasureUnit.CALORIE,
+                MeasureUnit.FOODCALORIE,
+                MeasureUnit.JOULE,
+                MeasureUnit.KILOCALORIE,
+                MeasureUnit.KILOJOULE,
+                MeasureUnit.KILOWATT_HOUR,
+                MeasureUnit.GIGAHERTZ,
+                MeasureUnit.HERTZ,
+                MeasureUnit.KILOHERTZ,
+                MeasureUnit.MEGAHERTZ,
+                MeasureUnit.ASTRONOMICAL_UNIT,
+                MeasureUnit.CENTIMETER,
+                MeasureUnit.DECIMETER,
+                MeasureUnit.FATHOM,
+                MeasureUnit.FOOT,
+                MeasureUnit.FURLONG,
+                MeasureUnit.INCH,
+                MeasureUnit.KILOMETER,
+                MeasureUnit.LIGHT_YEAR,
+                MeasureUnit.METER,
+                MeasureUnit.MICROMETER,
+                MeasureUnit.MILE,
+                MeasureUnit.MILE_SCANDINAVIAN,
+                MeasureUnit.MILLIMETER,
+                MeasureUnit.NANOMETER,
+                MeasureUnit.NAUTICAL_MILE,
+                MeasureUnit.PARSEC,
+                MeasureUnit.PICOMETER,
+                MeasureUnit.POINT,
+                MeasureUnit.YARD,
+                MeasureUnit.LUX,
+                MeasureUnit.CARAT,
+                MeasureUnit.GRAM,
+                MeasureUnit.KILOGRAM,
+                MeasureUnit.METRIC_TON,
+                MeasureUnit.MICROGRAM,
+                MeasureUnit.MILLIGRAM,
+                MeasureUnit.OUNCE,
+                MeasureUnit.OUNCE_TROY,
+                MeasureUnit.POUND,
+                MeasureUnit.STONE,
+                MeasureUnit.TON,
+                MeasureUnit.GIGAWATT,
+                MeasureUnit.HORSEPOWER,
+                MeasureUnit.KILOWATT,
+                MeasureUnit.MEGAWATT,
+                MeasureUnit.MILLIWATT,
+                MeasureUnit.WATT,
+                MeasureUnit.ATMOSPHERE,
+                MeasureUnit.HECTOPASCAL,
+                MeasureUnit.INCH_HG,
+                MeasureUnit.MILLIBAR,
+                MeasureUnit.MILLIMETER_OF_MERCURY,
+                MeasureUnit.POUND_PER_SQUARE_INCH,
+                MeasureUnit.KILOMETER_PER_HOUR,
+                MeasureUnit.KNOT,
+                MeasureUnit.METER_PER_SECOND,
+                MeasureUnit.MILE_PER_HOUR,
+                MeasureUnit.CELSIUS,
+                MeasureUnit.FAHRENHEIT,
+                MeasureUnit.GENERIC_TEMPERATURE,
+                MeasureUnit.KELVIN,
+                MeasureUnit.ACRE_FOOT,
+                MeasureUnit.BUSHEL,
+                MeasureUnit.CENTILITER,
+                MeasureUnit.CUBIC_CENTIMETER,
+                MeasureUnit.CUBIC_FOOT,
+                MeasureUnit.CUBIC_INCH,
+                MeasureUnit.CUBIC_KILOMETER,
+                MeasureUnit.CUBIC_METER,
+                MeasureUnit.CUBIC_MILE,
+                MeasureUnit.CUBIC_YARD,
+                MeasureUnit.CUP,
+                MeasureUnit.CUP_METRIC,
+                MeasureUnit.DECILITER,
+                MeasureUnit.FLUID_OUNCE,
+                MeasureUnit.GALLON,
+                MeasureUnit.GALLON_IMPERIAL,
+                MeasureUnit.HECTOLITER,
+                MeasureUnit.LITER,
+                MeasureUnit.MEGALITER,
+                MeasureUnit.MILLILITER,
+                MeasureUnit.PINT,
+                MeasureUnit.PINT_METRIC,
+                MeasureUnit.QUART,
+                MeasureUnit.TABLESPOON,
+                MeasureUnit.TEASPOON,
+        };
+        assertEquals("",  139, units.length);
+    }
+
+    @Test
+    public void TestCompatible64() {
+        MeasureUnit[] units = {
+                MeasureUnit.G_FORCE,
+                MeasureUnit.METER_PER_SECOND_SQUARED,
+                MeasureUnit.ARC_MINUTE,
+                MeasureUnit.ARC_SECOND,
+                MeasureUnit.DEGREE,
+                MeasureUnit.RADIAN,
+                MeasureUnit.REVOLUTION_ANGLE,
+                MeasureUnit.ACRE,
+                MeasureUnit.DUNAM,
+                MeasureUnit.HECTARE,
+                MeasureUnit.SQUARE_CENTIMETER,
+                MeasureUnit.SQUARE_FOOT,
+                MeasureUnit.SQUARE_INCH,
+                MeasureUnit.SQUARE_KILOMETER,
+                MeasureUnit.SQUARE_METER,
+                MeasureUnit.SQUARE_MILE,
+                MeasureUnit.SQUARE_YARD,
+                MeasureUnit.KARAT,
+                MeasureUnit.MILLIGRAM_PER_DECILITER,
+                MeasureUnit.MILLIMOLE_PER_LITER,
+                MeasureUnit.MOLE,
+                MeasureUnit.PART_PER_MILLION,
+                MeasureUnit.PERCENT,
+                MeasureUnit.PERMILLE,
+                MeasureUnit.PERMYRIAD,
+                MeasureUnit.LITER_PER_100KILOMETERS,
+                MeasureUnit.LITER_PER_KILOMETER,
+                MeasureUnit.MILE_PER_GALLON,
+                MeasureUnit.MILE_PER_GALLON_IMPERIAL,
+                MeasureUnit.BIT,
+                MeasureUnit.BYTE,
+                MeasureUnit.GIGABIT,
+                MeasureUnit.GIGABYTE,
+                MeasureUnit.KILOBIT,
+                MeasureUnit.KILOBYTE,
+                MeasureUnit.MEGABIT,
+                MeasureUnit.MEGABYTE,
+                MeasureUnit.PETABYTE,
+                MeasureUnit.TERABIT,
+                MeasureUnit.TERABYTE,
+                MeasureUnit.CENTURY,
+                MeasureUnit.DAY,
+                MeasureUnit.DAY_PERSON,
+                MeasureUnit.HOUR,
+                MeasureUnit.MICROSECOND,
+                MeasureUnit.MILLISECOND,
+                MeasureUnit.MINUTE,
+                MeasureUnit.MONTH,
+                MeasureUnit.MONTH_PERSON,
+                MeasureUnit.NANOSECOND,
+                MeasureUnit.SECOND,
+                MeasureUnit.WEEK,
+                MeasureUnit.WEEK_PERSON,
+                MeasureUnit.YEAR,
+                MeasureUnit.YEAR_PERSON,
+                MeasureUnit.AMPERE,
+                MeasureUnit.MILLIAMPERE,
+                MeasureUnit.OHM,
+                MeasureUnit.VOLT,
+                MeasureUnit.BRITISH_THERMAL_UNIT,
+                MeasureUnit.CALORIE,
+                MeasureUnit.ELECTRONVOLT,
+                MeasureUnit.FOODCALORIE,
+                MeasureUnit.JOULE,
+                MeasureUnit.KILOCALORIE,
+                MeasureUnit.KILOJOULE,
+                MeasureUnit.KILOWATT_HOUR,
+                MeasureUnit.NEWTON,
+                MeasureUnit.POUND_FORCE,
+                MeasureUnit.GIGAHERTZ,
+                MeasureUnit.HERTZ,
+                MeasureUnit.KILOHERTZ,
+                MeasureUnit.MEGAHERTZ,
+                MeasureUnit.ASTRONOMICAL_UNIT,
+                MeasureUnit.CENTIMETER,
+                MeasureUnit.DECIMETER,
+                MeasureUnit.FATHOM,
+                MeasureUnit.FOOT,
+                MeasureUnit.FURLONG,
+                MeasureUnit.INCH,
+                MeasureUnit.KILOMETER,
+                MeasureUnit.LIGHT_YEAR,
+                MeasureUnit.METER,
+                MeasureUnit.MICROMETER,
+                MeasureUnit.MILE,
+                MeasureUnit.MILE_SCANDINAVIAN,
+                MeasureUnit.MILLIMETER,
+                MeasureUnit.NANOMETER,
+                MeasureUnit.NAUTICAL_MILE,
+                MeasureUnit.PARSEC,
+                MeasureUnit.PICOMETER,
+                MeasureUnit.POINT,
+                MeasureUnit.SOLAR_RADIUS,
+                MeasureUnit.YARD,
+                MeasureUnit.LUX,
+                MeasureUnit.SOLAR_LUMINOSITY,
+                MeasureUnit.CARAT,
+                MeasureUnit.DALTON,
+                MeasureUnit.EARTH_MASS,
+                MeasureUnit.GRAM,
+                MeasureUnit.KILOGRAM,
+                MeasureUnit.METRIC_TON,
+                MeasureUnit.MICROGRAM,
+                MeasureUnit.MILLIGRAM,
+                MeasureUnit.OUNCE,
+                MeasureUnit.OUNCE_TROY,
+                MeasureUnit.POUND,
+                MeasureUnit.SOLAR_MASS,
+                MeasureUnit.STONE,
+                MeasureUnit.TON,
+                MeasureUnit.GIGAWATT,
+                MeasureUnit.HORSEPOWER,
+                MeasureUnit.KILOWATT,
+                MeasureUnit.MEGAWATT,
+                MeasureUnit.MILLIWATT,
+                MeasureUnit.WATT,
+                MeasureUnit.ATMOSPHERE,
+                MeasureUnit.HECTOPASCAL,
+                MeasureUnit.INCH_HG,
+                MeasureUnit.KILOPASCAL,
+                MeasureUnit.MEGAPASCAL,
+                MeasureUnit.MILLIBAR,
+                MeasureUnit.MILLIMETER_OF_MERCURY,
+                MeasureUnit.POUND_PER_SQUARE_INCH,
+                MeasureUnit.KILOMETER_PER_HOUR,
+                MeasureUnit.KNOT,
+                MeasureUnit.METER_PER_SECOND,
+                MeasureUnit.MILE_PER_HOUR,
+                MeasureUnit.CELSIUS,
+                MeasureUnit.FAHRENHEIT,
+                MeasureUnit.GENERIC_TEMPERATURE,
+                MeasureUnit.KELVIN,
+                MeasureUnit.NEWTON_METER,
+                MeasureUnit.POUND_FOOT,
+                MeasureUnit.ACRE_FOOT,
+                MeasureUnit.BARREL,
+                MeasureUnit.BUSHEL,
+                MeasureUnit.CENTILITER,
+                MeasureUnit.CUBIC_CENTIMETER,
+                MeasureUnit.CUBIC_FOOT,
+                MeasureUnit.CUBIC_INCH,
+                MeasureUnit.CUBIC_KILOMETER,
+                MeasureUnit.CUBIC_METER,
+                MeasureUnit.CUBIC_MILE,
+                MeasureUnit.CUBIC_YARD,
+                MeasureUnit.CUP,
+                MeasureUnit.CUP_METRIC,
+                MeasureUnit.DECILITER,
+                MeasureUnit.FLUID_OUNCE,
+                MeasureUnit.FLUID_OUNCE_IMPERIAL,
+                MeasureUnit.GALLON,
+                MeasureUnit.GALLON_IMPERIAL,
+                MeasureUnit.HECTOLITER,
+                MeasureUnit.LITER,
+                MeasureUnit.MEGALITER,
+                MeasureUnit.MILLILITER,
+                MeasureUnit.PINT,
+                MeasureUnit.PINT_METRIC,
+                MeasureUnit.QUART,
+                MeasureUnit.TABLESPOON,
+                MeasureUnit.TEASPOON,
+        };
+        assertEquals("",  161, units.length);
+    }
+
+    @Test
+    public void TestCompatible65() {
+        MeasureUnit[] units = {
+                MeasureUnit.G_FORCE,
+                MeasureUnit.METER_PER_SECOND_SQUARED,
+                MeasureUnit.ARC_MINUTE,
+                MeasureUnit.ARC_SECOND,
+                MeasureUnit.DEGREE,
+                MeasureUnit.RADIAN,
+                MeasureUnit.REVOLUTION_ANGLE,
+                MeasureUnit.ACRE,
+                MeasureUnit.DUNAM,
+                MeasureUnit.HECTARE,
+                MeasureUnit.SQUARE_CENTIMETER,
+                MeasureUnit.SQUARE_FOOT,
+                MeasureUnit.SQUARE_INCH,
+                MeasureUnit.SQUARE_KILOMETER,
+                MeasureUnit.SQUARE_METER,
+                MeasureUnit.SQUARE_MILE,
+                MeasureUnit.SQUARE_YARD,
+                MeasureUnit.KARAT,
+                MeasureUnit.MILLIGRAM_PER_DECILITER,
+                MeasureUnit.MILLIMOLE_PER_LITER,
+                MeasureUnit.MOLE,
+                MeasureUnit.PART_PER_MILLION,
+                MeasureUnit.PERCENT,
+                MeasureUnit.PERMILLE,
+                MeasureUnit.PERMYRIAD,
+                MeasureUnit.LITER_PER_100KILOMETERS,
+                MeasureUnit.LITER_PER_KILOMETER,
+                MeasureUnit.MILE_PER_GALLON,
+                MeasureUnit.MILE_PER_GALLON_IMPERIAL,
+                MeasureUnit.BIT,
+                MeasureUnit.BYTE,
+                MeasureUnit.GIGABIT,
+                MeasureUnit.GIGABYTE,
+                MeasureUnit.KILOBIT,
+                MeasureUnit.KILOBYTE,
+                MeasureUnit.MEGABIT,
+                MeasureUnit.MEGABYTE,
+                MeasureUnit.PETABYTE,
+                MeasureUnit.TERABIT,
+                MeasureUnit.TERABYTE,
+                MeasureUnit.CENTURY,
+                MeasureUnit.DAY,
+                MeasureUnit.DAY_PERSON,
+                MeasureUnit.DECADE,
+                MeasureUnit.HOUR,
+                MeasureUnit.MICROSECOND,
+                MeasureUnit.MILLISECOND,
+                MeasureUnit.MINUTE,
+                MeasureUnit.MONTH,
+                MeasureUnit.MONTH_PERSON,
+                MeasureUnit.NANOSECOND,
+                MeasureUnit.SECOND,
+                MeasureUnit.WEEK,
+                MeasureUnit.WEEK_PERSON,
+                MeasureUnit.YEAR,
+                MeasureUnit.YEAR_PERSON,
+                MeasureUnit.AMPERE,
+                MeasureUnit.MILLIAMPERE,
+                MeasureUnit.OHM,
+                MeasureUnit.VOLT,
+                MeasureUnit.BRITISH_THERMAL_UNIT,
+                MeasureUnit.CALORIE,
+                MeasureUnit.ELECTRONVOLT,
+                MeasureUnit.FOODCALORIE,
+                MeasureUnit.JOULE,
+                MeasureUnit.KILOCALORIE,
+                MeasureUnit.KILOJOULE,
+                MeasureUnit.KILOWATT_HOUR,
+                MeasureUnit.THERM_US,
+                MeasureUnit.NEWTON,
+                MeasureUnit.POUND_FORCE,
+                MeasureUnit.GIGAHERTZ,
+                MeasureUnit.HERTZ,
+                MeasureUnit.KILOHERTZ,
+                MeasureUnit.MEGAHERTZ,
+                MeasureUnit.DOT_PER_CENTIMETER,
+                MeasureUnit.DOT_PER_INCH,
+                MeasureUnit.EM,
+                MeasureUnit.MEGAPIXEL,
+                MeasureUnit.PIXEL,
+                MeasureUnit.PIXEL_PER_CENTIMETER,
+                MeasureUnit.PIXEL_PER_INCH,
+                MeasureUnit.ASTRONOMICAL_UNIT,
+                MeasureUnit.CENTIMETER,
+                MeasureUnit.DECIMETER,
+                MeasureUnit.FATHOM,
+                MeasureUnit.FOOT,
+                MeasureUnit.FURLONG,
+                MeasureUnit.INCH,
+                MeasureUnit.KILOMETER,
+                MeasureUnit.LIGHT_YEAR,
+                MeasureUnit.METER,
+                MeasureUnit.MICROMETER,
+                MeasureUnit.MILE,
+                MeasureUnit.MILE_SCANDINAVIAN,
+                MeasureUnit.MILLIMETER,
+                MeasureUnit.NANOMETER,
+                MeasureUnit.NAUTICAL_MILE,
+                MeasureUnit.PARSEC,
+                MeasureUnit.PICOMETER,
+                MeasureUnit.POINT,
+                MeasureUnit.SOLAR_RADIUS,
+                MeasureUnit.YARD,
+                MeasureUnit.LUX,
+                MeasureUnit.SOLAR_LUMINOSITY,
+                MeasureUnit.CARAT,
+                MeasureUnit.DALTON,
+                MeasureUnit.EARTH_MASS,
+                MeasureUnit.GRAM,
+                MeasureUnit.KILOGRAM,
+                MeasureUnit.METRIC_TON,
+                MeasureUnit.MICROGRAM,
+                MeasureUnit.MILLIGRAM,
+                MeasureUnit.OUNCE,
+                MeasureUnit.OUNCE_TROY,
+                MeasureUnit.POUND,
+                MeasureUnit.SOLAR_MASS,
+                MeasureUnit.STONE,
+                MeasureUnit.TON,
+                MeasureUnit.GIGAWATT,
+                MeasureUnit.HORSEPOWER,
+                MeasureUnit.KILOWATT,
+                MeasureUnit.MEGAWATT,
+                MeasureUnit.MILLIWATT,
+                MeasureUnit.WATT,
+                MeasureUnit.ATMOSPHERE,
+                MeasureUnit.BAR,
+                MeasureUnit.HECTOPASCAL,
+                MeasureUnit.INCH_HG,
+                MeasureUnit.KILOPASCAL,
+                MeasureUnit.MEGAPASCAL,
+                MeasureUnit.MILLIBAR,
+                MeasureUnit.MILLIMETER_OF_MERCURY,
+                MeasureUnit.PASCAL,
+                MeasureUnit.POUND_PER_SQUARE_INCH,
+                MeasureUnit.KILOMETER_PER_HOUR,
+                MeasureUnit.KNOT,
+                MeasureUnit.METER_PER_SECOND,
+                MeasureUnit.MILE_PER_HOUR,
+                MeasureUnit.CELSIUS,
+                MeasureUnit.FAHRENHEIT,
+                MeasureUnit.GENERIC_TEMPERATURE,
+                MeasureUnit.KELVIN,
+                MeasureUnit.NEWTON_METER,
+                MeasureUnit.POUND_FOOT,
+                MeasureUnit.ACRE_FOOT,
+                MeasureUnit.BARREL,
+                MeasureUnit.BUSHEL,
+                MeasureUnit.CENTILITER,
+                MeasureUnit.CUBIC_CENTIMETER,
+                MeasureUnit.CUBIC_FOOT,
+                MeasureUnit.CUBIC_INCH,
+                MeasureUnit.CUBIC_KILOMETER,
+                MeasureUnit.CUBIC_METER,
+                MeasureUnit.CUBIC_MILE,
+                MeasureUnit.CUBIC_YARD,
+                MeasureUnit.CUP,
+                MeasureUnit.CUP_METRIC,
+                MeasureUnit.DECILITER,
+                MeasureUnit.FLUID_OUNCE,
+                MeasureUnit.FLUID_OUNCE_IMPERIAL,
+                MeasureUnit.GALLON,
+                MeasureUnit.GALLON_IMPERIAL,
+                MeasureUnit.HECTOLITER,
+                MeasureUnit.LITER,
+                MeasureUnit.MEGALITER,
+                MeasureUnit.MILLILITER,
+                MeasureUnit.PINT,
+                MeasureUnit.PINT_METRIC,
+                MeasureUnit.QUART,
+                MeasureUnit.TABLESPOON,
+                MeasureUnit.TEASPOON,
+        };
+        assertEquals("",  172, units.length);
+    }
+
+    @Test
+    public void TestCompatible68() {
+        MeasureUnit[] units = {
+                MeasureUnit.G_FORCE,
+                MeasureUnit.METER_PER_SECOND_SQUARED,
+                MeasureUnit.ARC_MINUTE,
+                MeasureUnit.ARC_SECOND,
+                MeasureUnit.DEGREE,
+                MeasureUnit.RADIAN,
+                MeasureUnit.REVOLUTION_ANGLE,
+                MeasureUnit.ACRE,
+                MeasureUnit.DUNAM,
+                MeasureUnit.HECTARE,
+                MeasureUnit.SQUARE_CENTIMETER,
+                MeasureUnit.SQUARE_FOOT,
+                MeasureUnit.SQUARE_INCH,
+                MeasureUnit.SQUARE_KILOMETER,
+                MeasureUnit.SQUARE_METER,
+                MeasureUnit.SQUARE_MILE,
+                MeasureUnit.SQUARE_YARD,
+                MeasureUnit.KARAT,
+                MeasureUnit.MILLIGRAM_PER_DECILITER,
+                MeasureUnit.MILLIMOLE_PER_LITER,
+                MeasureUnit.MOLE,
+                MeasureUnit.PERCENT,
+                MeasureUnit.PERMILLE,
+                MeasureUnit.PART_PER_MILLION,
+                MeasureUnit.PERMYRIAD,
+                MeasureUnit.LITER_PER_100KILOMETERS,
+                MeasureUnit.LITER_PER_KILOMETER,
+                MeasureUnit.MILE_PER_GALLON,
+                MeasureUnit.MILE_PER_GALLON_IMPERIAL,
+                MeasureUnit.BIT,
+                MeasureUnit.BYTE,
+                MeasureUnit.GIGABIT,
+                MeasureUnit.GIGABYTE,
+                MeasureUnit.KILOBIT,
+                MeasureUnit.KILOBYTE,
+                MeasureUnit.MEGABIT,
+                MeasureUnit.MEGABYTE,
+                MeasureUnit.PETABYTE,
+                MeasureUnit.TERABIT,
+                MeasureUnit.TERABYTE,
+                MeasureUnit.CENTURY,
+                MeasureUnit.DAY,
+                MeasureUnit.DAY_PERSON,
+                MeasureUnit.DECADE,
+                MeasureUnit.HOUR,
+                MeasureUnit.MICROSECOND,
+                MeasureUnit.MILLISECOND,
+                MeasureUnit.MINUTE,
+                MeasureUnit.MONTH,
+                MeasureUnit.MONTH_PERSON,
+                MeasureUnit.NANOSECOND,
+                MeasureUnit.SECOND,
+                MeasureUnit.WEEK,
+                MeasureUnit.WEEK_PERSON,
+                MeasureUnit.YEAR,
+                MeasureUnit.YEAR_PERSON,
+                MeasureUnit.AMPERE,
+                MeasureUnit.MILLIAMPERE,
+                MeasureUnit.OHM,
+                MeasureUnit.VOLT,
+                MeasureUnit.BRITISH_THERMAL_UNIT,
+                MeasureUnit.CALORIE,
+                MeasureUnit.ELECTRONVOLT,
+                MeasureUnit.FOODCALORIE,
+                MeasureUnit.JOULE,
+                MeasureUnit.KILOCALORIE,
+                MeasureUnit.KILOJOULE,
+                MeasureUnit.KILOWATT_HOUR,
+                MeasureUnit.THERM_US,
+                MeasureUnit.NEWTON,
+                MeasureUnit.POUND_FORCE,
+                MeasureUnit.GIGAHERTZ,
+                MeasureUnit.HERTZ,
+                MeasureUnit.KILOHERTZ,
+                MeasureUnit.MEGAHERTZ,
+                MeasureUnit.DOT,
+                MeasureUnit.DOT_PER_CENTIMETER,
+                MeasureUnit.DOT_PER_INCH,
+                MeasureUnit.EM,
+                MeasureUnit.MEGAPIXEL,
+                MeasureUnit.PIXEL,
+                MeasureUnit.PIXEL_PER_CENTIMETER,
+                MeasureUnit.PIXEL_PER_INCH,
+                MeasureUnit.ASTRONOMICAL_UNIT,
+                MeasureUnit.CENTIMETER,
+                MeasureUnit.DECIMETER,
+                MeasureUnit.EARTH_RADIUS,
+                MeasureUnit.FATHOM,
+                MeasureUnit.FOOT,
+                MeasureUnit.FURLONG,
+                MeasureUnit.INCH,
+                MeasureUnit.KILOMETER,
+                MeasureUnit.LIGHT_YEAR,
+                MeasureUnit.METER,
+                MeasureUnit.MICROMETER,
+                MeasureUnit.MILE,
+                MeasureUnit.MILE_SCANDINAVIAN,
+                MeasureUnit.MILLIMETER,
+                MeasureUnit.NANOMETER,
+                MeasureUnit.NAUTICAL_MILE,
+                MeasureUnit.PARSEC,
+                MeasureUnit.PICOMETER,
+                MeasureUnit.POINT,
+                MeasureUnit.SOLAR_RADIUS,
+                MeasureUnit.YARD,
+                MeasureUnit.CANDELA,
+                MeasureUnit.LUMEN,
+                MeasureUnit.LUX,
+                MeasureUnit.SOLAR_LUMINOSITY,
+                MeasureUnit.CARAT,
+                MeasureUnit.DALTON,
+                MeasureUnit.EARTH_MASS,
+                MeasureUnit.GRAIN,
+                MeasureUnit.GRAM,
+                MeasureUnit.KILOGRAM,
+                MeasureUnit.METRIC_TON,
+                MeasureUnit.MICROGRAM,
+                MeasureUnit.MILLIGRAM,
+                MeasureUnit.OUNCE,
+                MeasureUnit.OUNCE_TROY,
+                MeasureUnit.POUND,
+                MeasureUnit.SOLAR_MASS,
+                MeasureUnit.STONE,
+                MeasureUnit.TON,
+                MeasureUnit.GIGAWATT,
+                MeasureUnit.HORSEPOWER,
+                MeasureUnit.KILOWATT,
+                MeasureUnit.MEGAWATT,
+                MeasureUnit.MILLIWATT,
+                MeasureUnit.WATT,
+                MeasureUnit.ATMOSPHERE,
+                MeasureUnit.BAR,
+                MeasureUnit.HECTOPASCAL,
+                MeasureUnit.INCH_HG,
+                MeasureUnit.KILOPASCAL,
+                MeasureUnit.MEGAPASCAL,
+                MeasureUnit.MILLIBAR,
+                MeasureUnit.MILLIMETER_OF_MERCURY,
+                MeasureUnit.PASCAL,
+                MeasureUnit.POUND_PER_SQUARE_INCH,
+                MeasureUnit.KILOMETER_PER_HOUR,
+                MeasureUnit.KNOT,
+                MeasureUnit.METER_PER_SECOND,
+                MeasureUnit.MILE_PER_HOUR,
+                MeasureUnit.CELSIUS,
+                MeasureUnit.FAHRENHEIT,
+                MeasureUnit.GENERIC_TEMPERATURE,
+                MeasureUnit.KELVIN,
+                MeasureUnit.NEWTON_METER,
+                MeasureUnit.POUND_FOOT,
+                MeasureUnit.ACRE_FOOT,
+                MeasureUnit.BARREL,
+                MeasureUnit.BUSHEL,
+                MeasureUnit.CENTILITER,
+                MeasureUnit.CUBIC_CENTIMETER,
+                MeasureUnit.CUBIC_FOOT,
+                MeasureUnit.CUBIC_INCH,
+                MeasureUnit.CUBIC_KILOMETER,
+                MeasureUnit.CUBIC_METER,
+                MeasureUnit.CUBIC_MILE,
+                MeasureUnit.CUBIC_YARD,
+                MeasureUnit.CUP,
+                MeasureUnit.CUP_METRIC,
+                MeasureUnit.DECILITER,
+                MeasureUnit.DESSERT_SPOON,
+                MeasureUnit.DESSERT_SPOON_IMPERIAL,
+                MeasureUnit.DRAM,
+                MeasureUnit.DROP,
+                MeasureUnit.FLUID_OUNCE,
+                MeasureUnit.FLUID_OUNCE_IMPERIAL,
+                MeasureUnit.GALLON,
+                MeasureUnit.GALLON_IMPERIAL,
+                MeasureUnit.HECTOLITER,
+                MeasureUnit.JIGGER,
+                MeasureUnit.LITER,
+                MeasureUnit.MEGALITER,
+                MeasureUnit.MILLILITER,
+                MeasureUnit.PINCH,
+                MeasureUnit.PINT,
+                MeasureUnit.PINT_METRIC,
+                MeasureUnit.QUART,
+                MeasureUnit.QUART_IMPERIAL,
+                MeasureUnit.TABLESPOON,
+                MeasureUnit.TEASPOON,
+        };
+        assertEquals("",  184, units.length);
+    }
+
+    @Test
+    public void TestCompatible69() {
+        MeasureUnit[] units = {
+                MeasureUnit.G_FORCE,
+                MeasureUnit.METER_PER_SECOND_SQUARED,
+                MeasureUnit.ARC_MINUTE,
+                MeasureUnit.ARC_SECOND,
+                MeasureUnit.DEGREE,
+                MeasureUnit.RADIAN,
+                MeasureUnit.REVOLUTION_ANGLE,
+                MeasureUnit.ACRE,
+                MeasureUnit.DUNAM,
+                MeasureUnit.HECTARE,
+                MeasureUnit.SQUARE_CENTIMETER,
+                MeasureUnit.SQUARE_FOOT,
+                MeasureUnit.SQUARE_INCH,
+                MeasureUnit.SQUARE_KILOMETER,
+                MeasureUnit.SQUARE_METER,
+                MeasureUnit.SQUARE_MILE,
+                MeasureUnit.SQUARE_YARD,
+                MeasureUnit.KARAT,
+                MeasureUnit.MILLIGRAM_OFGLUCOSE_PER_DECILITER,
+                MeasureUnit.MILLIGRAM_PER_DECILITER,
+                MeasureUnit.MILLIMOLE_PER_LITER,
+                MeasureUnit.MOLE,
+                MeasureUnit.PERCENT,
+                MeasureUnit.PERMILLE,
+                MeasureUnit.PART_PER_MILLION,
+                MeasureUnit.PERMYRIAD,
+                MeasureUnit.LITER_PER_100KILOMETERS,
+                MeasureUnit.LITER_PER_KILOMETER,
+                MeasureUnit.MILE_PER_GALLON,
+                MeasureUnit.MILE_PER_GALLON_IMPERIAL,
+                MeasureUnit.BIT,
+                MeasureUnit.BYTE,
+                MeasureUnit.GIGABIT,
+                MeasureUnit.GIGABYTE,
+                MeasureUnit.KILOBIT,
+                MeasureUnit.KILOBYTE,
+                MeasureUnit.MEGABIT,
+                MeasureUnit.MEGABYTE,
+                MeasureUnit.PETABYTE,
+                MeasureUnit.TERABIT,
+                MeasureUnit.TERABYTE,
+                MeasureUnit.CENTURY,
+                MeasureUnit.DAY,
+                MeasureUnit.DAY_PERSON,
+                MeasureUnit.DECADE,
+                MeasureUnit.HOUR,
+                MeasureUnit.MICROSECOND,
+                MeasureUnit.MILLISECOND,
+                MeasureUnit.MINUTE,
+                MeasureUnit.MONTH,
+                MeasureUnit.MONTH_PERSON,
+                MeasureUnit.NANOSECOND,
+                MeasureUnit.SECOND,
+                MeasureUnit.WEEK,
+                MeasureUnit.WEEK_PERSON,
+                MeasureUnit.YEAR,
+                MeasureUnit.YEAR_PERSON,
+                MeasureUnit.AMPERE,
+                MeasureUnit.MILLIAMPERE,
+                MeasureUnit.OHM,
+                MeasureUnit.VOLT,
+                MeasureUnit.BRITISH_THERMAL_UNIT,
+                MeasureUnit.CALORIE,
+                MeasureUnit.ELECTRONVOLT,
+                MeasureUnit.FOODCALORIE,
+                MeasureUnit.JOULE,
+                MeasureUnit.KILOCALORIE,
+                MeasureUnit.KILOJOULE,
+                MeasureUnit.KILOWATT_HOUR,
+                MeasureUnit.THERM_US,
+                MeasureUnit.NEWTON,
+                MeasureUnit.POUND_FORCE,
+                MeasureUnit.GIGAHERTZ,
+                MeasureUnit.HERTZ,
+                MeasureUnit.KILOHERTZ,
+                MeasureUnit.MEGAHERTZ,
+                MeasureUnit.DOT,
+                MeasureUnit.DOT_PER_CENTIMETER,
+                MeasureUnit.DOT_PER_INCH,
+                MeasureUnit.EM,
+                MeasureUnit.MEGAPIXEL,
+                MeasureUnit.PIXEL,
+                MeasureUnit.PIXEL_PER_CENTIMETER,
+                MeasureUnit.PIXEL_PER_INCH,
+                MeasureUnit.ASTRONOMICAL_UNIT,
+                MeasureUnit.CENTIMETER,
+                MeasureUnit.DECIMETER,
+                MeasureUnit.EARTH_RADIUS,
+                MeasureUnit.FATHOM,
+                MeasureUnit.FOOT,
+                MeasureUnit.FURLONG,
+                MeasureUnit.INCH,
+                MeasureUnit.KILOMETER,
+                MeasureUnit.LIGHT_YEAR,
+                MeasureUnit.METER,
+                MeasureUnit.MICROMETER,
+                MeasureUnit.MILE,
+                MeasureUnit.MILE_SCANDINAVIAN,
+                MeasureUnit.MILLIMETER,
+                MeasureUnit.NANOMETER,
+                MeasureUnit.NAUTICAL_MILE,
+                MeasureUnit.PARSEC,
+                MeasureUnit.PICOMETER,
+                MeasureUnit.POINT,
+                MeasureUnit.SOLAR_RADIUS,
+                MeasureUnit.YARD,
+                MeasureUnit.CANDELA,
+                MeasureUnit.LUMEN,
+                MeasureUnit.LUX,
+                MeasureUnit.SOLAR_LUMINOSITY,
+                MeasureUnit.CARAT,
+                MeasureUnit.DALTON,
+                MeasureUnit.EARTH_MASS,
+                MeasureUnit.GRAIN,
+                MeasureUnit.GRAM,
+                MeasureUnit.KILOGRAM,
+                MeasureUnit.METRIC_TON,
+                MeasureUnit.MICROGRAM,
+                MeasureUnit.MILLIGRAM,
+                MeasureUnit.OUNCE,
+                MeasureUnit.OUNCE_TROY,
+                MeasureUnit.POUND,
+                MeasureUnit.SOLAR_MASS,
+                MeasureUnit.STONE,
+                MeasureUnit.TON,
+                MeasureUnit.GIGAWATT,
+                MeasureUnit.HORSEPOWER,
+                MeasureUnit.KILOWATT,
+                MeasureUnit.MEGAWATT,
+                MeasureUnit.MILLIWATT,
+                MeasureUnit.WATT,
+                MeasureUnit.ATMOSPHERE,
+                MeasureUnit.BAR,
+                MeasureUnit.HECTOPASCAL,
+                MeasureUnit.INCH_HG,
+                MeasureUnit.KILOPASCAL,
+                MeasureUnit.MEGAPASCAL,
+                MeasureUnit.MILLIBAR,
+                MeasureUnit.MILLIMETER_OF_MERCURY,
+                MeasureUnit.PASCAL,
+                MeasureUnit.POUND_PER_SQUARE_INCH,
+                MeasureUnit.KILOMETER_PER_HOUR,
+                MeasureUnit.KNOT,
+                MeasureUnit.METER_PER_SECOND,
+                MeasureUnit.MILE_PER_HOUR,
+                MeasureUnit.CELSIUS,
+                MeasureUnit.FAHRENHEIT,
+                MeasureUnit.GENERIC_TEMPERATURE,
+                MeasureUnit.KELVIN,
+                MeasureUnit.NEWTON_METER,
+                MeasureUnit.POUND_FOOT,
+                MeasureUnit.ACRE_FOOT,
+                MeasureUnit.BARREL,
+                MeasureUnit.BUSHEL,
+                MeasureUnit.CENTILITER,
+                MeasureUnit.CUBIC_CENTIMETER,
+                MeasureUnit.CUBIC_FOOT,
+                MeasureUnit.CUBIC_INCH,
+                MeasureUnit.CUBIC_KILOMETER,
+                MeasureUnit.CUBIC_METER,
+                MeasureUnit.CUBIC_MILE,
+                MeasureUnit.CUBIC_YARD,
+                MeasureUnit.CUP,
+                MeasureUnit.CUP_METRIC,
+                MeasureUnit.DECILITER,
+                MeasureUnit.DESSERT_SPOON,
+                MeasureUnit.DESSERT_SPOON_IMPERIAL,
+                MeasureUnit.DRAM,
+                MeasureUnit.DROP,
+                MeasureUnit.FLUID_OUNCE,
+                MeasureUnit.FLUID_OUNCE_IMPERIAL,
+                MeasureUnit.GALLON,
+                MeasureUnit.GALLON_IMPERIAL,
+                MeasureUnit.HECTOLITER,
+                MeasureUnit.JIGGER,
+                MeasureUnit.LITER,
+                MeasureUnit.MEGALITER,
+                MeasureUnit.MILLILITER,
+                MeasureUnit.PINCH,
+                MeasureUnit.PINT,
+                MeasureUnit.PINT_METRIC,
+                MeasureUnit.QUART,
+                MeasureUnit.QUART_IMPERIAL,
+                MeasureUnit.TABLESPOON,
+                MeasureUnit.TEASPOON,
+        };
+        assertEquals("",  185, units.length);
+    }
+
+    @Test
+    public void TestCompatible70() { // TestCompatible71 would be identical
+        MeasureUnit[] units = {
+                MeasureUnit.G_FORCE,
+                MeasureUnit.METER_PER_SECOND_SQUARED,
+                MeasureUnit.ARC_MINUTE,
+                MeasureUnit.ARC_SECOND,
+                MeasureUnit.DEGREE,
+                MeasureUnit.RADIAN,
+                MeasureUnit.REVOLUTION_ANGLE,
+                MeasureUnit.ACRE,
+                MeasureUnit.DUNAM,
+                MeasureUnit.HECTARE,
+                MeasureUnit.SQUARE_CENTIMETER,
+                MeasureUnit.SQUARE_FOOT,
+                MeasureUnit.SQUARE_INCH,
+                MeasureUnit.SQUARE_KILOMETER,
+                MeasureUnit.SQUARE_METER,
+                MeasureUnit.SQUARE_MILE,
+                MeasureUnit.SQUARE_YARD,
+                MeasureUnit.ITEM,
+                MeasureUnit.KARAT,
+                MeasureUnit.MILLIGRAM_OFGLUCOSE_PER_DECILITER,
+                MeasureUnit.MILLIGRAM_PER_DECILITER,
+                MeasureUnit.MILLIMOLE_PER_LITER,
+                MeasureUnit.MOLE,
+                MeasureUnit.PERCENT,
+                MeasureUnit.PERMILLE,
+                MeasureUnit.PART_PER_MILLION,
+                MeasureUnit.PERMYRIAD,
+                MeasureUnit.LITER_PER_100KILOMETERS,
+                MeasureUnit.LITER_PER_KILOMETER,
+                MeasureUnit.MILE_PER_GALLON,
+                MeasureUnit.MILE_PER_GALLON_IMPERIAL,
+                MeasureUnit.BIT,
+                MeasureUnit.BYTE,
+                MeasureUnit.GIGABIT,
+                MeasureUnit.GIGABYTE,
+                MeasureUnit.KILOBIT,
+                MeasureUnit.KILOBYTE,
+                MeasureUnit.MEGABIT,
+                MeasureUnit.MEGABYTE,
+                MeasureUnit.PETABYTE,
+                MeasureUnit.TERABIT,
+                MeasureUnit.TERABYTE,
+                MeasureUnit.CENTURY,
+                MeasureUnit.DAY,
+                MeasureUnit.DAY_PERSON,
+                MeasureUnit.DECADE,
+                MeasureUnit.HOUR,
+                MeasureUnit.MICROSECOND,
+                MeasureUnit.MILLISECOND,
+                MeasureUnit.MINUTE,
+                MeasureUnit.MONTH,
+                MeasureUnit.MONTH_PERSON,
+                MeasureUnit.NANOSECOND,
+                MeasureUnit.SECOND,
+                MeasureUnit.WEEK,
+                MeasureUnit.WEEK_PERSON,
+                MeasureUnit.YEAR,
+                MeasureUnit.YEAR_PERSON,
+                MeasureUnit.AMPERE,
+                MeasureUnit.MILLIAMPERE,
+                MeasureUnit.OHM,
+                MeasureUnit.VOLT,
+                MeasureUnit.BRITISH_THERMAL_UNIT,
+                MeasureUnit.CALORIE,
+                MeasureUnit.ELECTRONVOLT,
+                MeasureUnit.FOODCALORIE,
+                MeasureUnit.JOULE,
+                MeasureUnit.KILOCALORIE,
+                MeasureUnit.KILOJOULE,
+                MeasureUnit.KILOWATT_HOUR,
+                MeasureUnit.THERM_US,
+                MeasureUnit.KILOWATT_HOUR_PER_100_KILOMETER,
+                MeasureUnit.NEWTON,
+                MeasureUnit.POUND_FORCE,
+                MeasureUnit.GIGAHERTZ,
+                MeasureUnit.HERTZ,
+                MeasureUnit.KILOHERTZ,
+                MeasureUnit.MEGAHERTZ,
+                MeasureUnit.DOT,
+                MeasureUnit.DOT_PER_CENTIMETER,
+                MeasureUnit.DOT_PER_INCH,
+                MeasureUnit.EM,
+                MeasureUnit.MEGAPIXEL,
+                MeasureUnit.PIXEL,
+                MeasureUnit.PIXEL_PER_CENTIMETER,
+                MeasureUnit.PIXEL_PER_INCH,
+                MeasureUnit.ASTRONOMICAL_UNIT,
+                MeasureUnit.CENTIMETER,
+                MeasureUnit.DECIMETER,
+                MeasureUnit.EARTH_RADIUS,
+                MeasureUnit.FATHOM,
+                MeasureUnit.FOOT,
+                MeasureUnit.FURLONG,
+                MeasureUnit.INCH,
+                MeasureUnit.KILOMETER,
+                MeasureUnit.LIGHT_YEAR,
+                MeasureUnit.METER,
+                MeasureUnit.MICROMETER,
+                MeasureUnit.MILE,
+                MeasureUnit.MILE_SCANDINAVIAN,
+                MeasureUnit.MILLIMETER,
+                MeasureUnit.NANOMETER,
+                MeasureUnit.NAUTICAL_MILE,
+                MeasureUnit.PARSEC,
+                MeasureUnit.PICOMETER,
+                MeasureUnit.POINT,
+                MeasureUnit.SOLAR_RADIUS,
+                MeasureUnit.YARD,
+                MeasureUnit.CANDELA,
+                MeasureUnit.LUMEN,
+                MeasureUnit.LUX,
+                MeasureUnit.SOLAR_LUMINOSITY,
+                MeasureUnit.CARAT,
+                MeasureUnit.DALTON,
+                MeasureUnit.EARTH_MASS,
+                MeasureUnit.GRAIN,
+                MeasureUnit.GRAM,
+                MeasureUnit.KILOGRAM,
+                MeasureUnit.METRIC_TON,
+                MeasureUnit.MICROGRAM,
+                MeasureUnit.MILLIGRAM,
+                MeasureUnit.OUNCE,
+                MeasureUnit.OUNCE_TROY,
+                MeasureUnit.POUND,
+                MeasureUnit.SOLAR_MASS,
+                MeasureUnit.STONE,
+                MeasureUnit.TON,
+                MeasureUnit.GIGAWATT,
+                MeasureUnit.HORSEPOWER,
+                MeasureUnit.KILOWATT,
+                MeasureUnit.MEGAWATT,
+                MeasureUnit.MILLIWATT,
+                MeasureUnit.WATT,
+                MeasureUnit.ATMOSPHERE,
+                MeasureUnit.BAR,
+                MeasureUnit.HECTOPASCAL,
+                MeasureUnit.INCH_HG,
+                MeasureUnit.KILOPASCAL,
+                MeasureUnit.MEGAPASCAL,
+                MeasureUnit.MILLIBAR,
+                MeasureUnit.MILLIMETER_OF_MERCURY,
+                MeasureUnit.PASCAL,
+                MeasureUnit.POUND_PER_SQUARE_INCH,
+                MeasureUnit.KILOMETER_PER_HOUR,
+                MeasureUnit.KNOT,
+                MeasureUnit.METER_PER_SECOND,
+                MeasureUnit.MILE_PER_HOUR,
+                MeasureUnit.CELSIUS,
+                MeasureUnit.FAHRENHEIT,
+                MeasureUnit.GENERIC_TEMPERATURE,
+                MeasureUnit.KELVIN,
+                MeasureUnit.NEWTON_METER,
+                MeasureUnit.POUND_FOOT,
+                MeasureUnit.ACRE_FOOT,
+                MeasureUnit.BARREL,
+                MeasureUnit.BUSHEL,
+                MeasureUnit.CENTILITER,
+                MeasureUnit.CUBIC_CENTIMETER,
+                MeasureUnit.CUBIC_FOOT,
+                MeasureUnit.CUBIC_INCH,
+                MeasureUnit.CUBIC_KILOMETER,
+                MeasureUnit.CUBIC_METER,
+                MeasureUnit.CUBIC_MILE,
+                MeasureUnit.CUBIC_YARD,
+                MeasureUnit.CUP,
+                MeasureUnit.CUP_METRIC,
+                MeasureUnit.DECILITER,
+                MeasureUnit.DESSERT_SPOON,
+                MeasureUnit.DESSERT_SPOON_IMPERIAL,
+                MeasureUnit.DRAM,
+                MeasureUnit.DROP,
+                MeasureUnit.FLUID_OUNCE,
+                MeasureUnit.FLUID_OUNCE_IMPERIAL,
+                MeasureUnit.GALLON,
+                MeasureUnit.GALLON_IMPERIAL,
+                MeasureUnit.HECTOLITER,
+                MeasureUnit.JIGGER,
+                MeasureUnit.LITER,
+                MeasureUnit.MEGALITER,
+                MeasureUnit.MILLILITER,
+                MeasureUnit.PINCH,
+                MeasureUnit.PINT,
+                MeasureUnit.PINT_METRIC,
+                MeasureUnit.QUART,
+                MeasureUnit.QUART_IMPERIAL,
+                MeasureUnit.TABLESPOON,
+                MeasureUnit.TEASPOON,
+        };
+        assertEquals("",  187, units.length);
+    }
+
+    // TestCompatible71 would be identical to TestCompatible70,
+    // no need to add it
+
+    @Test
+    public void TestCompatible72() {
+        MeasureUnit[] units = {
+                MeasureUnit.G_FORCE,
+                MeasureUnit.METER_PER_SECOND_SQUARED,
+                MeasureUnit.ARC_MINUTE,
+                MeasureUnit.ARC_SECOND,
+                MeasureUnit.DEGREE,
+                MeasureUnit.RADIAN,
+                MeasureUnit.REVOLUTION_ANGLE,
+                MeasureUnit.ACRE,
+                MeasureUnit.DUNAM,
+                MeasureUnit.HECTARE,
+                MeasureUnit.SQUARE_CENTIMETER,
+                MeasureUnit.SQUARE_FOOT,
+                MeasureUnit.SQUARE_INCH,
+                MeasureUnit.SQUARE_KILOMETER,
+                MeasureUnit.SQUARE_METER,
+                MeasureUnit.SQUARE_MILE,
+                MeasureUnit.SQUARE_YARD,
+                MeasureUnit.ITEM,
+                MeasureUnit.KARAT,
+                MeasureUnit.MILLIGRAM_OFGLUCOSE_PER_DECILITER,
+                MeasureUnit.MILLIGRAM_PER_DECILITER,
+                MeasureUnit.MILLIMOLE_PER_LITER,
+                MeasureUnit.MOLE,
+                MeasureUnit.PERCENT,
+                MeasureUnit.PERMILLE,
+                MeasureUnit.PART_PER_MILLION,
+                MeasureUnit.PERMYRIAD,
+                MeasureUnit.LITER_PER_100KILOMETERS,
+                MeasureUnit.LITER_PER_KILOMETER,
+                MeasureUnit.MILE_PER_GALLON,
+                MeasureUnit.MILE_PER_GALLON_IMPERIAL,
+                MeasureUnit.BIT,
+                MeasureUnit.BYTE,
+                MeasureUnit.GIGABIT,
+                MeasureUnit.GIGABYTE,
+                MeasureUnit.KILOBIT,
+                MeasureUnit.KILOBYTE,
+                MeasureUnit.MEGABIT,
+                MeasureUnit.MEGABYTE,
+                MeasureUnit.PETABYTE,
+                MeasureUnit.TERABIT,
+                MeasureUnit.TERABYTE,
+                MeasureUnit.CENTURY,
+                MeasureUnit.DAY,
+                MeasureUnit.DAY_PERSON,
+                MeasureUnit.DECADE,
+                MeasureUnit.HOUR,
+                MeasureUnit.MICROSECOND,
+                MeasureUnit.MILLISECOND,
+                MeasureUnit.MINUTE,
+                MeasureUnit.MONTH,
+                MeasureUnit.MONTH_PERSON,
+                MeasureUnit.NANOSECOND,
+                MeasureUnit.QUARTER,
+                MeasureUnit.SECOND,
+                MeasureUnit.WEEK,
+                MeasureUnit.WEEK_PERSON,
+                MeasureUnit.YEAR,
+                MeasureUnit.YEAR_PERSON,
+                MeasureUnit.AMPERE,
+                MeasureUnit.MILLIAMPERE,
+                MeasureUnit.OHM,
+                MeasureUnit.VOLT,
+                MeasureUnit.BRITISH_THERMAL_UNIT,
+                MeasureUnit.CALORIE,
+                MeasureUnit.ELECTRONVOLT,
+                MeasureUnit.FOODCALORIE,
+                MeasureUnit.JOULE,
+                MeasureUnit.KILOCALORIE,
+                MeasureUnit.KILOJOULE,
+                MeasureUnit.KILOWATT_HOUR,
+                MeasureUnit.THERM_US,
+                MeasureUnit.KILOWATT_HOUR_PER_100_KILOMETER,
+                MeasureUnit.NEWTON,
+                MeasureUnit.POUND_FORCE,
+                MeasureUnit.GIGAHERTZ,
+                MeasureUnit.HERTZ,
+                MeasureUnit.KILOHERTZ,
+                MeasureUnit.MEGAHERTZ,
+                MeasureUnit.DOT,
+                MeasureUnit.DOT_PER_CENTIMETER,
+                MeasureUnit.DOT_PER_INCH,
+                MeasureUnit.EM,
+                MeasureUnit.MEGAPIXEL,
+                MeasureUnit.PIXEL,
+                MeasureUnit.PIXEL_PER_CENTIMETER,
+                MeasureUnit.PIXEL_PER_INCH,
+                MeasureUnit.ASTRONOMICAL_UNIT,
+                MeasureUnit.CENTIMETER,
+                MeasureUnit.DECIMETER,
+                MeasureUnit.EARTH_RADIUS,
+                MeasureUnit.FATHOM,
+                MeasureUnit.FOOT,
+                MeasureUnit.FURLONG,
+                MeasureUnit.INCH,
+                MeasureUnit.KILOMETER,
+                MeasureUnit.LIGHT_YEAR,
+                MeasureUnit.METER,
+                MeasureUnit.MICROMETER,
+                MeasureUnit.MILE,
+                MeasureUnit.MILE_SCANDINAVIAN,
+                MeasureUnit.MILLIMETER,
+                MeasureUnit.NANOMETER,
+                MeasureUnit.NAUTICAL_MILE,
+                MeasureUnit.PARSEC,
+                MeasureUnit.PICOMETER,
+                MeasureUnit.POINT,
+                MeasureUnit.SOLAR_RADIUS,
+                MeasureUnit.YARD,
+                MeasureUnit.CANDELA,
+                MeasureUnit.LUMEN,
+                MeasureUnit.LUX,
+                MeasureUnit.SOLAR_LUMINOSITY,
+                MeasureUnit.CARAT,
+                MeasureUnit.DALTON,
+                MeasureUnit.EARTH_MASS,
+                MeasureUnit.GRAIN,
+                MeasureUnit.GRAM,
+                MeasureUnit.KILOGRAM,
+                MeasureUnit.MICROGRAM,
+                MeasureUnit.MILLIGRAM,
+                MeasureUnit.OUNCE,
+                MeasureUnit.OUNCE_TROY,
+                MeasureUnit.POUND,
+                MeasureUnit.SOLAR_MASS,
+                MeasureUnit.STONE,
+                MeasureUnit.TON,
+                MeasureUnit.TONNE,
+                MeasureUnit.GIGAWATT,
+                MeasureUnit.HORSEPOWER,
+                MeasureUnit.KILOWATT,
+                MeasureUnit.MEGAWATT,
+                MeasureUnit.MILLIWATT,
+                MeasureUnit.WATT,
+                MeasureUnit.ATMOSPHERE,
+                MeasureUnit.BAR,
+                MeasureUnit.HECTOPASCAL,
+                MeasureUnit.INCH_HG,
+                MeasureUnit.KILOPASCAL,
+                MeasureUnit.MEGAPASCAL,
+                MeasureUnit.MILLIBAR,
+                MeasureUnit.MILLIMETER_OF_MERCURY,
+                MeasureUnit.PASCAL,
+                MeasureUnit.POUND_PER_SQUARE_INCH,
+                MeasureUnit.KILOMETER_PER_HOUR,
+                MeasureUnit.KNOT,
+                MeasureUnit.METER_PER_SECOND,
+                MeasureUnit.MILE_PER_HOUR,
+                MeasureUnit.CELSIUS,
+                MeasureUnit.FAHRENHEIT,
+                MeasureUnit.GENERIC_TEMPERATURE,
+                MeasureUnit.KELVIN,
+                MeasureUnit.NEWTON_METER,
+                MeasureUnit.POUND_FOOT,
+                MeasureUnit.ACRE_FOOT,
+                MeasureUnit.BARREL,
+                MeasureUnit.BUSHEL,
+                MeasureUnit.CENTILITER,
+                MeasureUnit.CUBIC_CENTIMETER,
+                MeasureUnit.CUBIC_FOOT,
+                MeasureUnit.CUBIC_INCH,
+                MeasureUnit.CUBIC_KILOMETER,
+                MeasureUnit.CUBIC_METER,
+                MeasureUnit.CUBIC_MILE,
+                MeasureUnit.CUBIC_YARD,
+                MeasureUnit.CUP,
+                MeasureUnit.CUP_METRIC,
+                MeasureUnit.DECILITER,
+                MeasureUnit.DESSERT_SPOON,
+                MeasureUnit.DESSERT_SPOON_IMPERIAL,
+                MeasureUnit.DRAM,
+                MeasureUnit.DROP,
+                MeasureUnit.FLUID_OUNCE,
+                MeasureUnit.FLUID_OUNCE_IMPERIAL,
+                MeasureUnit.GALLON,
+                MeasureUnit.GALLON_IMPERIAL,
+                MeasureUnit.HECTOLITER,
+                MeasureUnit.JIGGER,
+                MeasureUnit.LITER,
+                MeasureUnit.MEGALITER,
+                MeasureUnit.MILLILITER,
+                MeasureUnit.PINCH,
+                MeasureUnit.PINT,
+                MeasureUnit.PINT_METRIC,
+                MeasureUnit.QUART,
+                MeasureUnit.QUART_IMPERIAL,
+                MeasureUnit.TABLESPOON,
+                MeasureUnit.TEASPOON,
+        };
+        assertEquals("",  188, units.length);
     }
 
     @Test
@@ -1020,20 +2485,20 @@ public class MeasureUnitTest extends TestFmwk {
         MeasureFormat fmtFr = MeasureFormat.getInstance(
                 ULocale.FRENCH, FormatWidth.SHORT);
         Measure measure = new Measure(23, MeasureUnit.CELSIUS);
-        assertEquals("23 °C", "23 °C", fmtFr.format(measure));
+        assertEquals("23\u202F°C", "23\u202F°C", fmtFr.format(measure));
         Measure measureF = new Measure(70, MeasureUnit.FAHRENHEIT);
-        assertEquals("70 °F", "70 °F", fmtFr.format(measureF));
+        assertEquals("70\u202F°F", "70\u202F°F", fmtFr.format(measureF));
         MeasureFormat fmtFrFull = MeasureFormat.getInstance(
                 ULocale.FRENCH, FormatWidth.WIDE);
         assertEquals(
-                "70 pied et 5,3 pouces",
-                "70 pieds et 5,3 pouces",
+                "70 pied et 5,3 pouces",
+                "70 pieds et 5,3 pouces",
                 fmtFrFull.formatMeasures(
                         new Measure(70, MeasureUnit.FOOT),
                         new Measure(5.3, MeasureUnit.INCH)));
         assertEquals(
-                "1 pied et 1 pouce",
-                "1 pied et 1 pouce",
+                "1\u00A0pied et 1\u00A0pouce",
+                "1\u00A0pied et 1\u00A0pouce",
                 fmtFrFull.formatMeasures(
                         new Measure(1, MeasureUnit.FOOT),
                         new Measure(1, MeasureUnit.INCH)));
@@ -1163,6 +2628,30 @@ public class MeasureUnitTest extends TestFmwk {
                 {_0h_0m_17s, "0:00:17"},
                 {_6h_56_92m, "6:56,92"},
                 {_3h_5h, "3 Std., 5 Std."}};
+        Object[][] numericDataBn = {
+                {_1m_59_9996s, "১:৫৯.৯৯৯৬"},
+                {_19m, "১৯ মিঃ"},
+                {_1h_23_5s, "১:০০:২৩.৫"},
+                {_1h_0m_23s, "১:০০:২৩"},
+                {_1h_23_5m, "১:২৩.৫"},
+                {_5h_17m, "৫:১৭"},
+                {_19m_28s, "১৯:২৮"},
+                {_2y_5M_3w_4d, "২ বছর, ৫ মাস, ৩ সপ্তাহ, ৪ দিন"},
+                {_0h_0m_17s, "০:০০:১৭"},
+                {_6h_56_92m, "৬:৫৬.৯২"},
+                {_3h_5h, "৩ ঘঃ, ৫ ঘঃ"}};
+        Object[][] numericDataBnLatn = {
+                {_1m_59_9996s, "1:59.9996"},
+                {_19m, "19 মিঃ"},
+                {_1h_23_5s, "1:00:23.5"},
+                {_1h_0m_23s, "1:00:23"},
+                {_1h_23_5m, "1:23.5"},
+                {_5h_17m, "5:17"},
+                {_19m_28s, "19:28"},
+                {_2y_5M_3w_4d, "2 বছর, 5 মাস, 3 সপ্তাহ, 4 দিন"},
+                {_0h_0m_17s, "0:00:17"},
+                {_6h_56_92m, "6:56.92"},
+                {_3h_5h, "3 ঘঃ, 5 ঘঃ"}};
 
         NumberFormat nf = NumberFormat.getNumberInstance(ULocale.ENGLISH);
         nf.setMaximumFractionDigits(4);
@@ -1190,6 +2679,17 @@ public class MeasureUnitTest extends TestFmwk {
         mf = MeasureFormat.getInstance(Locale.GERMAN, FormatWidth.NUMERIC, nf);
         verifyFormatPeriod("de NUMERIC(Java Locale)", mf, numericDataDe);
 
+        ULocale bengali = ULocale.forLanguageTag("bn");
+        nf = NumberFormat.getNumberInstance(bengali);
+        nf.setMaximumFractionDigits(4);
+        mf = MeasureFormat.getInstance(bengali, FormatWidth.NUMERIC, nf);
+        verifyFormatPeriod("bn NUMERIC(Java Locale)", mf, numericDataBn);
+
+        bengali = ULocale.forLanguageTag("bn-u-nu-latn");
+        nf = NumberFormat.getNumberInstance(bengali);
+        nf.setMaximumFractionDigits(4);
+        mf = MeasureFormat.getInstance(bengali, FormatWidth.NUMERIC, nf);
+        verifyFormatPeriod("bn NUMERIC(Java Locale)", mf, numericDataBnLatn);
     }
 
     private void verifyFormatPeriod(String desc, MeasureFormat mf, Object[][] testData) {
@@ -1251,8 +2751,8 @@ public class MeasureUnitTest extends TestFmwk {
                 "1 έτος",
                 // "el_GR" 1 short
                 "1 δευτ.",
-                "1 λεπ.",
-                "1 ώρα",
+                "1 λ.",
+                "1 ώ.",
                 "1 ημέρα",
                 "1 εβδ.",
                 "1 μήν.",
@@ -1267,8 +2767,8 @@ public class MeasureUnitTest extends TestFmwk {
                 "7 έτη",
                 // "el_GR" 7 short
                 "7 δευτ.",
-                "7 λεπ.",
-                "7 ώρ.",		    // hour (other)
+                "7 λ.",
+                "7 ώ.",		       // hour (other)
                 "7 ημέρες",
                 "7 εβδ.",
                 "7 μήν.",
@@ -1283,8 +2783,8 @@ public class MeasureUnitTest extends TestFmwk {
                 "1 έτος",
                 // "el" 1 short
                 "1 δευτ.",
-                "1 λεπ.",
-                "1 ώρα",
+                "1 λ.",
+                "1 ώ.",
                 "1 ημέρα",
                 "1 εβδ.",
                 "1 μήν.",
@@ -1299,8 +2799,8 @@ public class MeasureUnitTest extends TestFmwk {
                 "7 έτη",
                 // "el" 7 short
                 "7 δευτ.",
-                "7 λεπ.",
-                "7 ώρ.",		    // hour (other)
+                "7 λ.",
+                "7 ώ.",		        // hour (other)
                 "7 ημέρες",
                 "7 εβδ.",
                 "7 μήν.",
@@ -1340,6 +2840,15 @@ public class MeasureUnitTest extends TestFmwk {
             MeasureUnit actual = MeasureUnit.internalGetInstance(type, code);
             assertSame("Identity check", expected, actual);
         }
+
+        // The return value should contain only unique elements
+        assertUnique(MeasureUnit.getAvailable());
+    }
+
+    static void assertUnique(Collection<?> coll) {
+        int expectedSize = new HashSet<>(coll).size();
+        int actualSize = coll.size();
+        assertEquals("Collection should contain only unique elements", expectedSize, actualSize);
     }
 
     @Test
@@ -1369,10 +2878,10 @@ public class MeasureUnitTest extends TestFmwk {
                 {ULocale.ENGLISH, FormatWidth.WIDE, "2 miles, 1 foot, 2.3 inches"},
                 {ULocale.ENGLISH, FormatWidth.SHORT, "2 mi, 1 ft, 2.3 in"},
                 {ULocale.ENGLISH, FormatWidth.NARROW, "2mi 1\u2032 2.3\u2033"},
-                {russia, FormatWidth.WIDE,   "2 \u043C\u0438\u043B\u0438 1 \u0444\u0443\u0442 \u0438 2,3 \u0434\u044E\u0439\u043C\u0430"},
-                {russia, FormatWidth.SHORT,  "2 \u043C\u0438\u043B\u0438 1 \u0444\u0443\u0442 \u0438 2,3 \u0434\u044E\u0439\u043C."},
-                {russia, FormatWidth.NARROW, "2 \u043C\u0438\u043B\u044C 1 \u0444\u0443\u0442 2,3 \u0434\u044E\u0439\u043C\u0430"},
-        };
+                {russia, FormatWidth.WIDE,   "2 \u043C\u0438\u043B\u0438 1 \u0444\u0443\u0442 2,3 \u0434\u044E\u0439\u043C\u0430"},
+                {russia, FormatWidth.SHORT,  "2 \u043C\u0438 1 \u0444\u0442 2,3 \u0434\u044E\u0439\u043C."},
+                {russia, FormatWidth.NARROW, "2 \u043C\u0438 1 \u0444\u0442 2,3 \u0434\u044E\u0439\u043C."},
+   };
         for (Object[] row : data) {
             MeasureFormat mf = MeasureFormat.getInstance(
                     (ULocale) row[0], (FormatWidth) row[1]);
@@ -1399,7 +2908,7 @@ public class MeasureUnitTest extends TestFmwk {
         ULocale ulocDutch        = new ULocale("nl");
         ULocale ulocSwedish      = new ULocale("sv");
         Object[][] data = new Object[][] {
-            { ulocDanish,       FormatWidth.NARROW,  "5 t og 37 min" },
+            { ulocDanish,       FormatWidth.NARROW,  "5 t og 37 m" },
             { ulocDanish,       FormatWidth.NUMERIC, "5.37" },
             { ULocale.GERMAN,   FormatWidth.NARROW,  "5 Std., 37 Min." },
             { ULocale.GERMAN,   FormatWidth.NUMERIC, "5:37" },
@@ -1409,8 +2918,8 @@ public class MeasureUnitTest extends TestFmwk {
             { ulocSpanish,      FormatWidth.NUMERIC, "5:37" },
             { ulocFinnish,      FormatWidth.NARROW,  "5t 37min" },
             { ulocFinnish,      FormatWidth.NUMERIC, "5.37" },
-            { ULocale.FRENCH,   FormatWidth.NARROW,  "5h 37m" },
-            { ULocale.FRENCH,   FormatWidth.NUMERIC, "05:37" },
+            { ULocale.FRENCH,   FormatWidth.NARROW,  "5h 37min" },
+            { ULocale.FRENCH,   FormatWidth.NUMERIC, "5:37" },
             { ulocIcelandic,    FormatWidth.NARROW,  "5 klst. og 37 m\u00EDn." },
             { ulocIcelandic,    FormatWidth.NUMERIC, "5:37" },
             { ULocale.JAPANESE, FormatWidth.NARROW,  "5h37m" },
@@ -1419,7 +2928,7 @@ public class MeasureUnitTest extends TestFmwk {
             { ulocNorwegianBok, FormatWidth.NUMERIC, "5:37" },
             { ulocDutch,        FormatWidth.NARROW,  "5 u, 37 m" },
             { ulocDutch,        FormatWidth.NUMERIC, "5:37" },
-            { ulocNorwegianNyn, FormatWidth.NARROW,  "5 h og 37 min" },
+            { ulocNorwegianNyn, FormatWidth.NARROW,  "5t 37m" },
             { ulocNorwegianNyn, FormatWidth.NUMERIC, "5:37" },
             { ulocSwedish,      FormatWidth.NARROW,  "5h 37m" },
             { ulocSwedish,      FormatWidth.NUMERIC, "5:37" },
@@ -1545,9 +3054,9 @@ public class MeasureUnitTest extends TestFmwk {
         assertEquals("Wide currency", "1.00 US dollars", mf.format(USD_1));
         assertEquals("Wide currency", "2.00 US dollars", mf.format(USD_2));
         mf = MeasureFormat.getInstance(ULocale.ENGLISH, FormatWidth.SHORT);
-        assertEquals("short currency", "-USD1.00", mf.format(USD_NEG_1));
-        assertEquals("short currency", "USD1.00", mf.format(USD_1));
-        assertEquals("short currency", "USD2.00", mf.format(USD_2));
+        assertEquals("short currency", "-USD 1.00", mf.format(USD_NEG_1));
+        assertEquals("short currency", "USD 1.00", mf.format(USD_1));
+        assertEquals("short currency", "USD 2.00", mf.format(USD_2));
         mf = MeasureFormat.getInstance(ULocale.ENGLISH, FormatWidth.NARROW);
         assertEquals("narrow currency", "-$1.00", mf.format(USD_NEG_1));
         assertEquals("narrow currency", "$1.00", mf.format(USD_1));
@@ -1558,13 +3067,15 @@ public class MeasureUnitTest extends TestFmwk {
         assertEquals("numeric currency", "$2.00", mf.format(USD_2));
 
         mf = MeasureFormat.getInstance(ULocale.JAPAN, FormatWidth.WIDE);
+        // Locale jp does NOT put a space between the number and the currency long name:
+        // https://unicode.org/cldr/trac/browser/tags/release-32-0-1/common/main/ja.xml?rev=13805#L7046
         assertEquals("Wide currency", "-1.00\u7C73\u30C9\u30EB", mf.format(USD_NEG_1));
         assertEquals("Wide currency", "1.00\u7C73\u30C9\u30EB", mf.format(USD_1));
         assertEquals("Wide currency", "2.00\u7C73\u30C9\u30EB", mf.format(USD_2));
 
         Measure CAD_1 = new Measure(1.0, Currency.getInstance("CAD"));
         mf = MeasureFormat.getInstance(ULocale.CANADA, FormatWidth.SHORT);
-        assertEquals("short currency", "CAD1.00", mf.format(CAD_1));
+        assertEquals("short currency", "CAD 1.00", mf.format(CAD_1));
     }
 
     @Test
@@ -1589,8 +3100,8 @@ public class MeasureUnitTest extends TestFmwk {
             { MeasureUnit.SECOND, "pt-PT", FormatWidth.NARROW, "s" },
             { MeasureUnit.SECOND, "pt-PT", FormatWidth.SHORT, "s" },
             { MeasureUnit.SECOND, "pt-PT", FormatWidth.WIDE, "segundos" },
-            { MeasureUnit.SECOND, "pt", FormatWidth.NARROW, "seg" },
-            { MeasureUnit.SECOND, "pt", FormatWidth.SHORT, "segs" },
+            { MeasureUnit.SECOND, "pt", FormatWidth.NARROW, "s" },
+            { MeasureUnit.SECOND, "pt", FormatWidth.SHORT, "s" },
             { MeasureUnit.SECOND, "pt", FormatWidth.WIDE, "segundos" },
         };
 
@@ -1685,14 +3196,14 @@ public class MeasureUnitTest extends TestFmwk {
 
     @Test
     public void testOldFormatWithList() {
-        List<Measure> measures = new ArrayList<Measure>(2);
+        List<Measure> measures = new ArrayList<>(2);
         measures.add(new Measure(5, MeasureUnit.ACRE));
         measures.add(new Measure(3000, MeasureUnit.SQUARE_FOOT));
         MeasureFormat fmt = MeasureFormat.getInstance(
                 ULocale.ENGLISH, FormatWidth.WIDE);
         assertEquals("", "5 acres, 3,000 square feet", fmt.format(measures));
         assertEquals("", "5 acres", fmt.format(measures.subList(0, 1)));
-        List<String> badList = new ArrayList<String>();
+        List<String> badList = new ArrayList<>();
         badList.add("be");
         badList.add("you");
         try {
@@ -1734,7 +3245,7 @@ public class MeasureUnitTest extends TestFmwk {
         // This fails unless we resolve to MeasureUnit.POUND_PER_SQUARE_INCH
         assertEquals("", "50 psi",
                 fmt.formatMeasurePerUnit(
-                        new Measure(50, MeasureUnit.POUND),
+                        new Measure(50, MeasureUnit.POUND_FORCE),
                         MeasureUnit.SQUARE_INCH,
                         new StringBuilder(),
                         new FieldPosition(0)).toString());
@@ -1806,6 +3317,15 @@ public class MeasureUnitTest extends TestFmwk {
     }
 
     @Test
+    public void testCurrencyFormatParseIsoCode() throws ParseException {
+        MeasureFormat mf = MeasureFormat.getCurrencyFormat(ULocale.ENGLISH);
+        CurrencyAmount result = (CurrencyAmount) mf.parseObject("GTQ 34.56");
+        assertEquals("Parse should succeed", result.getNumber().doubleValue(), 34.56, 0.0);
+        assertEquals("Should parse ISO code GTQ even though the currency is USD",
+                "GTQ", result.getCurrency().getCurrencyCode());
+    }
+
+    @Test
     public void testDoubleZero() {
         ULocale en = new ULocale("en");
         NumberFormat nf = NumberFormat.getInstance(en);
@@ -1858,7 +3378,7 @@ public class MeasureUnitTest extends TestFmwk {
 
     @Test
     public void testCLDRUnitAvailability() {
-        Set<MeasureUnit> knownUnits = new HashSet<MeasureUnit>();
+        Set<MeasureUnit> knownUnits = new HashSet<>();
         Class cMeasureUnit, cTimeUnit;
         try {
             cMeasureUnit = Class.forName("android.icu.util.MeasureUnit");
@@ -1882,7 +3402,10 @@ public class MeasureUnitTest extends TestFmwk {
             }
         }
         for (String type : MeasureUnit.getAvailableTypes()) {
-            if (type.equals("currency") || type.equals("compound")) {
+            if (type.equals("currency")
+                    || type.equals("compound")
+                    || type.equals("coordinate")
+                    || type.equals("none")) {
                 continue;
             }
             for (MeasureUnit unit : MeasureUnit.getAvailable(type)) {
@@ -1893,13 +3416,48 @@ public class MeasureUnitTest extends TestFmwk {
         }
     }
 
+    @Test
+    public void testBug11966() {
+        Locale locale = new Locale("en", "AU");
+        MeasureFormat.getInstance(locale, MeasureFormat.FormatWidth.WIDE);
+        // Should not throw an exception.
+    }
+
+    @Test
+    public void test20332_PersonUnits() {
+        Object[][] cases = new Object[][] {
+            {ULocale.US, MeasureUnit.YEAR_PERSON, MeasureFormat.FormatWidth.NARROW, "25y"},
+            {ULocale.US, MeasureUnit.YEAR_PERSON, MeasureFormat.FormatWidth.SHORT, "25 yrs"},
+            {ULocale.US, MeasureUnit.YEAR_PERSON, MeasureFormat.FormatWidth.WIDE, "25 years"},
+            {ULocale.US, MeasureUnit.MONTH_PERSON, MeasureFormat.FormatWidth.NARROW, "25m"},
+            {ULocale.US, MeasureUnit.MONTH_PERSON, MeasureFormat.FormatWidth.SHORT, "25 mths"},
+            {ULocale.US, MeasureUnit.MONTH_PERSON, MeasureFormat.FormatWidth.WIDE, "25 months"},
+            {ULocale.US, MeasureUnit.WEEK_PERSON, MeasureFormat.FormatWidth.NARROW, "25w"},
+            {ULocale.US, MeasureUnit.WEEK_PERSON, MeasureFormat.FormatWidth.SHORT, "25 wks"},
+            {ULocale.US, MeasureUnit.WEEK_PERSON, MeasureFormat.FormatWidth.WIDE, "25 weeks"},
+            {ULocale.US, MeasureUnit.DAY_PERSON, MeasureFormat.FormatWidth.NARROW, "25d"},
+            {ULocale.US, MeasureUnit.DAY_PERSON, MeasureFormat.FormatWidth.SHORT, "25 days"},
+            {ULocale.US, MeasureUnit.DAY_PERSON, MeasureFormat.FormatWidth.WIDE, "25 days"}
+        };
+        for (Object[] cas : cases) {
+            ULocale locale = (ULocale) cas[0];
+            MeasureUnit unit = (MeasureUnit) cas[1];
+            MeasureFormat.FormatWidth width = (MeasureFormat.FormatWidth) cas[2];
+            String expected = (String) cas[3];
+
+            MeasureFormat fmt = MeasureFormat.getInstance(locale, width);
+            String result = fmt.formatMeasures(new Measure(25, unit));
+            assertEquals("" + locale + " " + unit + " " + width, expected, result);
+        }
+    }
+
     // DO NOT DELETE THIS FUNCTION! It may appear as dead code, but we use this to generate code
     // for MeasureFormat during the release process.
     static Map<MeasureUnit, Pair<MeasureUnit, MeasureUnit>> getUnitsToPerParts() {
         TreeMap<String, List<MeasureUnit>> allUnits = getAllUnits();
         Map<MeasureUnit, Pair<String, String>> unitsToPerStrings =
-                new HashMap<MeasureUnit, Pair<String, String>>();
-        Map<String, MeasureUnit> namesToUnits = new HashMap<String, MeasureUnit>();
+                new HashMap<>();
+        Map<String, MeasureUnit> namesToUnits = new HashMap<>();
         for (Map.Entry<String, List<MeasureUnit>> entry : allUnits.entrySet()) {
             String type = entry.getKey();
             // Currency types are always atomic units, so we can skip these
@@ -1917,7 +3475,7 @@ public class MeasureUnitTest extends TestFmwk {
             }
         }
         Map<MeasureUnit, Pair<MeasureUnit, MeasureUnit>> unitsToPerUnits =
-                new HashMap<MeasureUnit, Pair<MeasureUnit, MeasureUnit>>();
+                new HashMap<>();
         for (Map.Entry<MeasureUnit, Pair<String, String>> entry : unitsToPerStrings.entrySet()) {
             Pair<String, String> perStrings = entry.getValue();
             MeasureUnit unit = namesToUnits.get(perStrings.first);
@@ -1932,7 +3490,8 @@ public class MeasureUnitTest extends TestFmwk {
     // DO NOT DELETE THIS FUNCTION! It may appear as dead code, but we use this to generate code
     // for MeasureFormat during the release process.
     static void generateCXXHConstants(String thisVersion) {
-        Map<String, MeasureUnit> seen = new HashMap<String, MeasureUnit>();
+        Map<String, MeasureUnit> seen = new HashMap<>();
+        System.out.println("// Start generated createXXX methods");
         System.out.println();
         TreeMap<String, List<MeasureUnit>> allUnits = getAllUnits();
         for (Map.Entry<String, List<MeasureUnit>> entry : allUnits.entrySet()) {
@@ -1949,8 +3508,9 @@ public class MeasureUnitTest extends TestFmwk {
                     System.out.println("#ifndef U_HIDE_DRAFT_API");
                 }
                 System.out.println("    /**");
-                System.out.println("     * Returns unit of " + type + ": " + code + ".");
+                System.out.println("     * Returns by pointer, unit of " + type + ": " + code + ".");
                 System.out.println("     * Caller owns returned value and must free it.");
+                System.out.printf("     * Also see {@link #get%s()}.\n", name);
                 System.out.println("     * @param status ICU error code.");
                 if (isDraft(javaName)) {
                     System.out.println("     * @draft ICU " + getVersion(javaName, thisVersion));
@@ -1958,12 +3518,29 @@ public class MeasureUnitTest extends TestFmwk {
                     System.out.println("     * @stable ICU " + getVersion(javaName, thisVersion));
                 }
                 System.out.println("     */");
-                System.out.printf("    static MeasureUnit *create%s(UErrorCode &status);\n\n", name);
+                System.out.printf("    static MeasureUnit *create%s(UErrorCode &status);\n", name);
+                System.out.println();
+                System.out.println("    /**");
+                System.out.println("     * Returns by value, unit of " + type + ": " + code + ".");
+                System.out.printf("     * Also see {@link #create%s()}.\n", name);
+                String getterVersion = getVersion(javaName, thisVersion);
+                if (Integer.valueOf(getterVersion) < 64) {
+                    getterVersion = "64";
+                }
+                if (isDraft(javaName)) {
+                    System.out.println("     * @draft ICU " + getterVersion);
+                } else {
+                    System.out.println("     * @stable ICU " + getterVersion);
+                }
+                System.out.println("     */");
+                System.out.printf("    static MeasureUnit get%s();\n", name);
                 if (isDraft(javaName)) {
                     System.out.println("#endif /* U_HIDE_DRAFT_API */");
                 }
+                System.out.println("");
             }
         }
+        System.out.println("// End generated createXXX methods");
     }
 
     private static void checkForDup(
@@ -1979,7 +3556,7 @@ public class MeasureUnitTest extends TestFmwk {
     // for MeasureFormat during the release process.
     static void updateJAVAVersions(String thisVersion) {
         System.out.println();
-        Map<String, MeasureUnit> seen = new HashMap<String, MeasureUnit>();
+        Map<String, MeasureUnit> seen = new HashMap<>();
         TreeMap<String, List<MeasureUnit>> allUnits = getAllUnits();
         for (Map.Entry<String, List<MeasureUnit>> entry : allUnits.entrySet()) {
             String type = entry.getKey();
@@ -1997,9 +3574,9 @@ public class MeasureUnitTest extends TestFmwk {
     }
 
     static TreeMap<String, List<MeasureUnit>> getAllUnits() {
-        TreeMap<String, List<MeasureUnit>> allUnits = new TreeMap<String, List<MeasureUnit>>();
+        TreeMap<String, List<MeasureUnit>> allUnits = new TreeMap<>();
         for (String type : MeasureUnit.getAvailableTypes()) {
-            ArrayList<MeasureUnit> units = new ArrayList<MeasureUnit>(MeasureUnit.getAvailable(type));
+            ArrayList<MeasureUnit> units = new ArrayList<>(MeasureUnit.getAvailable(type));
             Collections.sort(
                     units,
                     new Comparator<MeasureUnit>() {
@@ -2018,28 +3595,34 @@ public class MeasureUnitTest extends TestFmwk {
     // DO NOT DELETE THIS FUNCTION! It may appear as dead code, but we use this to generate code
     // for MeasureFormat during the release process.
     static void generateCXXConstants() {
+        System.out.println("// Start generated code for measunit.cpp");
         System.out.println("");
         TreeMap<String, List<MeasureUnit>> allUnits = getAllUnits();
 
+        // Hack: for C++, add base unit here, but ignore them when printing the create methods.
+        // Also keep track of the base unit offset to make the C++ default constructor faster.
+        allUnits.put("none", Arrays.asList(new MeasureUnit[] {NoUnit.BASE}));
+        int baseTypeIdx = -1;
+        int baseSubTypeIdx = -1;
+
+        System.out.println("// Maps from Type ID to offset in gSubTypes.");
         System.out.println("static const int32_t gOffsets[] = {");
         int index = 0;
+        int typeCount = 0;
+        int currencyIndex = -1;
         for (Map.Entry<String, List<MeasureUnit>> entry : allUnits.entrySet()) {
             System.out.printf("    %d,\n", index);
+            if (entry.getKey() == "currency") {
+                currencyIndex = typeCount;
+            }
+            typeCount++;
             index += entry.getValue().size();
         }
+        assertTrue("currency present", currencyIndex >= 0);
         System.out.printf("    %d\n", index);
         System.out.println("};");
         System.out.println();
-        System.out.println("static const int32_t gIndexes[] = {");
-        index = 0;
-        for (Map.Entry<String, List<MeasureUnit>> entry : allUnits.entrySet()) {
-            System.out.printf("    %d,\n", index);
-            if (!entry.getKey().equals("currency")) {
-                index += entry.getValue().size();
-            }
-        }
-        System.out.printf("    %d\n", index);
-        System.out.println("};");
+        System.out.println("static const int32_t kCurrencyOffset = " + currencyIndex + ";");
         System.out.println();
         System.out.println("// Must be sorted alphabetically.");
         System.out.println("static const char * const gTypes[] = {");
@@ -2059,19 +3642,28 @@ public class MeasureUnitTest extends TestFmwk {
         first = true;
         int offset = 0;
         int typeIdx = 0;
-        Map<MeasureUnit, Integer> measureUnitToOffset = new HashMap<MeasureUnit, Integer>();
+        Map<MeasureUnit, Integer> measureUnitToOffset = new HashMap<>();
         Map<MeasureUnit, Pair<Integer, Integer>> measureUnitToTypeSubType =
-                new HashMap<MeasureUnit, Pair<Integer, Integer>>();
+                new HashMap<>();
         for (Map.Entry<String, List<MeasureUnit>> entry : allUnits.entrySet()) {
             int subTypeIdx = 0;
             for (MeasureUnit unit : entry.getValue()) {
                 if (!first) {
                     System.out.println(",");
                 }
-                System.out.print("    \"" + unit.getSubtype() + "\"");
+                if (unit != null) {
+                    System.out.print("    \"" + unit.getSubtype() + "\"");
+                } else {
+                    assertEquals("unit only null for \"none\" type", "none", entry.getKey());
+                    System.out.print("    \"\"");
+                }
                 first = false;
                 measureUnitToOffset.put(unit, offset);
                 measureUnitToTypeSubType.put(unit, Pair.of(typeIdx, subTypeIdx));
+                if (unit == NoUnit.BASE) {
+                    baseTypeIdx = typeIdx;
+                    baseSubTypeIdx = subTypeIdx;
+                }
                 offset++;
                 subTypeIdx++;
             }
@@ -2084,7 +3676,7 @@ public class MeasureUnitTest extends TestFmwk {
         // Build unit per unit offsets to corresponding type sub types sorted by
         // unit first and then per unit.
         TreeMap<OrderedPair<Integer, Integer>, Pair<Integer, Integer>> unitPerUnitOffsetsToTypeSubType
-                = new TreeMap<OrderedPair<Integer, Integer>, Pair<Integer, Integer>>();
+                = new TreeMap<>();
         for (Map.Entry<MeasureUnit, Pair<MeasureUnit, MeasureUnit>> entry
                 : getUnitsToPerParts().entrySet()) {
             Pair<MeasureUnit, MeasureUnit> unitPerUnit = entry.getValue();
@@ -2095,32 +3687,17 @@ public class MeasureUnitTest extends TestFmwk {
                     measureUnitToTypeSubType.get(entry.getKey()));
         }
 
-        System.out.println("// Must be sorted by first value and then second value.");
-        System.out.println("static int32_t unitPerUnitToSingleUnit[][4] = {");
-        first = true;
-        for (Map.Entry<OrderedPair<Integer, Integer>, Pair<Integer, Integer>> entry
-                : unitPerUnitOffsetsToTypeSubType.entrySet()) {
-            if (!first) {
-                System.out.println(",");
-            }
-            first = false;
-            OrderedPair<Integer, Integer> unitPerUnitOffsets = entry.getKey();
-            Pair<Integer, Integer> typeSubType = entry.getValue();
-            System.out.printf("        {%d, %d, %d, %d}",
-                    unitPerUnitOffsets.first,
-                    unitPerUnitOffsets.second,
-                    typeSubType.first,
-                    typeSubType.second);
-        }
-        System.out.println();
-        System.out.println("};");
+        // Print out the fast-path for the default constructor
+        System.out.println("// Shortcuts to the base unit in order to make the default constructor fast");
+        System.out.println("static const int32_t kBaseTypeIdx = " + baseTypeIdx + ";");
+        System.out.println("static const int32_t kBaseSubTypeIdx = " + baseSubTypeIdx + ";");
         System.out.println();
 
-        Map<String, MeasureUnit> seen = new HashMap<String, MeasureUnit>();
+        Map<String, MeasureUnit> seen = new HashMap<>();
         for (Map.Entry<String, List<MeasureUnit>> entry : allUnits.entrySet()) {
 
             String type = entry.getKey();
-            if (type.equals("currency")) {
+            if (type.equals("currency") || type.equals("none")) {
                 continue;
             }
             for (MeasureUnit unit : entry.getValue()) {
@@ -2135,19 +3712,34 @@ public class MeasureUnitTest extends TestFmwk {
                         typeSubType.first, typeSubType.second);
                 System.out.println("}");
                 System.out.println();
+                System.out.printf("MeasureUnit MeasureUnit::get%s() {\n", name);
+                System.out.printf("    return MeasureUnit(%d, %d);\n",
+                        typeSubType.first, typeSubType.second);
+                System.out.println("}");
+                System.out.println();
             }
         }
+        System.out.println("// End generated code for measunit.cpp");
     }
 
     private static String toCamelCase(MeasureUnit unit) {
         StringBuilder result = new StringBuilder();
         boolean caps = true;
         String code = unit.getSubtype();
+
+        String replacement = CLDR_NAME_REMAP.get(code);
+        if (replacement != null) {
+            code = replacement;
+        }
+
         int len = code.length();
         for (int i = 0; i < len; i++) {
             char ch = code.charAt(i);
             if (ch == '-') {
                 caps = true;
+            } else if (Character.isDigit(ch)) {
+                caps = true;
+                result.append(ch);
             } else if (caps) {
                 result.append(Character.toUpperCase(ch));
                 caps = false;
@@ -2165,7 +3757,7 @@ public class MeasureUnitTest extends TestFmwk {
     // DO NOT DELETE THIS FUNCTION! It may appear as dead code, but we use this to generate code
     // for MeasureFormat during the release process.
     static void generateBackwardCompatibilityTest(String version) {
-        Map<String, MeasureUnit> seen = new HashMap<String, MeasureUnit>();
+        Map<String, MeasureUnit> seen = new HashMap<>();
         System.out.println();
         System.out.printf("    public void TestCompatible%s() {\n", version.replace(".", "_"));
         System.out.println("        MeasureUnit[] units = {");
@@ -2191,10 +3783,11 @@ public class MeasureUnitTest extends TestFmwk {
     // for MeasureFormat during the release process.
     static void generateCXXBackwardCompatibilityTest(String version) {
         System.out.println();
-        Map<String, MeasureUnit> seen = new HashMap<String, MeasureUnit>();
+        Map<String, MeasureUnit> seen = new HashMap<>();
         System.out.printf("void MeasureFormatTest::TestCompatible%s() {\n", version.replace(".", "_"));
         System.out.println("    UErrorCode status = U_ZERO_ERROR;");
         System.out.println("    LocalPointer<MeasureUnit> measureUnit;");
+        System.out.println("    MeasureUnit measureUnitValue;");
         TreeMap<String, List<MeasureUnit>> allUnits = getAllUnits();
         for (Map.Entry<String, List<MeasureUnit>> entry : allUnits.entrySet()) {
             if (isTypeHidden(entry.getKey())) {
@@ -2204,6 +3797,7 @@ public class MeasureUnitTest extends TestFmwk {
                 String camelCase = toCamelCase(unit);
                 checkForDup(seen, camelCase, unit);
                 System.out.printf("    measureUnit.adoptInstead(MeasureUnit::create%s(status));\n", camelCase);
+                System.out.printf("    measureUnitValue = MeasureUnit::get%s();\n", camelCase);
             }
         }
         System.out.println("    assertSuccess(\"\", status);");
@@ -2213,6 +3807,12 @@ public class MeasureUnitTest extends TestFmwk {
     static String toJAVAName(MeasureUnit unit) {
         String code = unit.getSubtype();
         String type = unit.getType();
+
+        String replacement = CLDR_NAME_REMAP.get(code);
+         if (replacement != null) {
+            code = replacement;
+        }
+
         String name = code.toUpperCase(Locale.ENGLISH).replace("-", "_");
         if (type.equals("angle")) {
             if (code.equals("minute") || code.equals("second")) {
@@ -2225,8 +3825,9 @@ public class MeasureUnitTest extends TestFmwk {
     // DO NOT DELETE THIS FUNCTION! It may appear as dead code, but we use this to generate code
     // for MeasureFormat during the release process.
     static void generateConstants(String thisVersion) {
+        System.out.println("    // Start generated MeasureUnit constants");
         System.out.println();
-        Map<String, MeasureUnit> seen = new HashMap<String, MeasureUnit>();
+        Map<String, MeasureUnit> seen = new HashMap<>();
         TreeMap<String, List<MeasureUnit>> allUnits = getAllUnits();
         for (Map.Entry<String, List<MeasureUnit>> entry : allUnits.entrySet()) {
             String type = entry.getKey();
@@ -2247,11 +3848,10 @@ public class MeasureUnitTest extends TestFmwk {
                 }
                 else if (isDraft(name)) {
                     System.out.println("     * @draft ICU " + getVersion(name, thisVersion));
-                    System.out.println("     * @provisional This API might change or be removed in a future release.");
                 } else {
                     System.out.println("     * @stable ICU " + getVersion(name, thisVersion));
                 }
-                System.out.println("    */");
+                System.out.println("     */");
                 if ("duration".equals(type) && TIME_CODES.contains(code)) {
                     System.out.println("    public static final TimeUnit " + name + " = (TimeUnit) MeasureUnit.internalGetInstance(\"" +
                             type +
@@ -2268,16 +3868,7 @@ public class MeasureUnitTest extends TestFmwk {
                 System.out.println();
             }
         }
-        System.out.println("    private static HashMap<Pair<MeasureUnit, MeasureUnit>, MeasureUnit>unitPerUnitToSingleUnit =");
-        System.out.println("            new HashMap<Pair<MeasureUnit, MeasureUnit>, MeasureUnit>();");
-        System.out.println();
-        System.out.println("    static {");
-        for (Map.Entry<MeasureUnit, Pair<MeasureUnit, MeasureUnit>> unitPerUnitEntry
-                : getUnitsToPerParts().entrySet()) {
-            Pair<MeasureUnit, MeasureUnit> unitPerUnit = unitPerUnitEntry.getValue();
-            System.out.println("        unitPerUnitToSingleUnit.put(Pair.<MeasureUnit, MeasureUnit>of(MeasureUnit." + toJAVAName(unitPerUnit.first) + ", MeasureUnit." + toJAVAName(unitPerUnit.second) + "), MeasureUnit." + toJAVAName(unitPerUnitEntry.getKey()) + ");");
-        }
-        System.out.println("    }");
+        System.out.println("    // End generated MeasureUnit constants");
     }
 
     private static String getVersion(String javaName, String thisVersion) {
@@ -2321,7 +3912,7 @@ public class MeasureUnitTest extends TestFmwk {
      * @return
      */
     private String showBytes(byte[] contents) {
-      StringBuilder b = new StringBuilder('[');
+      StringBuilder b = new StringBuilder("[");
       for (int i = 0; i < contents.length; ++i) {
         int item = contents[i] & 0xFF;
         if (item >= 0x20 && item <= 0x7F) {
@@ -2368,6 +3959,8 @@ public class MeasureUnitTest extends TestFmwk {
 
     public static class MeasureFormatHandler  implements SerializableTestUtility.Handler
     {
+        FormatHandler.NumberFormatHandler nfh = new FormatHandler.NumberFormatHandler();
+
         @Override
         public Object[] getTestObjects()
         {
@@ -2385,10 +3978,703 @@ public class MeasureUnitTest extends TestFmwk {
         {
             MeasureFormat a1 = (MeasureFormat) a;
             MeasureFormat b1 = (MeasureFormat) b;
-            return a1.getLocale().equals(b1.getLocale())
-                    && a1.getWidth().equals(b1.getWidth())
-                    && a1.getNumberFormat().equals(b1.getNumberFormat())
-                    ;
+            boolean getLocaleEqual = a1.getLocale().equals(b1.getLocale());
+            boolean getWidthEqual = a1.getWidth().equals(b1.getWidth());
+            boolean numFmtHasSameBehavior = nfh.hasSameBehavior(a1.getNumberFormat(), b1.getNumberFormat());
+            if (getLocaleEqual && getWidthEqual && numFmtHasSameBehavior) {
+                return true;
+            }
+            System.out.println("MeasureFormatHandler.hasSameBehavior fails:");
+            if (!getLocaleEqual) {
+                System.out.println("- getLocale equality fails: old a1: " + a1.getLocale().getName() + "; test b1: " + b1.getLocale().getName());
+            }
+            if (!getWidthEqual) {
+                System.out.println("- getWidth equality fails: old a1: " + a1.getWidth().name() + "; test b1: " + b1.getWidth().name());
+            }
+            if (!numFmtHasSameBehavior) {
+                System.out.println("- getNumberFormat hasSameBehavior fails");
+            }
+            return false;
+        }
+    }
+
+    @Test
+    public void TestNumericTimeNonLatin() {
+        ULocale ulocale = ULocale.forLanguageTag("bn");
+        MeasureFormat fmt = MeasureFormat.getInstance(ulocale, FormatWidth.NUMERIC);
+        String actual = fmt.formatMeasures(new Measure(12, MeasureUnit.MINUTE), new Measure(39.12345, MeasureUnit.SECOND));
+        assertEquals("Incorrect digits", "১২:৩৯.১২৩", actual);
+    }
+
+    @Test
+    public void TestNumericTime() {
+        MeasureFormat fmt = MeasureFormat.getInstance(ULocale.forLanguageTag("en"), FormatWidth.NUMERIC);
+
+        Measure hours = new Measure(112, MeasureUnit.HOUR);
+        Measure minutes = new Measure(113, MeasureUnit.MINUTE);
+        Measure seconds = new Measure(114, MeasureUnit.SECOND);
+        Measure fhours = new Measure(112.8765, MeasureUnit.HOUR);
+        Measure fminutes = new Measure(113.8765, MeasureUnit.MINUTE);
+        Measure fseconds = new Measure(114.8765, MeasureUnit.SECOND);
+
+        Assert.assertEquals("112h", fmt.formatMeasures(hours));
+        Assert.assertEquals("113m", fmt.formatMeasures(minutes));
+        Assert.assertEquals("114s", fmt.formatMeasures(seconds));
+
+        Assert.assertEquals("112.876h", fmt.formatMeasures(fhours));
+        Assert.assertEquals("113.876m", fmt.formatMeasures(fminutes));
+        Assert.assertEquals("114.876s", fmt.formatMeasures(fseconds));
+
+        Assert.assertEquals("112:113", fmt.formatMeasures(hours, minutes));
+        Assert.assertEquals("112:00:114", fmt.formatMeasures(hours, seconds));
+        Assert.assertEquals("113:114", fmt.formatMeasures(minutes, seconds));
+
+        Assert.assertEquals("112:113.876", fmt.formatMeasures(hours, fminutes));
+        Assert.assertEquals("112:00:114.876", fmt.formatMeasures(hours, fseconds));
+        Assert.assertEquals("113:114.876", fmt.formatMeasures(minutes, fseconds));
+
+        Assert.assertEquals("112:113", fmt.formatMeasures(fhours, minutes));
+        Assert.assertEquals("112:00:114", fmt.formatMeasures(fhours, seconds));
+        Assert.assertEquals("113:114", fmt.formatMeasures(fminutes, seconds));
+
+        Assert.assertEquals("112:113.876", fmt.formatMeasures(fhours, fminutes));
+        Assert.assertEquals("112:00:114.876", fmt.formatMeasures(fhours, fseconds));
+        Assert.assertEquals("113:114.876", fmt.formatMeasures(fminutes, fseconds));
+
+        Assert.assertEquals("112:113:114", fmt.formatMeasures(hours, minutes, seconds));
+        Assert.assertEquals("112:113:114.876", fmt.formatMeasures(fhours, fminutes, fseconds));
+    }
+
+    @Test
+    public void TestNumericTimeSomeSpecialFormats() {
+        Measure fhours = new Measure(2.8765432, MeasureUnit.HOUR);
+        Measure fminutes = new Measure(3.8765432, MeasureUnit.MINUTE);
+
+        // Latvian is one of the very few locales 0-padding the hour
+        MeasureFormat fmt = MeasureFormat.getInstance(ULocale.forLanguageTag("lt"), FormatWidth.NUMERIC);
+        Assert.assertEquals("02:03,877", fmt.formatMeasures(fhours, fminutes));
+
+        // Danish is one of the very few locales using '.' as separator
+        fmt = MeasureFormat.getInstance(ULocale.forLanguageTag("da"), FormatWidth.NUMERIC);
+        Assert.assertEquals("2.03,877", fmt.formatMeasures(fhours, fminutes));
+    }
+
+    @Test
+    public void TestIdentifiers() {
+        class TestCase {
+            final String id;
+            final String normalized;
+
+            TestCase(String id, String normalized) {
+                this.id = id;
+                this.normalized = normalized;
+            }
+        }
+
+        TestCase cases[] = {
+            // Correctly normalized identifiers should not change
+            new TestCase("square-meter-per-square-meter", "square-meter-per-square-meter"),
+            new TestCase("kilogram-meter-per-square-meter-square-second",
+                         "kilogram-meter-per-square-meter-square-second"),
+            new TestCase("square-mile-and-square-foot", "square-mile-and-square-foot"),
+            new TestCase("square-foot-and-square-mile", "square-foot-and-square-mile"),
+            new TestCase("per-cubic-centimeter", "per-cubic-centimeter"),
+            new TestCase("per-kilometer", "per-kilometer"),
+
+            // Normalization of power and per
+            new TestCase("pow2-foot-and-pow2-mile", "square-foot-and-square-mile"),
+            new TestCase("gram-square-gram-per-dekagram", "cubic-gram-per-dekagram"),
+            new TestCase("kilogram-per-meter-per-second", "kilogram-per-meter-second"),
+            new TestCase("kilometer-per-second-per-megaparsec", "kilometer-per-megaparsec-second"),
+
+            // Correct order of units, as per unitQuantities in CLDR's units.xml
+            new TestCase("newton-meter", "newton-meter"),
+            new TestCase("meter-newton", "newton-meter"),
+            new TestCase("pound-force-foot", "pound-force-foot"),
+            new TestCase("foot-pound-force", "pound-force-foot"),
+            new TestCase("kilowatt-hour", "kilowatt-hour"),
+            new TestCase("hour-kilowatt", "kilowatt-hour"),
+
+            // Testing prefixes are parsed and produced correctly (ensures no
+            // collisions in the enum values)
+            new TestCase("yoctofoot", "yoctofoot"),
+            new TestCase("zeptofoot", "zeptofoot"),
+            new TestCase("attofoot", "attofoot"),
+            new TestCase("femtofoot", "femtofoot"),
+            new TestCase("picofoot", "picofoot"),
+            new TestCase("nanofoot", "nanofoot"),
+            new TestCase("microfoot", "microfoot"),
+            new TestCase("millifoot", "millifoot"),
+            new TestCase("centifoot", "centifoot"),
+            new TestCase("decifoot", "decifoot"),
+            new TestCase("foot", "foot"),
+            new TestCase("dekafoot", "dekafoot"),
+            new TestCase("hectofoot", "hectofoot"),
+            new TestCase("kilofoot", "kilofoot"),
+            new TestCase("megafoot", "megafoot"),
+            new TestCase("gigafoot", "gigafoot"),
+            new TestCase("terafoot", "terafoot"),
+            new TestCase("petafoot", "petafoot"),
+            new TestCase("exafoot", "exafoot"),
+            new TestCase("zettafoot", "zettafoot"),
+            new TestCase("yottafoot", "yottafoot"),
+            new TestCase("kibibyte", "kibibyte"),
+            new TestCase("mebibyte", "mebibyte"),
+            new TestCase("gibibyte", "gibibyte"),
+            new TestCase("tebibyte", "tebibyte"),
+            new TestCase("pebibyte", "pebibyte"),
+            new TestCase("exbibyte", "exbibyte"),
+            new TestCase("zebibyte", "zebibyte"),
+            new TestCase("yobibyte", "yobibyte"),
+
+            // Testing aliases
+            new TestCase("foodcalorie", "foodcalorie"),
+            new TestCase("dot-per-centimeter", "dot-per-centimeter"),
+            new TestCase("dot-per-inch", "dot-per-inch"),
+            new TestCase("dot", "dot"),
+
+            // Testing sort order of prefixes.
+            new TestCase("megafoot-mebifoot-kibifoot-kilofoot", "mebifoot-megafoot-kibifoot-kilofoot"),
+            new TestCase("per-megafoot-mebifoot-kibifoot-kilofoot", "per-mebifoot-megafoot-kibifoot-kilofoot"),
+            new TestCase("megafoot-mebifoot-kibifoot-kilofoot-per-megafoot-mebifoot-kibifoot-kilofoot", "mebifoot-megafoot-kibifoot-kilofoot-per-mebifoot-megafoot-kibifoot-kilofoot"),
+            new TestCase("microfoot-millifoot-megafoot-mebifoot-kibifoot-kilofoot", "mebifoot-megafoot-kibifoot-kilofoot-millifoot-microfoot"),
+            new TestCase("per-microfoot-millifoot-megafoot-mebifoot-kibifoot-kilofoot", "per-mebifoot-megafoot-kibifoot-kilofoot-millifoot-microfoot"),
+        };
+
+        for (TestCase testCase : cases) {
+            MeasureUnit unit = MeasureUnit.forIdentifier(testCase.id);
+
+            final String actual = unit.getIdentifier();
+            assertEquals(testCase.id, testCase.normalized, actual);
+        }
+
+        assertEquals("for empty identifiers, the MeasureUnit will be null",
+                null, MeasureUnit.forIdentifier(""));
+    }
+
+    @Test
+    public void TestInvalidIdentifiers() {
+        final String inputs[] = {
+                "kilo",
+                "kilokilo",
+                "onekilo",
+                "meterkilo",
+                "meter-kilo",
+                "k",
+                "meter-",
+                "meter+",
+                "-meter",
+                "+meter",
+                "-kilometer",
+                "+kilometer",
+                "-pow2-meter",
+                "+pow2-meter",
+                "p2-meter",
+                "p4-meter",
+                "+",
+                "-",
+                "-mile",
+                "-and-mile",
+                "-per-mile",
+                "one",
+                "one-one",
+                "one-per-mile",
+                "one-per-cubic-centimeter",
+                "square--per-meter",
+                "metersecond", // Must have compound part in between single units
+
+                // Negative powers not supported in mixed units yet. TODO(CLDR-13701).
+                "per-hour-and-hertz",
+                "hertz-and-per-hour",
+
+                // Compound units not supported in mixed units yet. TODO(CLDR-13701).
+                "kilonewton-meter-and-newton-meter",
+        };
+
+        for (String input : inputs) {
+            try {
+                MeasureUnit.forIdentifier(input);
+                Assert.fail("An IllegalArgumentException must be thrown");
+            } catch (IllegalArgumentException e) {
+                continue;
+            }
+        }
+    }
+
+    @Test
+    public void TestIdentifierDetails() {
+        MeasureUnit joule = MeasureUnit.forIdentifier("joule");
+        assertEquals("Initial joule", "joule", joule.getIdentifier());
+
+        // "Invalid prefix" test not needed: in Java we cannot pass a
+        // non-existent enum instance. (In C++ an int can be typecast.)
+
+        MeasureUnit unit = joule.withPrefix(MeasureUnit.MeasurePrefix.HECTO);
+        assertEquals("Joule with hecto prefix", "hectojoule", unit.getIdentifier());
+
+        unit = unit.withPrefix(MeasureUnit.MeasurePrefix.EXBI);
+        assertEquals("Joule with exbi prefix", "exbijoule", unit.getIdentifier());
+    }
+
+    @Test
+    public void TestPrefixes() {
+        class TestCase {
+            final MeasureUnit.MeasurePrefix prefix;
+            final int expectedBase;
+            final int expectedPower;
+
+            TestCase(MeasureUnit.MeasurePrefix prefix, int expectedBase, int expectedPower) {
+                this.prefix = prefix;
+                this.expectedBase = expectedBase;
+                this.expectedPower = expectedPower;
+            }
+        }
+
+        TestCase cases[] = {
+            new TestCase(MeasureUnit.MeasurePrefix.YOCTO, 10, -24),
+            new TestCase(MeasureUnit.MeasurePrefix.ZEPTO, 10, -21),
+            new TestCase(MeasureUnit.MeasurePrefix.ATTO, 10, -18),
+            new TestCase(MeasureUnit.MeasurePrefix.FEMTO, 10, -15),
+            new TestCase(MeasureUnit.MeasurePrefix.PICO, 10, -12),
+            new TestCase(MeasureUnit.MeasurePrefix.NANO, 10, -9),
+            new TestCase(MeasureUnit.MeasurePrefix.MICRO, 10, -6),
+            new TestCase(MeasureUnit.MeasurePrefix.MILLI, 10, -3),
+            new TestCase(MeasureUnit.MeasurePrefix.CENTI, 10, -2),
+            new TestCase(MeasureUnit.MeasurePrefix.DECI, 10, -1),
+            new TestCase(MeasureUnit.MeasurePrefix.ONE, 10, 0),
+            new TestCase(MeasureUnit.MeasurePrefix.DEKA, 10, 1),
+            new TestCase(MeasureUnit.MeasurePrefix.HECTO, 10, 2),
+            new TestCase(MeasureUnit.MeasurePrefix.KILO, 10, 3),
+            new TestCase(MeasureUnit.MeasurePrefix.MEGA, 10, 6),
+            new TestCase(MeasureUnit.MeasurePrefix.GIGA, 10, 9),
+            new TestCase(MeasureUnit.MeasurePrefix.TERA, 10, 12),
+            new TestCase(MeasureUnit.MeasurePrefix.PETA, 10, 15),
+            new TestCase(MeasureUnit.MeasurePrefix.EXA, 10, 18),
+            new TestCase(MeasureUnit.MeasurePrefix.ZETTA, 10, 21),
+            new TestCase(MeasureUnit.MeasurePrefix.YOTTA, 10, 24),
+            new TestCase(MeasureUnit.MeasurePrefix.KIBI, 1024, 1),
+            new TestCase(MeasureUnit.MeasurePrefix.MEBI, 1024, 2),
+            new TestCase(MeasureUnit.MeasurePrefix.GIBI, 1024, 3),
+            new TestCase(MeasureUnit.MeasurePrefix.TEBI, 1024, 4),
+            new TestCase(MeasureUnit.MeasurePrefix.PEBI, 1024, 5),
+            new TestCase(MeasureUnit.MeasurePrefix.EXBI, 1024, 6),
+            new TestCase(MeasureUnit.MeasurePrefix.ZEBI, 1024, 7),
+            new TestCase(MeasureUnit.MeasurePrefix.YOBI, 1024, 8),
+        };
+
+        for (TestCase testCase : cases) {
+            MeasureUnit m = MeasureUnit.AMPERE.withPrefix(testCase.prefix);
+            assertEquals("getPrefixPower()", testCase.expectedPower, m.getPrefix().getPower());
+            assertEquals("getPrefixBase()", testCase.expectedBase, m.getPrefix().getBase());
+        }
+    }
+
+    @Test
+    public void TestParseBuiltIns() {
+        for (MeasureUnit unit : MeasureUnit.getAvailable()) {
+            System.out.println("unit ident: " + unit.getIdentifier() + ", type: " + unit.getType());
+            if (unit.getType() == "currency") {
+                continue;
+            }
+
+            // Prove that all built-in units are parseable, except "generic" temperature:
+            if (unit == MeasureUnit.GENERIC_TEMPERATURE) {
+                try {
+                    MeasureUnit.forIdentifier(unit.getIdentifier());
+                    Assert.fail("GENERIC_TEMPERATURE should not be parseable");
+                } catch (IllegalArgumentException e) {
+                    continue;
+                }
+            } else {
+                MeasureUnit parsed = MeasureUnit.forIdentifier(unit.getIdentifier());
+                assertTrue("parsed MeasureUnit '" + parsed + "'' should equal built-in '" + unit + "'",
+                           unit.equals(parsed));
+            }
+        }
+    }
+
+    @Test
+    public void TestParseToBuiltIn() {
+        class TestCase {
+            final String identifier;
+            MeasureUnit expectedBuiltin;
+
+            TestCase(String identifier, MeasureUnit expectedBuiltin) {
+                this.identifier = identifier;
+                this.expectedBuiltin = expectedBuiltin;
+            }
+        }
+
+        TestCase cases[] = {
+            new TestCase("meter-per-second-per-second", MeasureUnit.METER_PER_SECOND_SQUARED),
+            new TestCase("meter-per-second-second", MeasureUnit.METER_PER_SECOND_SQUARED),
+            new TestCase("centimeter-centimeter", MeasureUnit.SQUARE_CENTIMETER),
+            new TestCase("square-foot", MeasureUnit.SQUARE_FOOT),
+            new TestCase("pow2-inch", MeasureUnit.SQUARE_INCH),
+            new TestCase("milligram-per-deciliter", MeasureUnit.MILLIGRAM_PER_DECILITER),
+            new TestCase("pound-force-per-pow2-inch", MeasureUnit.POUND_PER_SQUARE_INCH),
+            new TestCase("yard-pow2-yard", MeasureUnit.CUBIC_YARD),
+            new TestCase("square-yard-yard", MeasureUnit.CUBIC_YARD),
+        };
+
+        for (TestCase testCase : cases) {
+            MeasureUnit m = MeasureUnit.forIdentifier(testCase.identifier);
+            assertTrue(testCase.identifier + " parsed to builtin", m.equals(testCase.expectedBuiltin));
+        }
+    }
+
+    @Test
+    public void TestCompoundUnitOperations() {
+        MeasureUnit.forIdentifier("kilometer-per-second-joule");
+
+        MeasureUnit kilometer = MeasureUnit.KILOMETER;
+        MeasureUnit cubicMeter = MeasureUnit.CUBIC_METER;
+        MeasureUnit meter = kilometer.withPrefix(MeasureUnit.MeasurePrefix.ONE);
+        MeasureUnit centimeter1 = kilometer.withPrefix(MeasureUnit.MeasurePrefix.CENTI);
+        MeasureUnit centimeter2 = meter.withPrefix(MeasureUnit.MeasurePrefix.CENTI);
+        MeasureUnit cubicDecimeter = cubicMeter.withPrefix(MeasureUnit.MeasurePrefix.DECI);
+
+        verifySingleUnit(kilometer, MeasureUnit.MeasurePrefix.KILO, 1, "kilometer");
+        verifySingleUnit(meter, MeasureUnit.MeasurePrefix.ONE, 1, "meter");
+        verifySingleUnit(centimeter1, MeasureUnit.MeasurePrefix.CENTI, 1, "centimeter");
+        verifySingleUnit(centimeter2, MeasureUnit.MeasurePrefix.CENTI, 1, "centimeter");
+        verifySingleUnit(cubicDecimeter, MeasureUnit.MeasurePrefix.DECI, 3, "cubic-decimeter");
+
+        assertTrue("centimeter equality", centimeter1.equals( centimeter2));
+        assertTrue("kilometer inequality", !centimeter1.equals( kilometer));
+
+        MeasureUnit squareMeter = meter.withDimensionality(2);
+        MeasureUnit overCubicCentimeter = centimeter1.withDimensionality(-3);
+        MeasureUnit quarticKilometer = kilometer.withDimensionality(4);
+        MeasureUnit overQuarticKilometer1 = kilometer.withDimensionality(-4);
+
+        verifySingleUnit(squareMeter, MeasureUnit.MeasurePrefix.ONE, 2, "square-meter");
+        verifySingleUnit(overCubicCentimeter, MeasureUnit.MeasurePrefix.CENTI, -3, "per-cubic-centimeter");
+        verifySingleUnit(quarticKilometer, MeasureUnit.MeasurePrefix.KILO, 4, "pow4-kilometer");
+        verifySingleUnit(overQuarticKilometer1, MeasureUnit.MeasurePrefix.KILO, -4, "per-pow4-kilometer");
+
+        assertTrue("power inequality", quarticKilometer != overQuarticKilometer1);
+
+        MeasureUnit overQuarticKilometer2 = quarticKilometer.reciprocal();
+        MeasureUnit overQuarticKilometer3 = kilometer.product(kilometer)
+                .product(kilometer)
+                .product(kilometer)
+                .reciprocal();
+        MeasureUnit overQuarticKilometer4 = meter.withDimensionality(4)
+                .reciprocal()
+                .withPrefix(MeasureUnit.MeasurePrefix.KILO);
+
+        verifySingleUnit(overQuarticKilometer2, MeasureUnit.MeasurePrefix.KILO, -4, "per-pow4-kilometer");
+        verifySingleUnit(overQuarticKilometer3, MeasureUnit.MeasurePrefix.KILO, -4, "per-pow4-kilometer");
+        verifySingleUnit(overQuarticKilometer4, MeasureUnit.MeasurePrefix.KILO, -4, "per-pow4-kilometer");
+
+        assertTrue("reciprocal equality", overQuarticKilometer1.equals(overQuarticKilometer2));
+        assertTrue("reciprocal equality", overQuarticKilometer1.equals(overQuarticKilometer3));
+        assertTrue("reciprocal equality", overQuarticKilometer1.equals(overQuarticKilometer4));
+
+        MeasureUnit kiloSquareSecond = MeasureUnit.SECOND
+                .withDimensionality(2).withPrefix(MeasureUnit.MeasurePrefix.KILO);
+        MeasureUnit meterSecond = meter.product(kiloSquareSecond);
+        MeasureUnit cubicMeterSecond1 = meter.withDimensionality(3).product(kiloSquareSecond);
+        MeasureUnit centimeterSecond1 = meter.withPrefix(MeasureUnit.MeasurePrefix.CENTI).product(kiloSquareSecond);
+        MeasureUnit secondCubicMeter = kiloSquareSecond.product(meter.withDimensionality(3));
+        MeasureUnit secondCentimeter = kiloSquareSecond.product(meter.withPrefix(MeasureUnit.MeasurePrefix.CENTI));
+        MeasureUnit secondCentimeterPerKilometer = secondCentimeter.product(kilometer.reciprocal());
+
+        verifySingleUnit(kiloSquareSecond, MeasureUnit.MeasurePrefix.KILO, 2, "square-kilosecond");
+        String meterSecondSub[] = {
+                "meter", "square-kilosecond"
+        };
+        verifyCompoundUnit(meterSecond, "meter-square-kilosecond",
+                meterSecondSub, meterSecondSub.length);
+        String cubicMeterSecond1Sub[] = {
+                "cubic-meter", "square-kilosecond"
+        };
+        verifyCompoundUnit(cubicMeterSecond1, "cubic-meter-square-kilosecond",
+                cubicMeterSecond1Sub, cubicMeterSecond1Sub.length);
+        String centimeterSecond1Sub[] = {
+                "centimeter", "square-kilosecond"
+        };
+        verifyCompoundUnit(centimeterSecond1, "centimeter-square-kilosecond",
+                centimeterSecond1Sub, centimeterSecond1Sub.length);
+        String secondCubicMeterSub[] = {
+                "cubic-meter", "square-kilosecond"
+        };
+        verifyCompoundUnit(secondCubicMeter, "cubic-meter-square-kilosecond",
+                secondCubicMeterSub, secondCubicMeterSub.length);
+        String secondCentimeterSub[] = {
+                "centimeter", "square-kilosecond"
+        };
+        verifyCompoundUnit(secondCentimeter, "centimeter-square-kilosecond",
+                secondCentimeterSub, secondCentimeterSub.length);
+        String secondCentimeterPerKilometerSub[] = {
+                "centimeter", "square-kilosecond", "per-kilometer"
+        };
+        verifyCompoundUnit(secondCentimeterPerKilometer, "centimeter-square-kilosecond-per-kilometer",
+                secondCentimeterPerKilometerSub, secondCentimeterPerKilometerSub.length);
+
+        assertTrue("reordering equality", cubicMeterSecond1.equals(secondCubicMeter));
+        assertTrue("additional simple units inequality", !secondCubicMeter.equals(secondCentimeter));
+
+        // Don't allow get/set power or SI or binary prefix on compound units
+        try {
+            meterSecond.getDimensionality();
+            fail("UnsupportedOperationException must be thrown");
+        } catch (UnsupportedOperationException e) {
+            // Expecting an exception to be thrown
+        }
+
+        try {
+            meterSecond.withDimensionality(3);
+            fail("UnsupportedOperationException must be thrown");
+        } catch (UnsupportedOperationException e) {
+            // Expecting an exception to be thrown
+        }
+
+        try {
+            meterSecond.getPrefix();
+            fail("UnsupportedOperationException must be thrown");
+        } catch (UnsupportedOperationException e) {
+            // Expecting an exception to be thrown
+        }
+
+        try {
+            meterSecond.withPrefix(MeasureUnit.MeasurePrefix.CENTI);
+            fail("UnsupportedOperationException must be thrown");
+        } catch (UnsupportedOperationException e) {
+            // Expecting an exception to be thrown
+        }
+
+        MeasureUnit footInch = MeasureUnit.forIdentifier("foot-and-inch");
+        MeasureUnit inchFoot = MeasureUnit.forIdentifier("inch-and-foot");
+
+        String footInchSub[] = {
+                "foot", "inch"
+        };
+        verifyMixedUnit(footInch, "foot-and-inch",
+                footInchSub, footInchSub.length);
+        String inchFootSub[] = {
+                "inch", "foot"
+        };
+        verifyMixedUnit(inchFoot, "inch-and-foot",
+                inchFootSub, inchFootSub.length);
+
+        assertTrue("order matters inequality", !footInch.equals(inchFoot));
+
+
+        MeasureUnit dimensionless  = NoUnit.BASE;
+        MeasureUnit dimensionless2 = MeasureUnit.forIdentifier("");
+        assertEquals("dimensionless equality", dimensionless, dimensionless2);
+
+        // We support starting from an "identity" MeasureUnit and then combining it
+        // with others via product:
+        MeasureUnit kilometer2 = kilometer.product(dimensionless);
+
+        verifySingleUnit(kilometer2, MeasureUnit.MeasurePrefix.KILO, 1, "kilometer");
+        assertTrue("kilometer equality", kilometer.equals(kilometer2));
+
+        // Test out-of-range powers
+        MeasureUnit power15 = MeasureUnit.forIdentifier("pow15-kilometer");
+        verifySingleUnit(power15, MeasureUnit.MeasurePrefix.KILO, 15, "pow15-kilometer");
+
+        try {
+            MeasureUnit.forIdentifier("pow16-kilometer");
+            fail("An IllegalArgumentException must be thrown");
+        } catch (IllegalArgumentException e) {
+            // Expecting an exception to be thrown
+        }
+
+        try {
+            power15.product(kilometer);
+            fail("An IllegalArgumentException must be thrown");
+        } catch (IllegalArgumentException e) {
+            // Expecting an exception to be thrown
+        }
+
+        MeasureUnit powerN15 = MeasureUnit.forIdentifier("per-pow15-kilometer");
+        verifySingleUnit(powerN15, MeasureUnit.MeasurePrefix.KILO, -15, "per-pow15-kilometer");
+
+        try {
+            MeasureUnit.forIdentifier("per-pow16-kilometer");
+            fail("An IllegalArgumentException must be thrown");
+        } catch (IllegalArgumentException e) {
+            // Expecting an exception to be thrown
+        }
+
+        try {
+            powerN15.product(overQuarticKilometer1);
+            fail("An IllegalArgumentException must be thrown");
+        } catch (IllegalArgumentException e) {
+            // Expecting an exception to be thrown
+        }
+    }
+
+    @Test
+    public void TestDimensionlessBehaviour() {
+        MeasureUnit dimensionless = MeasureUnit.forIdentifier("");
+        MeasureUnit dimensionless2 = NoUnit.BASE;
+        MeasureUnit dimensionless3 = null;
+        MeasureUnit dimensionless4 = MeasureUnit.forIdentifier(null);
+
+        assertEquals("dimensionless must be equals", dimensionless, dimensionless2);
+        assertEquals("dimensionless must be equals", dimensionless2, dimensionless3);
+        assertEquals("dimensionless must be equals", dimensionless3, dimensionless4);
+
+        // product(dimensionless)
+        MeasureUnit mile = MeasureUnit.MILE;
+        mile = mile.product(dimensionless);
+        verifySingleUnit(mile, MeasureUnit.MeasurePrefix.ONE, 1, "mile");
+    }
+
+    private void verifySingleUnit(MeasureUnit singleMeasureUnit, MeasureUnit.MeasurePrefix prefix, int power, String identifier) {
+        assertEquals(identifier + ": SI or binary prefix", prefix, singleMeasureUnit.getPrefix());
+
+        assertEquals(identifier + ": Power", power, singleMeasureUnit.getDimensionality());
+
+        assertEquals(identifier + ": Identifier", identifier, singleMeasureUnit.getIdentifier());
+
+        assertTrue(identifier + ": Constructor", singleMeasureUnit.equals(MeasureUnit.forIdentifier(identifier)));
+
+        assertEquals(identifier + ": Complexity", MeasureUnit.Complexity.SINGLE, singleMeasureUnit.getComplexity());
+    }
+
+
+    // Kilogram is a "base unit", although it's also "gram" with a kilo- prefix.
+    // This tests that it is handled in the preferred manner.
+    @Test
+    public void TestKilogramIdentifier() {
+        // SI unit of mass
+        MeasureUnit kilogram = MeasureUnit.forIdentifier("kilogram");
+        // Metric mass unit
+        MeasureUnit gram = MeasureUnit.forIdentifier("gram");
+        // Microgram: still a built-in type
+        MeasureUnit microgram = MeasureUnit.forIdentifier("microgram");
+        // Nanogram: not a built-in type at this time
+        MeasureUnit nanogram = MeasureUnit.forIdentifier("nanogram");
+
+        assertEquals("parsed kilogram equals built-in kilogram", MeasureUnit.KILOGRAM.getType(),
+                kilogram.getType());
+        assertEquals("parsed kilogram equals built-in kilogram", MeasureUnit.KILOGRAM.getSubtype(),
+                kilogram.getSubtype());
+        assertEquals("parsed gram equals built-in gram", MeasureUnit.GRAM.getType(), gram.getType());
+        assertEquals("parsed gram equals built-in gram", MeasureUnit.GRAM.getSubtype(),
+                gram.getSubtype());
+        assertEquals("parsed microgram equals built-in microgram", MeasureUnit.MICROGRAM.getType(),
+                microgram.getType());
+        assertEquals("parsed microgram equals built-in microgram", MeasureUnit.MICROGRAM.getSubtype(),
+                microgram.getSubtype());
+        assertEquals("nanogram", null, nanogram.getType());
+        assertEquals("nanogram", "nanogram", nanogram.getIdentifier());
+
+        assertEquals("prefix of kilogram", MeasureUnit.MeasurePrefix.KILO, kilogram.getPrefix());
+        assertEquals("prefix of gram", MeasureUnit.MeasurePrefix.ONE, gram.getPrefix());
+        assertEquals("prefix of microgram", MeasureUnit.MeasurePrefix.MICRO, microgram.getPrefix());
+        assertEquals("prefix of nanogram", MeasureUnit.MeasurePrefix.NANO, nanogram.getPrefix());
+
+        MeasureUnit tmp = kilogram.withPrefix(MeasureUnit.MeasurePrefix.MILLI);
+        assertEquals("Kilogram + milli should be milligram, got: " + tmp.getIdentifier(),
+                MeasureUnit.MILLIGRAM.getIdentifier(), tmp.getIdentifier());
+    }
+
+    @Test
+    public void TestInternalMeasureUnitImpl() {
+        MeasureUnitImpl mu1 = MeasureUnitImpl.forIdentifier("meter");
+        assertEquals("mu1 initial identifier", null, mu1.getIdentifier());
+        assertEquals("mu1 initial complexity", MeasureUnit.Complexity.SINGLE, mu1.getComplexity());
+        assertEquals("mu1 initial units length", 1, mu1.getSingleUnits().size());
+        assertEquals("mu1 initial units[0]", "meter", mu1.getSingleUnits().get(0).getSimpleUnitID());
+
+        // Producing identifier via build(): the MeasureUnitImpl instance gets modified
+        // while it also gets assigned to tmp's internal measureUnitImpl.
+        MeasureUnit tmp = mu1.build();
+        assertEquals("mu1 post-build identifier", "meter", mu1.getIdentifier());
+        assertEquals("mu1 post-build complexity", MeasureUnit.Complexity.SINGLE, mu1.getComplexity());
+        assertEquals("mu1 post-build units length", 1, mu1.getSingleUnits().size());
+        assertEquals("mu1 post-build units[0]", "meter", mu1.getSingleUnits().get(0).getSimpleUnitID());
+        assertEquals("MeasureUnit tmp identifier", "meter", tmp.getIdentifier());
+
+        mu1 = MeasureUnitImpl.forIdentifier("hour-and-minute-and-second");
+        assertEquals("mu1 = HMS: identifier", null, mu1.getIdentifier());
+        assertEquals("mu1 = HMS: complexity", MeasureUnit.Complexity.MIXED, mu1.getComplexity());
+        assertEquals("mu1 = HMS: units length", 3, mu1.getSingleUnits().size());
+        assertEquals("mu1 = HMS: units[0]", "hour", mu1.getSingleUnits().get(0).getSimpleUnitID());
+        assertEquals("mu1 = HMS: units[1]", "minute", mu1.getSingleUnits().get(1).getSimpleUnitID());
+        assertEquals("mu1 = HMS: units[2]", "second", mu1.getSingleUnits().get(2).getSimpleUnitID());
+
+        MeasureUnitImpl m2 = MeasureUnitImpl.forIdentifier("meter");
+        m2.appendSingleUnit(MeasureUnit.METER.getCopyOfMeasureUnitImpl().getSingleUnitImpl());
+        assertEquals("append meter twice: complexity", MeasureUnit.Complexity.SINGLE, m2.getComplexity());
+        assertEquals("append meter twice: units length", 1, m2.getSingleUnits().size());
+        assertEquals("append meter twice: units[0]", "meter", m2.getSingleUnits().get(0).getSimpleUnitID());
+        assertEquals("append meter twice: identifier", "square-meter", m2.build().getIdentifier());
+
+        MeasureUnitImpl mcm = MeasureUnitImpl.forIdentifier("meter");
+        mcm.appendSingleUnit(MeasureUnit.CENTIMETER.getCopyOfMeasureUnitImpl().getSingleUnitImpl());
+        assertEquals("append meter & centimeter: complexity", MeasureUnit.Complexity.COMPOUND, mcm.getComplexity());
+        assertEquals("append meter & centimeter: units length", 2, mcm.getSingleUnits().size());
+        assertEquals("append meter & centimeter: units[0]", "meter", mcm.getSingleUnits().get(0).getSimpleUnitID());
+        assertEquals("append meter & centimeter: units[1]", "meter", mcm.getSingleUnits().get(1).getSimpleUnitID());
+        assertEquals("append meter & centimeter: identifier", "meter-centimeter", mcm.build().getIdentifier());
+
+        MeasureUnitImpl m2m = MeasureUnitImpl.forIdentifier("meter-square-meter");
+        assertEquals("meter-square-meter: complexity", MeasureUnit.Complexity.SINGLE, m2m.getComplexity());
+        assertEquals("meter-square-meter: units length", 1, m2m.getSingleUnits().size());
+        assertEquals("meter-square-meter: units[0]", "meter", m2m.getSingleUnits().get(0).getSimpleUnitID());
+        assertEquals("meter-square-meter: identifier", "cubic-meter", m2m.build().getIdentifier());
+
+    }
+
+    private void verifyCompoundUnit(
+            MeasureUnit unit,
+            String identifier,
+            String subIdentifiers[],
+            int subIdentifierCount) {
+        assertEquals(identifier + ": Identifier",
+                identifier,
+                unit.getIdentifier());
+
+        assertTrue(identifier + ": Constructor",
+                unit.equals(MeasureUnit.forIdentifier(identifier)));
+
+        assertEquals(identifier + ": Complexity",
+                MeasureUnit.Complexity.COMPOUND,
+                unit.getComplexity());
+
+        List<MeasureUnit> subUnits = unit.splitToSingleUnits();
+        assertEquals(identifier + ": Length", subIdentifierCount, subUnits.size());
+        for (int i = 0; ; i++) {
+            if (i >= subIdentifierCount || i >= subUnits.size()) break;
+            assertEquals(identifier + ": Sub-unit #" + i,
+                    subIdentifiers[i],
+                    subUnits.get(i).getIdentifier());
+            assertEquals(identifier + ": Sub-unit Complexity",
+                    MeasureUnit.Complexity.SINGLE,
+                    subUnits.get(i).getComplexity());
+        }
+    }
+
+    private void verifyMixedUnit(
+            MeasureUnit unit,
+            String identifier,
+            String subIdentifiers[],
+            int subIdentifierCount) {
+        assertEquals(identifier + ": Identifier",
+                identifier,
+                unit.getIdentifier());
+        assertTrue(identifier + ": Constructor",
+                unit.equals(MeasureUnit.forIdentifier(identifier)));
+
+        assertEquals(identifier + ": Complexity",
+                MeasureUnit.Complexity.MIXED,
+                unit.getComplexity());
+
+        List<MeasureUnit> subUnits = unit.splitToSingleUnits();
+        assertEquals(identifier + ": Length", subIdentifierCount, subUnits.size());
+        for (int i = 0; ; i++) {
+            if (i >= subIdentifierCount || i >= subUnits.size()) break;
+            assertEquals(identifier + ": Sub-unit #" + i,
+                    subIdentifiers[i],
+                    subUnits.get(i).getIdentifier());
         }
     }
 }

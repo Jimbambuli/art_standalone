@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2015-2016, International Business Machines Corporation and
@@ -28,6 +28,9 @@ import android.icu.util.UResourceBundleIterator;
  */
 public class ValidIdentifiers {
 
+    /**
+     * @hide Only a subset of ICU is exposed in Android
+     */
     public enum Datatype {
         currency,
         language,
@@ -42,6 +45,9 @@ public class ValidIdentifiers {
         illegal
     }
 
+    /**
+     * @hide Only a subset of ICU is exposed in Android
+     */
     public enum Datasubtype {
         deprecated,
         private_use,
@@ -49,8 +55,12 @@ public class ValidIdentifiers {
         special,
         unknown,
         macroregion,
+        reserved,
     }
 
+    /**
+     * @hide Only a subset of ICU is exposed in Android
+     */
     public static class ValiditySet {
         public final Set<String> regularData;
         public final Map<String,Set<String>> subdivisionData;

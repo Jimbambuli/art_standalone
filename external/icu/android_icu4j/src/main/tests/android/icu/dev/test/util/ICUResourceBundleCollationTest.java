@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /**
  *******************************************************************************
  * Copyright (C) 2009-2016, International Business Machines Corporation and
@@ -12,6 +12,8 @@ package android.icu.dev.test.util;
 import java.util.MissingResourceException;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.impl.ICUData;
@@ -19,8 +21,10 @@ import android.icu.impl.ICUResourceBundle;
 import android.icu.text.Collator;
 import android.icu.util.ULocale;
 import android.icu.util.UResourceBundle;
+import android.icu.testsharding.MainTestShard;
 
-
+@MainTestShard
+@RunWith(JUnit4.class)
 public final class ICUResourceBundleCollationTest extends TestFmwk {
     private static final String COLLATION_RESNAME = "collations";
     private static final String COLLATION_KEYWORD = "collation";
@@ -31,34 +35,35 @@ public final class ICUResourceBundleCollationTest extends TestFmwk {
     public void TestFunctionalEquivalent(){
        // Android patch: Add exceptions for big5han and gb2312han in genrb.
        String[] collCases = {
+       // note: in ICU 64, empty locales are shown as available for collation
        //  avail   locale                               equiv
            "f",     "sv_US_CALIFORNIA",                 "sv",
            "f",     "zh_TW@collation=stroke",           "zh@collation=stroke", /* alias of zh_Hant_TW */
-           "f",     "zh_Hant_TW@collation=stroke",      "zh@collation=stroke",
+           "t",     "zh_Hant_TW@collation=stroke",      "zh@collation=stroke",
            "f",     "sv_CN@collation=pinyin",           "sv",
            "t",     "zh@collation=pinyin",              "zh",
            "f",     "zh_CN@collation=pinyin",           "zh", /* alias of zh_Hans_CN */
-           "f",     "zh_Hans_CN@collation=pinyin",      "zh",
+           "t",     "zh_Hans_CN@collation=pinyin",      "zh",
            "f",     "zh_HK@collation=pinyin",           "zh", /* alias of zh_Hant_HK */
-           "f",     "zh_Hant_HK@collation=pinyin",      "zh",
+           "t",     "zh_Hant_HK@collation=pinyin",      "zh",
            "f",     "zh_HK@collation=stroke",           "zh@collation=stroke", /* alias of zh_Hant_HK */
-           "f",     "zh_Hant_HK@collation=stroke",      "zh@collation=stroke",
+           "t",     "zh_Hant_HK@collation=stroke",      "zh@collation=stroke",
            "f",     "zh_HK",                            "zh@collation=stroke", /* alias of zh_Hant_HK */
-           "f",     "zh_Hant_HK",                       "zh@collation=stroke",
+           "t",     "zh_Hant_HK",                       "zh@collation=stroke",
            "f",     "zh_MO",                            "zh@collation=stroke", /* alias of zh_Hant_MO */
-           "f",     "zh_Hant_MO",                       "zh@collation=stroke",
+           "t",     "zh_Hant_MO",                       "zh@collation=stroke",
            "f",     "zh_TW_STROKE",                     "zh@collation=stroke",
        //  "f",     "zh_TW_STROKE@collation=big5han",   "zh@collation=big5han",
            "f",     "sv_CN@calendar=japanese",          "sv",
            "t",     "sv@calendar=japanese",             "sv",
        //  "f",     "zh_TW@collation=big5han",          "zh@collation=big5han", /* alias of zh_Hant_TW */
-       //  "f",     "zh_Hant_TW@collation=big5han",     "zh@collation=big5han",
+       //  "t",     "zh_Hant_TW@collation=big5han",     "zh@collation=big5han",
        //  "f",     "zh_TW@collation=gb2312han",        "zh@collation=gb2312han", /* alias of zh_Hant_TW */
-       //  "f",     "zh_Hant_TW@collation=gb2312han",   "zh@collation=gb2312han",
+       //  "t",     "zh_Hant_TW@collation=gb2312han",   "zh@collation=gb2312han",
        //  "f",     "zh_CN@collation=big5han",          "zh@collation=big5han", /* alias of zh_Hans_CN */
-       //  "f",     "zh_Hans_CN@collation=big5han",     "zh@collation=big5han",
+       //  "t",     "zh_Hans_CN@collation=big5han",     "zh@collation=big5han",
        //  "f",     "zh_CN@collation=gb2312han",        "zh@collation=gb2312han", /* alias of zh_Hans_CN */
-       //  "f",     "zh_Hans_CN@collation=gb2312han",   "zh@collation=gb2312han",
+       //  "t",     "zh_Hans_CN@collation=gb2312han",   "zh@collation=gb2312han",
        //  "t",     "zh@collation=big5han",             "zh@collation=big5han",
        //  "t",     "zh@collation=gb2312han",           "zh@collation=gb2312han",
            "t",     "hi@collation=standard",            "hi",
@@ -96,7 +101,9 @@ public final class ICUResourceBundleCollationTest extends TestFmwk {
         ICUResourceBundle bundle = null;
         String key = null;
         try{
-            bundle = (ICUResourceBundle) UResourceBundle.getBundleInstance(ICUData.ICU_COLLATION_BASE_NAME,ULocale.canonicalize("de__PHONEBOOK"));
+            bundle = (ICUResourceBundle) UResourceBundle.getBundleInstance(
+                    ICUData.ICU_COLLATION_BASE_NAME,
+                    ULocale.canonicalize("de@collation=phonebook"));
 
             if(!bundle.getULocale().getName().equals("de")){
                 errln("did not get the expected bundle");
@@ -149,7 +156,7 @@ public final class ICUResourceBundleCollationTest extends TestFmwk {
 
     @Test
     public void TestOpen(){
-        UResourceBundle bundle = (UResourceBundle)UResourceBundle.getBundleInstance(ICUData.ICU_COLLATION_BASE_NAME, "en_US_POSIX");
+        UResourceBundle bundle = UResourceBundle.getBundleInstance(ICUData.ICU_COLLATION_BASE_NAME, "en_US_POSIX");
         if(bundle==null){
             errln("could not load the stream");
         }

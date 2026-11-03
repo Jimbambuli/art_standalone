@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 1996-2015, Google, Inc., International Business Machines Corporation and
@@ -28,6 +28,9 @@ import android.icu.util.ICUException;
 public class StringRange {
     private static final boolean DEBUG = false;
 
+    /**
+     * @hide Only a subset of ICU is exposed in Android
+     */
     public interface Adder {
         /**
          * @param start

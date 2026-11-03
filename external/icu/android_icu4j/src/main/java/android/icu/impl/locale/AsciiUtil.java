@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2009-2010, International Business Machines Corporation and    *
@@ -165,6 +165,9 @@ public final class AsciiUtil {
         return b;
     }
 
+    /**
+     * @hide Only a subset of ICU is exposed in Android
+     */
     public static class CaseInsensitiveKey {
         private String _key;
         private int _hash;

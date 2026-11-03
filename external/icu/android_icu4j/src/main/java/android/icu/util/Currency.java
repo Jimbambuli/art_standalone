@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /**
  *******************************************************************************
  * Copyright (C) 2001-2016, International Business Machines Corporation and
@@ -15,7 +15,6 @@ import java.text.ParsePosition;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -31,11 +30,13 @@ import android.icu.impl.ICUDebug;
 import android.icu.impl.ICUResourceBundle;
 import android.icu.impl.SimpleCache;
 import android.icu.impl.SoftCache;
+import android.icu.impl.StaticUnicodeSets;
 import android.icu.impl.TextTrieMap;
 import android.icu.text.CurrencyDisplayNames;
 import android.icu.text.CurrencyMetaInfo;
 import android.icu.text.CurrencyMetaInfo.CurrencyDigits;
 import android.icu.text.CurrencyMetaInfo.CurrencyFilter;
+import android.icu.text.UnicodeSet;
 import android.icu.util.ULocale.Category;
 
 /**
@@ -63,7 +64,7 @@ public class Currency extends MeasureUnit {
 
     // Cache to save currency name trie
     private static ICUCache<ULocale, List<TextTrieMap<CurrencyStringInfo>>> CURRENCY_NAME_CACHE =
-        new SimpleCache<ULocale, List<TextTrieMap<CurrencyStringInfo>>>();
+        new SimpleCache<>();
 
     /**
      * Selector for getName() indicating a symbolic name for a
@@ -84,12 +85,31 @@ public class Currency extends MeasureUnit {
      */
     public static final int PLURAL_LONG_NAME = 2;
 
-    private static final EquivalenceRelation<String> EQUIVALENT_CURRENCY_SYMBOLS =
-            new EquivalenceRelation<String>()
-            .add("\u00a5", "\uffe5")
-            .add("$", "\ufe69", "\uff04")
-            .add("\u20a8", "\u20b9")
-            .add("\u00a3", "\u20a4");
+    /**
+     * Selector for getName() indicating the narrow currency symbol.
+     * <p>
+     * The narrow currency symbol is similar to the regular currency symbol,
+     * but it always takes the shortest form;
+     * for example, "$" instead of "US$" for USD in en-CA.
+     */
+    public static final int NARROW_SYMBOL_NAME = 3;
+
+    /**
+     * Selector for getName() indicating the formal currency symbol.
+     * <p>
+     * The formal currency symbol is similar to the regular currency symbol,
+     * but it always takes the form used in formal settings such as banking;
+     * for example, "NT$" instead of "$" for TWD in zh-TW.
+     */
+    public static final int FORMAL_SYMBOL_NAME = 4;
+
+    /**
+     * Selector for getName() indicating the variant currency symbol.
+     * <p>
+     * The variant symbol for a currency is an alternative symbol that is not
+     * necessarily as widely used as the regular symbol.
+     */
+    public static final int VARIANT_SYMBOL_NAME = 5;
 
     /**
      * Currency Usage used for Decimal Format
@@ -212,14 +232,13 @@ public class Currency extends MeasureUnit {
     public static Set<Currency> getAvailableCurrencies() {
         CurrencyMetaInfo info = CurrencyMetaInfo.getInstance();
         List<String> list = info.currencies(CurrencyFilter.all());
-        HashSet<Currency> resultSet = new HashSet<Currency>(list.size());
+        HashSet<Currency> resultSet = new HashSet<>(list.size());
         for (String code : list) {
             resultSet.add(getInstance(code));
         }
         return resultSet;
     }
 
-    private static final String EUR_STR = "EUR";
     private static final CacheBase<String, Currency, Void> regionCurrencyCache =
             new SoftCache<String, Currency, Void>() {
         @Override
@@ -232,40 +251,23 @@ public class Currency extends MeasureUnit {
      * Instantiate a currency from resource data.
      */
     /* package */ static Currency createCurrency(ULocale loc) {
-        String variant = loc.getVariant();
-        if ("EURO".equals(variant)) {
-            return getInstance(EUR_STR);
-        }
-
-        // Cache the currency by region, and whether variant=PREEURO.
+        // Cache the currency by region.
         // Minimizes the size of the cache compared with caching by ULocale.
         String key = ULocale.getRegionForSupplementalData(loc, false);
-        if ("PREEURO".equals(variant)) {
-            key = key + '-';
-        }
         return regionCurrencyCache.getInstance(key, null);
     }
 
     private static Currency loadCurrency(String key) {
-        String region;
-        boolean isPreEuro;
-        if (key.endsWith("-")) {
-            region = key.substring(0, key.length() - 1);
-            isPreEuro = true;
-        } else {
-            region = key;
-            isPreEuro = false;
-        }
+        String region = key;
         CurrencyMetaInfo info = CurrencyMetaInfo.getInstance();
-        List<String> list = info.currencies(CurrencyFilter.onRegion(region));
+        // https://unicode-org.atlassian.net/browse/ICU-21997
+        // Prefer to use currencies that are legal tender.
+        List<String> list = info.currencies(CurrencyFilter.onRegion(region).withTender());
+        if (list.isEmpty()) {
+            list = info.currencies(CurrencyFilter.onRegion(region));
+        }
         if (!list.isEmpty()) {
             String code = list.get(0);
-            if (isPreEuro && EUR_STR.equals(code)) {
-                if (list.size() < 2) {
-                    return null;
-                }
-                code = list.get(1);
-            }
             return getInstance(code);
         }
         return null;
@@ -303,6 +305,25 @@ public class Currency extends MeasureUnit {
             }
         }
         return true;
+    }
+
+    /**
+     * Returns a Currency object based on the currency represented by the given java.util.Currency.
+     *
+     * @param currency The Java currency object to convert.
+     * @return An equivalent ICU currency object.
+     */
+    public static Currency fromJavaCurrency(java.util.Currency currency) {
+        return getInstance(currency.getCurrencyCode());
+    }
+
+    /**
+     * Returns a java.util.Currency object based on the currency represented by this Currency.
+     *
+     * @return An equivalent Java currency object.
+     */
+    public java.util.Currency toJavaCurrency() {
+        return java.util.Currency.getInstance(getCurrencyCode());
     }
 
     /**
@@ -488,7 +509,7 @@ public class Currency extends MeasureUnit {
      * @see #getName
      */
     public String getSymbol(ULocale uloc) {
-        return getName(uloc, SYMBOL_NAME, new boolean[1]);
+        return getName(uloc, SYMBOL_NAME, null);
     }
 
     /**
@@ -496,6 +517,17 @@ public class Currency extends MeasureUnit {
      * given locale.
      * This is a convenient method for
      * getName(ULocale, int, boolean[]);
+     *
+     * @param locale locale in which to display currency
+     * @param nameStyle selector for which kind of name to return.
+     *                  The nameStyle should be SYMBOL_NAME, NARROW_SYMBOL_NAME,
+     *                  or LONG_NAME. Otherwise, throw IllegalArgumentException.
+     * @param isChoiceFormat isChoiceFormat[0] is always set to false, or isChoiceFormat can be null;
+     *     display names are static strings;
+     *     since ICU 4.4, ChoiceFormat patterns are no longer supported
+     * @return display string for this currency.  If the resource data
+     * contains no entry for this currency, then the ISO 4217 code is
+     * returned.
      */
     public String getName(Locale locale,
                           int nameStyle,
@@ -507,29 +539,23 @@ public class Currency extends MeasureUnit {
      * Returns the display name for the given currency in the
      * given locale.  For example, the display name for the USD
      * currency object in the en_US locale is "$".
+     *
      * @param locale locale in which to display currency
      * @param nameStyle selector for which kind of name to return.
-     *                  The nameStyle should be either SYMBOL_NAME or
-     *                  LONG_NAME. Otherwise, throw IllegalArgumentException.
-     * @param isChoiceFormat fill-in; isChoiceFormat[0] is set to true
-     * if the returned value is a ChoiceFormat pattern; otherwise it
-     * is set to false
+     *                  The nameStyle should be SYMBOL_NAME, NARROW_SYMBOL_NAME,
+     *                  or LONG_NAME. Otherwise, throw IllegalArgumentException.
+     * @param isChoiceFormat isChoiceFormat[0] is always set to false, or isChoiceFormat can be null;
+     *     display names are static strings;
+     *     since ICU 4.4, ChoiceFormat patterns are no longer supported
      * @return display string for this currency.  If the resource data
      * contains no entry for this currency, then the ISO 4217 code is
-     * returned.  If isChoiceFormat[0] is true, then the result is a
-     * ChoiceFormat pattern.  Otherwise it is a static string. <b>Note:</b>
-     * as of ICU 4.4, choice formats are not used, and the value returned
-     * in isChoiceFormat is always false.
+     * returned.
      * <p>
      * @throws  IllegalArgumentException  if the nameStyle is not SYMBOL_NAME
      *                                    or LONG_NAME.
      * @see #getName(ULocale, int, String, boolean[])
      */
     public String getName(ULocale locale, int nameStyle, boolean[] isChoiceFormat) {
-        if (!(nameStyle == SYMBOL_NAME || nameStyle == LONG_NAME)) {
-            throw new IllegalArgumentException("bad name style: " + nameStyle);
-        }
-
         // We no longer support choice format data in names.  Data should not contain
         // choice patterns.
         if (isChoiceFormat != null) {
@@ -537,12 +563,35 @@ public class Currency extends MeasureUnit {
         }
 
         CurrencyDisplayNames names = CurrencyDisplayNames.getInstance(locale);
-        return nameStyle == SYMBOL_NAME ? names.getSymbol(subType) : names.getName(subType);
+        switch (nameStyle) {
+        case SYMBOL_NAME:
+            return names.getSymbol(subType);
+        case NARROW_SYMBOL_NAME:
+            return names.getNarrowSymbol(subType);
+        case FORMAL_SYMBOL_NAME:
+            return names.getFormalSymbol(subType);
+        case VARIANT_SYMBOL_NAME:
+            return names.getVariantSymbol(subType);
+        case LONG_NAME:
+            return names.getName(subType);
+        default:
+            throw new IllegalArgumentException("bad name style: " + nameStyle);
+        }
     }
 
     /**
      * Returns the display name for the given currency in the given locale.
      * This is a convenience overload of getName(ULocale, int, String, boolean[]);
+     *
+     * @param locale locale in which to display currency
+     * @param nameStyle selector for which kind of name to return
+     * @param pluralCount plural count string for this locale
+     * @param isChoiceFormat isChoiceFormat[0] is always set to false, or isChoiceFormat can be null;
+     *     display names are static strings;
+     *     since ICU 4.4, ChoiceFormat patterns are no longer supported
+     * @return display string for this currency.  If the resource data
+     * contains no entry for this currency, then the ISO 4217 code is
+     * returned.
      */
     public String getName(Locale locale, int nameStyle, String pluralCount,
             boolean[] isChoiceFormat) {
@@ -557,18 +606,16 @@ public class Currency extends MeasureUnit {
      * amount is plural is "US dollars", such as in "3.00 US dollars";
      * while the PLURAL_LONG_NAME for the USD currency object when the currency
      * amount is singular is "US dollar", such as in "1.00 US dollar".
+     *
      * @param locale locale in which to display currency
      * @param nameStyle selector for which kind of name to return
      * @param pluralCount plural count string for this locale
-     * @param isChoiceFormat fill-in; isChoiceFormat[0] is set to true
-     * if the returned value is a ChoiceFormat pattern; otherwise it
-     * is set to false
+     * @param isChoiceFormat isChoiceFormat[0] is always set to false, or isChoiceFormat can be null;
+     *     display names are static strings;
+     *     since ICU 4.4, ChoiceFormat patterns are no longer supported
      * @return display string for this currency.  If the resource data
      * contains no entry for this currency, then the ISO 4217 code is
-     * returned.  If isChoiceFormat[0] is true, then the result is a
-     * ChoiceFormat pattern.  Otherwise it is a static string. <b>Note:</b>
-     * as of ICU 4.4, choice formats are not used, and the value returned
-     * in isChoiceFormat is always false.
+     * returned.
      * @throws  IllegalArgumentException  if the nameStyle is not SYMBOL_NAME,
      *                                    LONG_NAME, or PLURAL_LONG_NAME.
      */
@@ -600,7 +647,6 @@ public class Currency extends MeasureUnit {
      * @see #getDisplayName(Locale)
      * @see #getName(Locale, int, boolean[])
      */
-    @SuppressWarnings("javadoc")    // java.util.Currency#getDisplayName() is introduced in Java 7
     public String getDisplayName() {
         return getName(Locale.getDefault(), LONG_NAME, null);
     }
@@ -619,7 +665,6 @@ public class Currency extends MeasureUnit {
      * @see #getDisplayName(Locale)
      * @see #getName(Locale, int, boolean[])
      */
-    @SuppressWarnings("javadoc")    // java.util.Currency#getDisplayName() is introduced in Java 7
     public String getDisplayName(Locale locale) {
         return getName(locale, LONG_NAME, null);
     }
@@ -648,19 +693,7 @@ public class Currency extends MeasureUnit {
      */
     @Deprecated
     public static String parse(ULocale locale, String text, int type, ParsePosition pos) {
-        List<TextTrieMap<CurrencyStringInfo>> currencyTrieVec = CURRENCY_NAME_CACHE.get(locale);
-        if (currencyTrieVec == null) {
-            TextTrieMap<CurrencyStringInfo> currencyNameTrie =
-                new TextTrieMap<CurrencyStringInfo>(true);
-            TextTrieMap<CurrencyStringInfo> currencySymbolTrie =
-                new TextTrieMap<CurrencyStringInfo>(false);
-            currencyTrieVec = new ArrayList<TextTrieMap<CurrencyStringInfo>>();
-            currencyTrieVec.add(currencySymbolTrie);
-            currencyTrieVec.add(currencyNameTrie);
-            setupCurrencyTrieVec(locale, currencyTrieVec);
-            CURRENCY_NAME_CACHE.put(locale, currencyTrieVec);
-        }
-
+        List<TextTrieMap<CurrencyStringInfo>> currencyTrieVec = getCurrencyTrieVec(locale);
         int maxLength = 0;
         String isoResult = null;
 
@@ -685,6 +718,36 @@ public class Currency extends MeasureUnit {
         return isoResult;
     }
 
+    /**
+     * @deprecated This API is ICU internal only.
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    @Deprecated
+    public static TextTrieMap<CurrencyStringInfo> getParsingTrie(ULocale locale, int type) {
+        List<TextTrieMap<CurrencyStringInfo>> currencyTrieVec = getCurrencyTrieVec(locale);
+        if (type == Currency.LONG_NAME) {
+            return currencyTrieVec.get(1);
+        } else {
+            return currencyTrieVec.get(0);
+        }
+    }
+
+    private static List<TextTrieMap<CurrencyStringInfo>> getCurrencyTrieVec(ULocale locale) {
+        List<TextTrieMap<CurrencyStringInfo>> currencyTrieVec = CURRENCY_NAME_CACHE.get(locale);
+        if (currencyTrieVec == null) {
+            TextTrieMap<CurrencyStringInfo> currencyNameTrie =
+                new TextTrieMap<>(true);
+            TextTrieMap<CurrencyStringInfo> currencySymbolTrie =
+                new TextTrieMap<>(false);
+            currencyTrieVec = new ArrayList<>();
+            currencyTrieVec.add(currencySymbolTrie);
+            currencyTrieVec.add(currencyNameTrie);
+            setupCurrencyTrieVec(locale, currencyTrieVec);
+            CURRENCY_NAME_CACHE.put(locale, currencyTrieVec);
+        }
+        return currencyTrieVec;
+    }
+
     private static void setupCurrencyTrieVec(ULocale locale,
             List<TextTrieMap<CurrencyStringInfo>> trieVec) {
 
@@ -697,8 +760,16 @@ public class Currency extends MeasureUnit {
             String isoCode = e.getValue();
             // Register under not just symbol, but under every equivalent symbol as well
             // e.g short width yen and long width yen.
-            for (String equivalentSymbol : EQUIVALENT_CURRENCY_SYMBOLS.get(symbol)) {
-                symTrie.put(equivalentSymbol, new CurrencyStringInfo(isoCode, symbol));
+            StaticUnicodeSets.Key key = StaticUnicodeSets.chooseCurrency(symbol);
+            CurrencyStringInfo value = new CurrencyStringInfo(isoCode, symbol);
+            if (key != null) {
+                UnicodeSet equivalents = StaticUnicodeSets.get(key);
+                // The symbol itself is included in the UnicodeSet
+                for (String equivalentSymbol : equivalents) {
+                    symTrie.put(equivalentSymbol, value);
+                }
+            } else {
+                symTrie.put(symbol, value);
             }
         }
         for (Map.Entry<String, String> e : names.nameMap().entrySet()) {
@@ -708,19 +779,40 @@ public class Currency extends MeasureUnit {
         }
     }
 
-    private static final class CurrencyStringInfo {
+    /**
+     * @deprecated This API is ICU internal only.
+     * @hide Only a subset of ICU is exposed in Android
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    @Deprecated
+    public static final class CurrencyStringInfo {
         private String isoCode;
         private String currencyString;
 
+        /**
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
         public CurrencyStringInfo(String isoCode, String currencyString) {
             this.isoCode = isoCode;
             this.currencyString = currencyString;
         }
 
+        /**
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
         public String getISOCode() {
             return isoCode;
         }
 
+        /**
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
         @SuppressWarnings("unused")
         public String getCurrencyString() {
             return currencyString;
@@ -761,6 +853,13 @@ public class Currency extends MeasureUnit {
      * Returns the number of the number of fraction digits that should
      * be displayed for this currency.
      * This is equivalent to getDefaultFractionDigits(CurrencyUsage.STANDARD);
+     *
+     * Important: The number of fraction digits for a given currency is NOT
+     * guaranteed to be constant across versions of ICU or CLDR. For example,
+     * do NOT use this value as a mechanism for deciding the magnitude used
+     * to store currency values in a database. You should use this value for
+     * display purposes only.
+     *
      * @return a non-negative number of fraction digits to be
      * displayed
      */
@@ -771,6 +870,13 @@ public class Currency extends MeasureUnit {
     /**
      * Returns the number of the number of fraction digits that should
      * be displayed for this currency with Usage.
+     *
+     * Important: The number of fraction digits for a given currency is NOT
+     * guaranteed to be constant across versions of ICU or CLDR. For example,
+     * do NOT use this value as a mechanism for deciding the magnitude used
+     * to store currency values in a database. You should use this value for
+     * display purposes only.
+     *
      * @param Usage the usage of currency(Standard or Cash)
      * @return a non-negative number of fraction digits to be
      * displayed
@@ -862,7 +968,7 @@ public class Currency extends MeasureUnit {
             //CurrencyFilter filter = CurrencyFilter.onDateRange(null, new Date(253373299200000L));
             CurrencyFilter filter = CurrencyFilter.all();
             all = Collections.unmodifiableList(getTenderCurrencies(filter));
-            ALL_TENDER_CODES = new SoftReference<List<String>>(all);
+            ALL_TENDER_CODES = new SoftReference<>(all);
         }
         return all;
     }
@@ -872,8 +978,8 @@ public class Currency extends MeasureUnit {
         if (all == null) {
             CurrencyMetaInfo info = CurrencyMetaInfo.getInstance();
             all = Collections.unmodifiableSet(
-                    new HashSet<String>(info.currencies(CurrencyFilter.all())));
-            ALL_CODES_AS_SET = new SoftReference<Set<String>>(all);
+                    new HashSet<>(info.currencies(CurrencyFilter.all())));
+            ALL_CODES_AS_SET = new SoftReference<>(all);
         }
         return all;
     }
@@ -928,34 +1034,6 @@ public class Currency extends MeasureUnit {
     private static List<String> getTenderCurrencies(CurrencyFilter filter) {
         CurrencyMetaInfo info = CurrencyMetaInfo.getInstance();
         return info.currencies(filter.withTender());
-    }
-
-    private static final class EquivalenceRelation<T> {
-
-        private Map<T, Set<T>> data = new HashMap<T, Set<T>>();
-
-        @SuppressWarnings("unchecked")  // See ticket #11395, this is safe.
-        public EquivalenceRelation<T> add(T... items) {
-            Set<T> group = new HashSet<T>();
-            for (T item : items) {
-                if (data.containsKey(item)) {
-                    throw new IllegalArgumentException("All groups passed to add must be disjoint.");
-                }
-                group.add(item);
-            }
-            for (T item : items) {
-                data.put(item, group);
-            }
-            return this;
-        }
-
-        public Set<T> get(T item) {
-            Set<T> result = data.get(item);
-            if (result == null) {
-                return Collections.singleton(item);
-            }
-            return Collections.unmodifiableSet(result);
-        }
     }
 
     private Object writeReplace() throws ObjectStreamException {

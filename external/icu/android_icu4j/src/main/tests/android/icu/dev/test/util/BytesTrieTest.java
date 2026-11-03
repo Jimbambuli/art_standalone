@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 *******************************************************************************
 *   Copyright (C) 2011, International Business Machines
@@ -14,15 +14,21 @@
 package android.icu.dev.test.util;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.NoSuchElementException;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.util.BytesTrie;
 import android.icu.util.BytesTrieBuilder;
 import android.icu.util.StringTrieBuilder;
+import android.icu.testsharding.MainTestShard;
 
+@MainTestShard
+@RunWith(JUnit4.class)
 public class BytesTrieTest extends TestFmwk {
     public BytesTrieTest() {}
 
@@ -508,6 +514,63 @@ public class BytesTrieTest extends TestFmwk {
             data);
     }
 
+    @Test
+    public void TestClone() throws CloneNotSupportedException {
+        final StringAndValue[] data={
+            new StringAndValue("a", 1),
+            new StringAndValue("ab", 100),
+            new StringAndValue("abc", 300),
+            new StringAndValue("az", 999)
+        };
+        BytesTrie trie = buildTrie(data, data.length, StringTrieBuilder.Option.SMALL);
+        assertEquals("a result", BytesTrie.Result.INTERMEDIATE_VALUE, trie.next('a'));
+        assertEquals("a value", 1, trie.getValue());
+        BytesTrie clone = trie.clone();
+        trie = null;
+        assertEquals("ab result", BytesTrie.Result.INTERMEDIATE_VALUE, clone.next('b'));
+        assertEquals("ab value", 100, clone.getValue());
+        BytesTrie copy = new BytesTrie(clone);
+        clone = null;
+        assertEquals("abc result", BytesTrie.Result.FINAL_VALUE, copy.next('c'));
+        assertEquals("abc value", 300, copy.getValue());
+    }
+
+    @Test
+    public void TestDelta() {
+        byte[] intBytes0 = new byte[5];
+        byte[] intBytes1 = new byte[5];
+        int[] sampleDeltas = new int[] {
+            -1, 0, 1, 2, 3, 0xa5, 0xbe, 0xbf,
+            -2, 0xc0, 0xc1, 0xeee, 0x1234, 0x2ffe, 0x2fff,
+            -3, 0x3000, 0x3001, 0x3003, 0x50005, 0xdfffe, 0xdffff,
+            -4, 0xe0000, 0xe0001, 0xef0123, 0xfffffe, 0xffffff,
+            -5, 0x1000000, 0x1000001, 0x7fffffff
+        };
+        int expectedLength = 0;
+        for (int delta : sampleDeltas) {
+            if (delta < 0) {
+                expectedLength = -delta;
+                continue;
+            }
+            // Encoding twice into differently-initialized arrays
+            // catches bytes that are not written to.
+            Arrays.fill(intBytes0, (byte)0);
+            Arrays.fill(intBytes1, (byte)1);
+            int length0 = BytesTrieBuilder.internalEncodeDelta(delta, intBytes0);
+            int length1 = BytesTrieBuilder.internalEncodeDelta(delta, intBytes1);
+            assertTrue("non-zero length to encode delta " + delta, length0 > 0);
+            assertEquals("consistent length to encode delta " + delta, length0, length1);
+            assertEquals("expected length to encode delta " + delta, expectedLength, length0);
+            for (int i = 0; i < length0; ++i) {
+                byte b0 = intBytes0[i];
+                byte b1 = intBytes1[i];
+                assertEquals("differently encoded delta " + delta + " at byte index " + i, b0, b1);
+            }
+            int pos = BytesTrie.jumpByDelta(intBytes0, 0);
+            assertEquals("roundtrip for delta " + delta, delta, pos - length0);
+        }
+    }
+
     private void checkData(StringAndValue data[]) {
         checkData(data, data.length);
     }
@@ -524,6 +587,7 @@ public class BytesTrieTest extends TestFmwk {
         checkFirst(trie, data, dataLength);
         checkNext(trie, data, dataLength);
         checkNextWithState(trie, data, dataLength);
+        checkNextWithState64(trie, data, dataLength);
         checkNextString(trie, data, dataLength);
         checkIterator(trie, data, dataLength);
     }
@@ -706,6 +770,54 @@ public class BytesTrieTest extends TestFmwk {
                       result!=trie.current()) {
                 errln("trie does not seem to contain "+data[i].s+
                       " after saveState/next(rest)/resetToState");
+            } else if(trie.getValue()!=data[i].value) {
+                errln(String.format("trie value for %s is %d=0x%x instead of expected %d=0x%x",
+                                    data[i].s,
+                                    trie.getValue(), trie.getValue(),
+                                    data[i].value, data[i].value));
+            }
+            trie.reset();
+        }
+    }
+
+    private void checkNextWithState64(BytesTrie trie, StringAndValue data[], int dataLength) {
+        assertNotEquals("trie(initial state).getState64()!=0", 0, trie.getState64());
+        for(int i=0; i<dataLength; ++i) {
+            byte[] expectedString=data[i].bytes;
+            int stringLength=data[i].s.length();
+            int partialLength=stringLength/3;
+            for(int j=0; j<partialLength; ++j) {
+                if(!trie.next(expectedString[j]).matches()) {
+                    errln("trie.next()=BytesTrie.Result.NO_MATCH for a prefix of "+data[i].s);
+                    return;
+                }
+            }
+            long state = trie.getState64();
+            assertNotEquals("trie.getState64()!=0", 0, state);
+            BytesTrie.Result resultAtState=trie.current();
+            BytesTrie.Result result;
+            int valueAtState=-99;
+            if(resultAtState.hasValue()) {
+                valueAtState=trie.getValue();
+            }
+            result=trie.next(0);  // mismatch
+            if(result!=BytesTrie.Result.NO_MATCH || result!=trie.current()) {
+                errln("trie.next(0) matched after part of "+data[i].s);
+            }
+            if( resultAtState!=trie.resetToState64(state).current() ||
+                (resultAtState.hasValue() && valueAtState!=trie.getValue())
+            ) {
+                errln("trie.next(part of "+data[i].s+") changes current()/getValue() after "+
+                      "getState64/next(0)/resetToState64");
+            } else if(!(result=trie.next(expectedString, partialLength, stringLength)).hasValue() ||
+                      result!=trie.current()) {
+                errln("trie.next(rest of "+data[i].s+") does not seem to contain "+data[i].s+" after "+
+                      "getState64/next(0)/resetToState64");
+            } else if(!(result=trie.resetToState64(state).
+                                next(expectedString, partialLength, stringLength)).hasValue() ||
+                      result!=trie.current()) {
+                errln("trie does not seem to contain "+data[i].s+
+                      " after getState64/next(rest)/resetToState64");
             } else if(trie.getValue()!=data[i].value) {
                 errln(String.format("trie value for %s is %d=0x%x instead of expected %d=0x%x",
                                     data[i].s,

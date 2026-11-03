@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2013-2016, International Business Machines Corporation and
@@ -12,6 +12,8 @@ package android.icu.dev.test.format;
 import java.util.Locale;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.math.BigDecimal;
@@ -20,11 +22,16 @@ import android.icu.text.NumberFormat;
 import android.icu.text.RelativeDateTimeFormatter;
 import android.icu.text.RelativeDateTimeFormatter.AbsoluteUnit;
 import android.icu.text.RelativeDateTimeFormatter.Direction;
+import android.icu.text.RelativeDateTimeFormatter.FormattedRelativeDateTime;
 import android.icu.text.RelativeDateTimeFormatter.RelativeDateTimeUnit;
 import android.icu.text.RelativeDateTimeFormatter.RelativeUnit;
 import android.icu.text.RelativeDateTimeFormatter.Style;
+import android.icu.text.RuleBasedNumberFormat;
 import android.icu.util.ULocale;
+import android.icu.testsharding.MainTestShard;
 
+@MainTestShard
+@RunWith(JUnit4.class)
 public class RelativeDateTimeFormatterTest extends TestFmwk {
     @Test
     public void TestRelativeDateWithQuantity() {
@@ -248,64 +255,64 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
     @Test
     public void TestRelativeDateWithQuantityNarrow() {
         Object[][] data = {
-                {0.0, Direction.NEXT, RelativeUnit.SECONDS, "in 0 sec."},
-                {0.5, Direction.NEXT, RelativeUnit.SECONDS, "in 0.5 sec."},
+                {0.0, Direction.NEXT, RelativeUnit.SECONDS, "in 0s"},
+                {0.5, Direction.NEXT, RelativeUnit.SECONDS, "in 0.5s"},
 
-                {1.0, Direction.NEXT, RelativeUnit.SECONDS, "in 1 sec."},
-                {2.0, Direction.NEXT, RelativeUnit.SECONDS, "in 2 sec."},
-                {0.0, Direction.NEXT, RelativeUnit.MINUTES, "in 0 min."},
-                {0.5, Direction.NEXT, RelativeUnit.MINUTES, "in 0.5 min."},
-                {1.0, Direction.NEXT, RelativeUnit.MINUTES, "in 1 min."},
-                {2.0, Direction.NEXT, RelativeUnit.MINUTES, "in 2 min."},
-                {0.0, Direction.NEXT, RelativeUnit.HOURS, "in 0 hr."},
-                {0.5, Direction.NEXT, RelativeUnit.HOURS, "in 0.5 hr."},
-                {1.0, Direction.NEXT, RelativeUnit.HOURS, "in 1 hr."},
-                {2.0, Direction.NEXT, RelativeUnit.HOURS, "in 2 hr."},
-                {0.0, Direction.NEXT, RelativeUnit.DAYS, "in 0 days"},
-                {0.5, Direction.NEXT, RelativeUnit.DAYS, "in 0.5 days"},
-                {1.0, Direction.NEXT, RelativeUnit.DAYS, "in 1 day"},
-                {2.0, Direction.NEXT, RelativeUnit.DAYS, "in 2 days"},
-                {0.0, Direction.NEXT, RelativeUnit.WEEKS, "in 0 wk."},
-                {0.5, Direction.NEXT, RelativeUnit.WEEKS, "in 0.5 wk."},
-                {1.0, Direction.NEXT, RelativeUnit.WEEKS, "in 1 wk."},
-                {2.0, Direction.NEXT, RelativeUnit.WEEKS, "in 2 wk."},
-                {0.0, Direction.NEXT, RelativeUnit.MONTHS, "in 0 mo."},
-                {0.5, Direction.NEXT, RelativeUnit.MONTHS, "in 0.5 mo."},
-                {1.0, Direction.NEXT, RelativeUnit.MONTHS, "in 1 mo."},
-                {2.0, Direction.NEXT, RelativeUnit.MONTHS, "in 2 mo."},
-                {0.0, Direction.NEXT, RelativeUnit.YEARS, "in 0 yr."},
-                {0.5, Direction.NEXT, RelativeUnit.YEARS, "in 0.5 yr."},
-                {1.0, Direction.NEXT, RelativeUnit.YEARS, "in 1 yr."},
-                {2.0, Direction.NEXT, RelativeUnit.YEARS, "in 2 yr."},
+                {1.0, Direction.NEXT, RelativeUnit.SECONDS, "in 1s"},
+                {2.0, Direction.NEXT, RelativeUnit.SECONDS, "in 2s"},
+                {0.0, Direction.NEXT, RelativeUnit.MINUTES, "in 0m"},
+                {0.5, Direction.NEXT, RelativeUnit.MINUTES, "in 0.5m"},
+                {1.0, Direction.NEXT, RelativeUnit.MINUTES, "in 1m"},
+                {2.0, Direction.NEXT, RelativeUnit.MINUTES, "in 2m"},
+                {0.0, Direction.NEXT, RelativeUnit.HOURS, "in 0h"},
+                {0.5, Direction.NEXT, RelativeUnit.HOURS, "in 0.5h"},
+                {1.0, Direction.NEXT, RelativeUnit.HOURS, "in 1h"},
+                {2.0, Direction.NEXT, RelativeUnit.HOURS, "in 2h"},
+                {0.0, Direction.NEXT, RelativeUnit.DAYS, "in 0d"},
+                {0.5, Direction.NEXT, RelativeUnit.DAYS, "in 0.5d"},
+                {1.0, Direction.NEXT, RelativeUnit.DAYS, "in 1d"},
+                {2.0, Direction.NEXT, RelativeUnit.DAYS, "in 2d"},
+                {0.0, Direction.NEXT, RelativeUnit.WEEKS, "in 0w"},
+                {0.5, Direction.NEXT, RelativeUnit.WEEKS, "in 0.5w"},
+                {1.0, Direction.NEXT, RelativeUnit.WEEKS, "in 1w"},
+                {2.0, Direction.NEXT, RelativeUnit.WEEKS, "in 2w"},
+                {0.0, Direction.NEXT, RelativeUnit.MONTHS, "in 0mo"},
+                {0.5, Direction.NEXT, RelativeUnit.MONTHS, "in 0.5mo"},
+                {1.0, Direction.NEXT, RelativeUnit.MONTHS, "in 1mo"},
+                {2.0, Direction.NEXT, RelativeUnit.MONTHS, "in 2mo"},
+                {0.0, Direction.NEXT, RelativeUnit.YEARS, "in 0y"},
+                {0.5, Direction.NEXT, RelativeUnit.YEARS, "in 0.5y"},
+                {1.0, Direction.NEXT, RelativeUnit.YEARS, "in 1y"},
+                {2.0, Direction.NEXT, RelativeUnit.YEARS, "in 2y"},
 
-                {0.0, Direction.LAST, RelativeUnit.SECONDS, "0 sec. ago"},
-                {0.5, Direction.LAST, RelativeUnit.SECONDS, "0.5 sec. ago"},
-                {1.0, Direction.LAST, RelativeUnit.SECONDS, "1 sec. ago"},
-                {2.0, Direction.LAST, RelativeUnit.SECONDS, "2 sec. ago"},
-                {0.0, Direction.LAST, RelativeUnit.MINUTES, "0 min. ago"},
-                {0.5, Direction.LAST, RelativeUnit.MINUTES, "0.5 min. ago"},
-                {1.0, Direction.LAST, RelativeUnit.MINUTES, "1 min. ago"},
-                {2.0, Direction.LAST, RelativeUnit.MINUTES, "2 min. ago"},
-                {0.0, Direction.LAST, RelativeUnit.HOURS, "0 hr. ago"},
-                {0.5, Direction.LAST, RelativeUnit.HOURS, "0.5 hr. ago"},
-                {1.0, Direction.LAST, RelativeUnit.HOURS, "1 hr. ago"},
-                {2.0, Direction.LAST, RelativeUnit.HOURS, "2 hr. ago"},
-                {0.0, Direction.LAST, RelativeUnit.DAYS, "0 days ago"},
-                {0.5, Direction.LAST, RelativeUnit.DAYS, "0.5 days ago"},
-                {1.0, Direction.LAST, RelativeUnit.DAYS, "1 day ago"},
-                {2.0, Direction.LAST, RelativeUnit.DAYS, "2 days ago"},
-                {0.0, Direction.LAST, RelativeUnit.WEEKS, "0 wk. ago"},
-                {0.5, Direction.LAST, RelativeUnit.WEEKS, "0.5 wk. ago"},
-                {1.0, Direction.LAST, RelativeUnit.WEEKS, "1 wk. ago"},
-                {2.0, Direction.LAST, RelativeUnit.WEEKS, "2 wk. ago"},
-                {0.0, Direction.LAST, RelativeUnit.MONTHS, "0 mo. ago"},
-                {0.5, Direction.LAST, RelativeUnit.MONTHS, "0.5 mo. ago"},
-                {1.0, Direction.LAST, RelativeUnit.MONTHS, "1 mo. ago"},
-                {2.0, Direction.LAST, RelativeUnit.MONTHS, "2 mo. ago"},
-                {0.0, Direction.LAST, RelativeUnit.YEARS, "0 yr. ago"},
-                {0.5, Direction.LAST, RelativeUnit.YEARS, "0.5 yr. ago"},
-                {1.0, Direction.LAST, RelativeUnit.YEARS, "1 yr. ago"},
-                {2.0, Direction.LAST, RelativeUnit.YEARS, "2 yr. ago"},
+                {0.0, Direction.LAST, RelativeUnit.SECONDS, "0s ago"},
+                {0.5, Direction.LAST, RelativeUnit.SECONDS, "0.5s ago"},
+                {1.0, Direction.LAST, RelativeUnit.SECONDS, "1s ago"},
+                {2.0, Direction.LAST, RelativeUnit.SECONDS, "2s ago"},
+                {0.0, Direction.LAST, RelativeUnit.MINUTES, "0m ago"},
+                {0.5, Direction.LAST, RelativeUnit.MINUTES, "0.5m ago"},
+                {1.0, Direction.LAST, RelativeUnit.MINUTES, "1m ago"},
+                {2.0, Direction.LAST, RelativeUnit.MINUTES, "2m ago"},
+                {0.0, Direction.LAST, RelativeUnit.HOURS, "0h ago"},
+                {0.5, Direction.LAST, RelativeUnit.HOURS, "0.5h ago"},
+                {1.0, Direction.LAST, RelativeUnit.HOURS, "1h ago"},
+                {2.0, Direction.LAST, RelativeUnit.HOURS, "2h ago"},
+                {0.0, Direction.LAST, RelativeUnit.DAYS, "0d ago"},
+                {0.5, Direction.LAST, RelativeUnit.DAYS, "0.5d ago"},
+                {1.0, Direction.LAST, RelativeUnit.DAYS, "1d ago"},
+                {2.0, Direction.LAST, RelativeUnit.DAYS, "2d ago"},
+                {0.0, Direction.LAST, RelativeUnit.WEEKS, "0w ago"},
+                {0.5, Direction.LAST, RelativeUnit.WEEKS, "0.5w ago"},
+                {1.0, Direction.LAST, RelativeUnit.WEEKS, "1w ago"},
+                {2.0, Direction.LAST, RelativeUnit.WEEKS, "2w ago"},
+                {0.0, Direction.LAST, RelativeUnit.MONTHS, "0mo ago"},
+                {0.5, Direction.LAST, RelativeUnit.MONTHS, "0.5mo ago"},
+                {1.0, Direction.LAST, RelativeUnit.MONTHS, "1mo ago"},
+                {2.0, Direction.LAST, RelativeUnit.MONTHS, "2mo ago"},
+                {0.0, Direction.LAST, RelativeUnit.YEARS, "0y ago"},
+                {0.5, Direction.LAST, RelativeUnit.YEARS, "0.5y ago"},
+                {1.0, Direction.LAST, RelativeUnit.YEARS, "1y ago"},
+                {2.0, Direction.LAST, RelativeUnit.YEARS, "2y ago"},
 
         };
         RelativeDateTimeFormatter fmt = RelativeDateTimeFormatter.getInstance(
@@ -364,6 +371,7 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
                 {Direction.NEXT, AbsoluteUnit.DAY, "tomorrow"},
                 {Direction.NEXT, AbsoluteUnit.WEEK, "next week"},
                 {Direction.NEXT, AbsoluteUnit.MONTH, "next month"},
+                {Direction.NEXT, AbsoluteUnit.QUARTER, "next quarter"},
                 {Direction.NEXT, AbsoluteUnit.YEAR, "next year"},
                 {Direction.NEXT, AbsoluteUnit.MONDAY, "next Monday"},
                 {Direction.NEXT, AbsoluteUnit.TUESDAY, "next Tuesday"},
@@ -378,6 +386,7 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
                 {Direction.LAST, AbsoluteUnit.DAY, "yesterday"},
                 {Direction.LAST, AbsoluteUnit.WEEK, "last week"},
                 {Direction.LAST, AbsoluteUnit.MONTH, "last month"},
+                {Direction.LAST, AbsoluteUnit.QUARTER, "last quarter"},
                 {Direction.LAST, AbsoluteUnit.YEAR, "last year"},
                 {Direction.LAST, AbsoluteUnit.MONDAY, "last Monday"},
                 {Direction.LAST, AbsoluteUnit.TUESDAY, "last Tuesday"},
@@ -390,6 +399,7 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
                 {Direction.THIS, AbsoluteUnit.DAY, "today"},
                 {Direction.THIS, AbsoluteUnit.WEEK, "this week"},
                 {Direction.THIS, AbsoluteUnit.MONTH, "this month"},
+                {Direction.THIS, AbsoluteUnit.QUARTER, "this quarter"},
                 {Direction.THIS, AbsoluteUnit.YEAR, "this year"},
                 {Direction.THIS, AbsoluteUnit.MONDAY, "this Monday"},
                 {Direction.THIS, AbsoluteUnit.TUESDAY, "this Tuesday"},
@@ -398,10 +408,13 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
                 {Direction.THIS, AbsoluteUnit.FRIDAY, "this Friday"},
                 {Direction.THIS, AbsoluteUnit.SATURDAY, "this Saturday"},
                 {Direction.THIS, AbsoluteUnit.SUNDAY, "this Sunday"},
+                {Direction.THIS, AbsoluteUnit.HOUR, "this hour"},
+                {Direction.THIS, AbsoluteUnit.MINUTE, "this minute"},
 
                 {Direction.PLAIN, AbsoluteUnit.DAY, "day"},
                 {Direction.PLAIN, AbsoluteUnit.WEEK, "week"},
                 {Direction.PLAIN, AbsoluteUnit.MONTH, "month"},
+                {Direction.PLAIN, AbsoluteUnit.QUARTER, "quarter"},
                 {Direction.PLAIN, AbsoluteUnit.YEAR, "year"},
                 {Direction.PLAIN, AbsoluteUnit.MONDAY, "Monday"},
                 {Direction.PLAIN, AbsoluteUnit.TUESDAY, "Tuesday"},
@@ -428,6 +441,7 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
                 {Direction.NEXT, AbsoluteUnit.DAY, "Tomorrow"},
                 {Direction.NEXT, AbsoluteUnit.WEEK, "Next week"},
                 {Direction.NEXT, AbsoluteUnit.MONTH, "Next month"},
+                {Direction.NEXT, AbsoluteUnit.QUARTER, "Next quarter"},
                 {Direction.NEXT, AbsoluteUnit.YEAR, "Next year"},
 
                 {Direction.NEXT, AbsoluteUnit.MONDAY, "Next Monday"},
@@ -443,6 +457,7 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
                 {Direction.LAST, AbsoluteUnit.DAY, "Yesterday"},
                 {Direction.LAST, AbsoluteUnit.WEEK, "Last week"},
                 {Direction.LAST, AbsoluteUnit.MONTH, "Last month"},
+                {Direction.LAST, AbsoluteUnit.QUARTER, "Last quarter"},
                 {Direction.LAST, AbsoluteUnit.YEAR, "Last year"},
                 {Direction.LAST, AbsoluteUnit.MONDAY, "Last Monday"},
                 {Direction.LAST, AbsoluteUnit.TUESDAY, "Last Tuesday"},
@@ -455,6 +470,7 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
                 {Direction.THIS, AbsoluteUnit.DAY, "Today"},
                 {Direction.THIS, AbsoluteUnit.WEEK, "This week"},
                 {Direction.THIS, AbsoluteUnit.MONTH, "This month"},
+                {Direction.THIS, AbsoluteUnit.QUARTER, "This quarter"},
                 {Direction.THIS, AbsoluteUnit.YEAR, "This year"},
                 {Direction.THIS, AbsoluteUnit.MONDAY, "This Monday"},
                 {Direction.THIS, AbsoluteUnit.TUESDAY, "This Tuesday"},
@@ -467,6 +483,7 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
                 {Direction.PLAIN, AbsoluteUnit.DAY, "Day"},
                 {Direction.PLAIN, AbsoluteUnit.WEEK, "Week"},
                 {Direction.PLAIN, AbsoluteUnit.MONTH, "Month"},
+                {Direction.PLAIN, AbsoluteUnit.QUARTER, "Quarter"},
                 {Direction.PLAIN, AbsoluteUnit.YEAR, "Year"},
                 {Direction.PLAIN, AbsoluteUnit.MONDAY, "Monday"},
                 {Direction.PLAIN, AbsoluteUnit.TUESDAY, "Tuesday"},
@@ -499,6 +516,7 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
                 {Direction.NEXT, AbsoluteUnit.WEEK, "next wk."},
 
                 {Direction.NEXT, AbsoluteUnit.MONTH, "next mo."},
+                {Direction.NEXT, AbsoluteUnit.QUARTER, "next qtr."},
                 {Direction.NEXT, AbsoluteUnit.YEAR, "next yr."},
 
                 {Direction.NEXT, AbsoluteUnit.MONDAY, "next Mon."},
@@ -515,6 +533,7 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
                 {Direction.LAST, AbsoluteUnit.DAY, "yesterday"},
                 {Direction.LAST, AbsoluteUnit.WEEK, "last wk."},
                 {Direction.LAST, AbsoluteUnit.MONTH, "last mo."},
+                {Direction.LAST, AbsoluteUnit.QUARTER, "last qtr."},
                 {Direction.LAST, AbsoluteUnit.YEAR, "last yr."},
                 {Direction.LAST, AbsoluteUnit.MONDAY, "last Mon."},
                 {Direction.LAST, AbsoluteUnit.TUESDAY, "last Tue."},
@@ -529,6 +548,7 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
                 {Direction.THIS, AbsoluteUnit.DAY, "today"},
                 {Direction.THIS, AbsoluteUnit.WEEK, "this wk."},
                 {Direction.THIS, AbsoluteUnit.MONTH, "this mo."},
+                {Direction.THIS, AbsoluteUnit.QUARTER, "this qtr."},
                 {Direction.THIS, AbsoluteUnit.YEAR, "this yr."},
                 {Direction.THIS, AbsoluteUnit.MONDAY, "this Mon."},
                 {Direction.THIS, AbsoluteUnit.TUESDAY, "this Tue."},
@@ -541,6 +561,7 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
                 {Direction.PLAIN, AbsoluteUnit.DAY, "day"},
                 {Direction.PLAIN, AbsoluteUnit.WEEK, "wk."},
                 {Direction.PLAIN, AbsoluteUnit.MONTH, "mo."},
+                {Direction.PLAIN, AbsoluteUnit.QUARTER, "qtr."},
                 {Direction.PLAIN, AbsoluteUnit.YEAR, "yr."},
                 {Direction.PLAIN, AbsoluteUnit.MONDAY, "Mo"},
                 {Direction.PLAIN, AbsoluteUnit.TUESDAY, "Tu"},
@@ -573,6 +594,7 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
                 {Direction.NEXT, AbsoluteUnit.WEEK, "next wk."},
 
                 {Direction.NEXT, AbsoluteUnit.MONTH, "next mo."},
+                {Direction.NEXT, AbsoluteUnit.QUARTER, "next qtr."},
                 {Direction.NEXT, AbsoluteUnit.YEAR, "next yr."},
 
                 {Direction.NEXT, AbsoluteUnit.MONDAY, "next M"},
@@ -589,6 +611,7 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
                 {Direction.LAST, AbsoluteUnit.DAY, "yesterday"},
                 {Direction.LAST, AbsoluteUnit.WEEK, "last wk."},
                 {Direction.LAST, AbsoluteUnit.MONTH, "last mo."},
+                {Direction.LAST, AbsoluteUnit.QUARTER, "last qtr."},
                 {Direction.LAST, AbsoluteUnit.YEAR, "last yr."},
                 {Direction.LAST, AbsoluteUnit.MONDAY, "last M"},
                 {Direction.LAST, AbsoluteUnit.TUESDAY, "last Tu"},
@@ -601,6 +624,7 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
                 {Direction.THIS, AbsoluteUnit.DAY, "today"},
                 {Direction.THIS, AbsoluteUnit.WEEK, "this wk."},
                 {Direction.THIS, AbsoluteUnit.MONTH, "this mo."},
+                {Direction.THIS, AbsoluteUnit.QUARTER, "this qtr."},
                 {Direction.THIS, AbsoluteUnit.YEAR, "this yr."},
                 {Direction.THIS, AbsoluteUnit.MONDAY, "this M"},
                 {Direction.THIS, AbsoluteUnit.TUESDAY, "this Tu"},
@@ -613,9 +637,10 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
                 {Direction.THIS, AbsoluteUnit.SUNDAY, "this Su"},
 
                 {Direction.PLAIN, AbsoluteUnit.DAY, "day"},
-                {Direction.PLAIN, AbsoluteUnit.WEEK, "wk."},
-                {Direction.PLAIN, AbsoluteUnit.MONTH, "mo."},
-                {Direction.PLAIN, AbsoluteUnit.YEAR, "yr."},
+                {Direction.PLAIN, AbsoluteUnit.WEEK, "wk"},
+                {Direction.PLAIN, AbsoluteUnit.MONTH, "mo"},
+                {Direction.PLAIN, AbsoluteUnit.QUARTER, "qtr"},
+                {Direction.PLAIN, AbsoluteUnit.YEAR, "yr"},
                 {Direction.PLAIN, AbsoluteUnit.MONDAY, "M"},
                 {Direction.PLAIN, AbsoluteUnit.TUESDAY, "T"},
                 {Direction.PLAIN, AbsoluteUnit.WEDNESDAY, "W"},
@@ -640,7 +665,22 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
 
     @Test
     public void TestRelativeDateTimeUnitFormatters() {
-        double[] offsets = { -5.0, -2.2, -2.0, -1.0, -0.7, 0.0, 0.7, 1.0, 2.0, 5.0 };
+        double[] offsets = { -5.0, -2.2, -2.0, -1.0, -0.7, -0.0, 0.0, 0.7, 1.0, 2.0, 5.0 };
+
+        String[] en_decDef_long_midSent_sec = {
+        /*  text                    numeric */
+            "5 seconds ago",        "5 seconds ago",      /* -5   */
+            "2.2 seconds ago",      "2.2 seconds ago",    /* -2.2 */
+            "2 seconds ago",        "2 seconds ago",      /* -2   */
+            "1 second ago",         "1 second ago",       /* -1   */
+            "0.7 seconds ago",      "0.7 seconds ago",    /* -0.7 */
+            "now",                  "0 seconds ago",      /*  -0  */
+            "now",                  "in 0 seconds",       /*  0   */
+            "in 0.7 seconds",       "in 0.7 seconds",     /*  0.7 */
+            "in 1 second",          "in 1 second",        /*  1   */
+            "in 2 seconds",         "in 2 seconds",       /*  2   */
+            "in 5 seconds",         "in 5 seconds"        /*  5   */
+        };
 
         String[] en_decDef_long_midSent_week = {
         /*  text                    numeric */
@@ -649,6 +689,7 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
             "2 weeks ago",          "2 weeks ago",        /* -2   */
             "last week",            "1 week ago",         /* -1   */
             "0.7 weeks ago",        "0.7 weeks ago",      /* -0.7 */
+            "this week",            "0 weeks ago",        /* -0   */
             "this week",            "in 0 weeks",         /*  0   */
             "in 0.7 weeks",         "in 0.7 weeks",       /*  0.7 */
             "next week",            "in 1 week",          /*  1   */
@@ -663,6 +704,7 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
             "2 weeks ago",          "2 weeks ago",        /* -2   */
             "last week",            "1 week ago",         /* -1   */
             "0 weeks ago",          "0 weeks ago",        /* -0.7 */
+            "this week",            "0 weeks ago",        /* -0   */
             "this week",            "in 0 weeks",         /*  0   */
             "in 0 weeks",           "in 0 weeks",         /*  0.7 */
             "next week",            "in 1 week",          /*  1   */
@@ -677,6 +719,7 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
             "2 wk. ago",            "2 wk. ago",          /* -2   */
             "last wk.",             "1 wk. ago",          /* -1   */
             "0.7 wk. ago",          "0.7 wk. ago",        /* -0.7 */
+            "this wk.",             "0 wk. ago",          /* -0   */
             "this wk.",             "in 0 wk.",           /*  0   */
             "in 0.7 wk.",           "in 0.7 wk.",         /*  0.7 */
             "next wk.",             "in 1 wk.",           /*  1   */
@@ -691,7 +734,8 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
             "2 minutes ago",        "2 minutes ago",      /* -2   */
             "1 minute ago",         "1 minute ago",       /* -1   */
             "0.7 minutes ago",      "0.7 minutes ago",    /* -0.7 */
-            "in 0 minutes",         "in 0 minutes",       /*  0   */
+            "this minute",          "0 minutes ago",      /* -0   */
+            "this minute",          "in 0 minutes",       /*  0   */
             "in 0.7 minutes",       "in 0.7 minutes",     /*  0.7 */
             "in 1 minute",          "in 1 minute",        /*  1   */
             "in 2 minutes",         "in 2 minutes",       /*  2   */
@@ -700,16 +744,17 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
 
         String[] en_dec0_long_midSent_tues = {
         /*  text                    numeric */
-            ""/*no data */,         ""/*no data */,       /* -5   */
+            "5 Tuesdays ago",       "5 Tuesdays ago",     /* -5   */
             ""/*no data */,         ""/*no data */,       /* -2.2 */
-            ""/*no data */,         ""/*no data */,       /* -2   */
-            "last Tuesday",         ""/*no data */,       /* -1   */
+            "2 Tuesdays ago",       "2 Tuesdays ago",     /* -2   */
+            "last Tuesday",         "1 Tuesday ago",      /* -1   */
             ""/*no data */,         ""/*no data */,       /* -0.7 */
-            "this Tuesday",         ""/*no data */,       /*  0   */
+            "this Tuesday",         "0 Tuesdays ago",     /* -0   */
+            "this Tuesday",         "in 0 Tuesdays",      /*  0   */
             ""/*no data */,         ""/*no data */,       /*  0.7 */
-            "next Tuesday",         ""/*no data */,       /*  1   */
-            ""/*no data */,         ""/*no data */,       /*  2   */
-            ""/*no data */,         ""/*no data */,       /*  5   */
+            "next Tuesday",         "in 1 Tuesday",       /*  1   */
+            "in 2 Tuesdays",        "in 2 Tuesdays",      /*  2   */
+            "in 5 Tuesdays",        "in 5 Tuesdays",      /*  5   */
         };
 
         String[] fr_decDef_long_midSent_day = {
@@ -719,11 +764,43 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
             "avant-hier",           "il y a 2 jours",     /* -2   */
             "hier",                 "il y a 1 jour",      /* -1   */
             "il y a 0,7 jour",      "il y a 0,7 jour",    /* -0.7 */
+            "aujourd’hui",          "il y a 0 jour",      /* -0   */
             "aujourd’hui",          "dans 0 jour",        /*  0   */
             "dans 0,7 jour",        "dans 0,7 jour",      /*  0.7 */
             "demain",               "dans 1 jour",        /*  1   */
             "après-demain",         "dans 2 jours",       /*  2   */
             "dans 5 jours",         "dans 5 jours"        /*  5   */
+        };
+
+        String[] ak_decDef_long_stdAlon_sec = { // falls back to root
+        /*  text                    numeric */
+            "-5 s",                 "-5 s",               /* -5   */
+            "-2.2 s",               "-2.2 s",             /* -2.2 */
+            "-2 s",                 "-2 s",               /* -2   */
+            "-1 s",                 "-1 s",               /* -1   */
+            "-0.7 s",               "-0.7 s",             /* -0.7 */
+            "now",                  "-0 s",               /*  -0  */
+            "now",                  "+0 s",               /*  0   */
+            "+0.7 s",               "+0.7 s",             /*  0.7 */
+            "+1 s",                 "+1 s",               /*  1   */
+            "+2 s",                 "+2 s",               /*  2   */
+            "+5 s",                 "+5 s",               /*  5   */
+        };
+
+        @SuppressWarnings("unused")
+        String[] enIN_decDef_short_midSent_weds = {
+        /*  text                    numeric */
+            "5 Wed. ago",           "5 Wed. ago",         /* -5   */
+            "2.2 Wed. ago",         "2.2 Wed. ago",       /* -2.2 */
+            "2 Wed. ago",           "2 Wed. ago",         /* -2   */
+            "last Wed",             "1 Wed. ago",         /* -1   */
+            "0.7 Wed. ago",         "0.7 Wed. ago",       /* -0.7 */
+            "this Wed",             "0 Wed. ago",         /*  -0  */
+            "this Wed",             "in 0 Wed.",          /*  0   */
+            "in 0.7 Wed.",          "in 0.7 Wed.",        /*  0.7 */
+            "next Wed",             "in 1 Wed",           /*  1   */ // in 1 Wed. missing in logical group
+            "in 2  Wed.",           "in 2 Wed.",          /*  2   */
+            "in 5  Wed.",           "in 5 Wed."           /*  5   */
         };
 
         class TestRelativeDateTimeUnitItem {
@@ -745,6 +822,8 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
         };
         final TestRelativeDateTimeUnitItem[] items = {
             new TestRelativeDateTimeUnitItem("en", -1, Style.LONG,  DisplayContext.CAPITALIZATION_FOR_MIDDLE_OF_SENTENCE,
+                                                                    RelativeDateTimeUnit.SECOND, en_decDef_long_midSent_sec),
+            new TestRelativeDateTimeUnitItem("en", -1, Style.LONG,  DisplayContext.CAPITALIZATION_FOR_MIDDLE_OF_SENTENCE,
                                                                     RelativeDateTimeUnit.WEEK, en_decDef_long_midSent_week),
             new TestRelativeDateTimeUnitItem("en",  0, Style.LONG,  DisplayContext.CAPITALIZATION_FOR_MIDDLE_OF_SENTENCE,
                                                                     RelativeDateTimeUnit.WEEK, en_dec0_long_midSent_week),
@@ -756,6 +835,11 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
                                                                     RelativeDateTimeUnit.TUESDAY, en_dec0_long_midSent_tues),
             new TestRelativeDateTimeUnitItem("fr", -1, Style.LONG,  DisplayContext.CAPITALIZATION_FOR_MIDDLE_OF_SENTENCE,
                                                                     RelativeDateTimeUnit.DAY, fr_decDef_long_midSent_day),
+            new TestRelativeDateTimeUnitItem("ak", -1, Style.LONG,  DisplayContext.CAPITALIZATION_FOR_STANDALONE,
+                                                                    RelativeDateTimeUnit.SECOND, ak_decDef_long_stdAlon_sec),
+            // ICU4J RelativeDateTimeFormatter does not currently support RelativeDateTimeUnit.WEDNESDAY
+            //new TestRelativeDateTimeUnitItem("en_IN", -1, Style.SHORT, DisplayContext.CAPITALIZATION_FOR_MIDDLE_OF_SENTENCE,
+            //                                                        RelativeDateTimeUnit.WEDNESDAY, enIN_decDef_short_midSent_weds),
         };
         for (TestRelativeDateTimeUnitItem item: items) {
             ULocale uloc = new ULocale(item.localeID);
@@ -948,4 +1032,102 @@ public class RelativeDateTimeFormatterTest extends TestFmwk {
         String w = fmt.format(6.0, Direction.NEXT, RelativeUnit.QUARTERS);
         assertEquals("narrow: in 6 qtr", "in 6 qtr", w);
     }
+
+    @Test
+    public void TestLocales() {
+        ULocale[] availableLocales = ULocale.getAvailableLocales();
+        for (ULocale loc: availableLocales) {
+            RelativeDateTimeFormatter.getInstance(loc);
+        }
+    }
+
+    @Test
+    public void TestFields() {
+        RelativeDateTimeFormatter fmt = RelativeDateTimeFormatter.getInstance(ULocale.US);
+
+        {
+            String message = "automatic absolute unit";
+            FormattedRelativeDateTime fv = fmt.formatToValue(1, RelativeDateTimeUnit.DAY);
+            String expectedString = "tomorrow";
+            Object[][] expectedFieldPositions = new Object[][]{
+                {RelativeDateTimeFormatter.Field.LITERAL, 0, 8}};
+            FormattedValueTest.checkFormattedValue(message, fv, expectedString, expectedFieldPositions);
+        }
+        {
+            String message = "automatic numeric unit";
+            FormattedRelativeDateTime fv = fmt.formatToValue(3, RelativeDateTimeUnit.DAY);
+            String expectedString = "in 3 days";
+            Object[][] expectedFieldPositions = new Object[][]{
+                {RelativeDateTimeFormatter.Field.LITERAL, 0, 2},
+                {NumberFormat.Field.INTEGER, 3, 4},
+                {RelativeDateTimeFormatter.Field.NUMERIC, 3, 4},
+                {RelativeDateTimeFormatter.Field.LITERAL, 5, 9}};
+            FormattedValueTest.checkFormattedValue(message, fv, expectedString, expectedFieldPositions);
+        }
+        {
+            String message = "manual absolute unit";
+            FormattedRelativeDateTime fv = fmt.formatToValue(Direction.NEXT, AbsoluteUnit.MONDAY);
+            String expectedString = "next Monday";
+            Object[][] expectedFieldPositions = new Object[][]{
+                {RelativeDateTimeFormatter.Field.LITERAL, 0, 11}};
+            FormattedValueTest.checkFormattedValue(message, fv, expectedString, expectedFieldPositions);
+        }
+        {
+            String message = "manual numeric unit";
+            FormattedRelativeDateTime fv = fmt.formatNumericToValue(1.5, RelativeDateTimeUnit.WEEK);
+            String expectedString = "in 1.5 weeks";
+            Object[][] expectedFieldPositions = new Object[][]{
+                {RelativeDateTimeFormatter.Field.LITERAL, 0, 2},
+                {NumberFormat.Field.INTEGER, 3, 4},
+                {NumberFormat.Field.DECIMAL_SEPARATOR, 4, 5},
+                {NumberFormat.Field.FRACTION, 5, 6},
+                {RelativeDateTimeFormatter.Field.NUMERIC, 3, 6},
+                {RelativeDateTimeFormatter.Field.LITERAL, 7, 12}};
+            FormattedValueTest.checkFormattedValue(message, fv, expectedString, expectedFieldPositions);
+        }
+        {
+            String message = "manual numeric resolved unit";
+            FormattedRelativeDateTime fv = fmt.formatToValue(12, Direction.LAST, RelativeUnit.HOURS);
+            String expectedString = "12 hours ago";
+            Object[][] expectedFieldPositions = new Object[][]{
+                {NumberFormat.Field.INTEGER, 0, 2},
+                {RelativeDateTimeFormatter.Field.NUMERIC, 0, 2},
+                {RelativeDateTimeFormatter.Field.LITERAL, 3, 12}};
+            FormattedValueTest.checkFormattedValue(message, fv, expectedString, expectedFieldPositions);
+        }
+
+        // Test when the number field is at the end
+        fmt = RelativeDateTimeFormatter.getInstance(new ULocale("sw"));
+        {
+            String message = "numeric field at end";
+            FormattedRelativeDateTime fv = fmt.formatToValue(12, RelativeDateTimeUnit.HOUR);
+            String expectedString = "baada ya saa 12";
+            Object[][] expectedFieldPositions = new Object[][]{
+                {RelativeDateTimeFormatter.Field.LITERAL, 0, 12},
+                {NumberFormat.Field.INTEGER, 13, 15},
+                {RelativeDateTimeFormatter.Field.NUMERIC, 13, 15}};
+            FormattedValueTest.checkFormattedValue(message, fv, expectedString, expectedFieldPositions);
+        }
+    }
+
+    @Test
+    public void TestRBNF() {
+        RuleBasedNumberFormat rbnf = new RuleBasedNumberFormat(ULocale.US, RuleBasedNumberFormat.SPELLOUT);
+        RelativeDateTimeFormatter fmt = RelativeDateTimeFormatter.getInstance(ULocale.US, rbnf);
+        assertEquals("format (direction)", "in five seconds", fmt.format(5, Direction.NEXT, RelativeUnit.SECONDS));
+        assertEquals("formatNumeric", "one week ago", fmt.formatNumeric(-1, RelativeDateTimeUnit.WEEK));
+        assertEquals("format (absolute)", "yesterday", fmt.format(Direction.LAST, AbsoluteUnit.DAY));
+        assertEquals("format (relative)", "in forty-two months", fmt.format(42, RelativeDateTimeUnit.MONTH));
+
+        {
+            String message = "formatToValue (relative)";
+            FormattedRelativeDateTime fv = fmt.formatToValue(-100, RelativeDateTimeUnit.YEAR);
+            String expectedString = "one hundred years ago";
+            Object[][] expectedFieldPositions = new Object[][]{
+                {RelativeDateTimeFormatter.Field.NUMERIC, 0, 11},
+                {RelativeDateTimeFormatter.Field.LITERAL, 12, 21}};
+            FormattedValueTest.checkFormattedValue(message, fv, expectedString, expectedFieldPositions);
+        }
+    }
+
 }

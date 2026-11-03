@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2003-2011, International Business Machines Corporation and    *
@@ -11,6 +11,7 @@ package android.icu.dev.test.stringprep;
 
 import android.icu.text.StringPrepParseException;
 import android.icu.text.UCharacterIterator;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author ram
@@ -18,6 +19,7 @@ import android.icu.text.UCharacterIterator;
  * To change the template for this generated type comment go to
  * Window>Preferences>Java>Code Generation>Code and Comments
  */
+@MainTestShard
 public class IDNAReference {
     
     private static char[] ACE_PREFIX = new char[]{ 0x0078,0x006E,0x002d,0x002d } ;
@@ -159,7 +161,7 @@ public class IDNAReference {
         }
         int poLen = processOut.length();
         if(poLen==0){
-            throw new StringPrepParseException("Found zero length lable after NamePrep.",StringPrepParseException.ZERO_LENGTH_LABEL);
+            throw new StringPrepParseException("Found zero length label after NamePrep.",StringPrepParseException.ZERO_LENGTH_LABEL);
         }
         StringBuffer dest = new StringBuffer();
         
@@ -360,7 +362,7 @@ public class IDNAReference {
             sepIndex = getSeparatorIndex(srcArr,sepIndex,srcArr.length);
             String label = new String(srcArr,oldSepIndex,sepIndex-oldSepIndex);
             if(label.length()==0 && sepIndex!=srcArr.length ){
-                throw new StringPrepParseException("Found zero length lable after NamePrep.",StringPrepParseException.ZERO_LENGTH_LABEL);
+                throw new StringPrepParseException("Found zero length label after NamePrep.",StringPrepParseException.ZERO_LENGTH_LABEL);
             }
             UCharacterIterator iter = UCharacterIterator.getInstance(label);
             result.append(convertToUnicode(iter,options));

@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 1996-2013, International Business Machines Corporation and    *
@@ -16,6 +16,7 @@ import java.util.Locale;
 import android.icu.impl.IllegalIcuArgumentException;
 import android.icu.impl.InvalidFormatException;
 import android.icu.impl.locale.LocaleSyntaxException;
+import android.icu.number.SkeletonSyntaxException;
 import android.icu.text.ArabicShapingException;
 import android.icu.text.StringPrepParseException;
 import android.icu.util.IllformedLocaleException;
@@ -144,6 +145,17 @@ public abstract class ExceptionHandler implements SerializableTestUtility.Handle
         {
             IllegalIcuArgumentException[] exceptions = {
                 new IllegalIcuArgumentException("Bad argument FOO")
+            };
+            return exceptions;
+        }
+    }
+
+    static class SkeletonSyntaxExceptionHandler extends ExceptionHandler
+    {
+        public Object[] getTestObjects()
+        {
+            SkeletonSyntaxException[] exceptions = {
+                new SkeletonSyntaxException("Bad number skeleton", "[foo]")
             };
             return exceptions;
         }

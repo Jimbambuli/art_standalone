@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  **********************************************************************
  * Copyright (c) 2011-2016, International Business Machines
@@ -18,16 +18,21 @@ import java.util.List;
 import java.util.Set;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.util.Region;
 import android.icu.util.Region.RegionType;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @test
  * @summary General test of Regions
  */
 
+@MainTestShard
+@RunWith(JUnit4.class)
 public class RegionTest extends TestFmwk {
     String[][] knownRegions = {
             //   Code  , Numeric , Parent, Type, Containing Continent
@@ -97,12 +102,12 @@ public class RegionTest extends TestFmwk {
             { "BS" , "044", "029", "TERRITORY", "019" },
             { "BT" , "064", "034", "TERRITORY", "142" },
             { "BU" , "104", "035", "TERRITORY", "142" },
-            { "BV" , "074", "QO" , "TERRITORY", "009" },
+            { "BV" , "074", "005", "TERRITORY", "019" },
             { "BW" , "072", "018", "TERRITORY", "002" },
             { "BY" , "112", "151", "TERRITORY", "150" },
             { "BZ" , "084", "013", "TERRITORY", "019" },
             { "CA" , "124", "021", "TERRITORY", "019" },
-            { "CC" , "166", "QO" , "TERRITORY", "009" },
+            { "CC" , "166", "053", "TERRITORY", "009" },
             { "CD" , "180", "017", "TERRITORY", "002" },
             { "CF" , "140", "017", "TERRITORY", "002" },
             { "CG" , "178", "017", "TERRITORY", "002" },
@@ -118,7 +123,7 @@ public class RegionTest extends TestFmwk {
             { "CU" , "192", "029", "TERRITORY", "019" },
             { "CV" , "132", "011", "TERRITORY", "002" },
             { "CW" , "531", "029", "TERRITORY", "019" },
-            { "CX" , "162", "QO" , "TERRITORY", "009" },
+            { "CX" , "162", "053", "TERRITORY", "009" },
             { "CY" , "196", "145", "TERRITORY", "142" },
             { "CZ" , "203", "151", "TERRITORY", "150" },
             { "DD" , "276", "155", "TERRITORY", "150" },
@@ -159,13 +164,13 @@ public class RegionTest extends TestFmwk {
             { "GP" , "312", "029", "TERRITORY", "019" },
             { "GQ" , "226", "017", "TERRITORY", "002" },
             { "GR" , "300", "039", "TERRITORY", "150" },
-            { "GS" , "239", "QO" , "TERRITORY", "009" },
+            { "GS" , "239", "005", "TERRITORY", "019" },
             { "GT" , "320", "013", "TERRITORY", "019" },
             { "GU" , "316", "057", "TERRITORY", "009" },
             { "GW" , "624", "011", "TERRITORY", "002" },
             { "GY" , "328", "005", "TERRITORY", "019" },
             { "HK" , "344", "030", "TERRITORY", "142" },
-            { "HM" , "334", "QO" , "TERRITORY", "009" },
+            { "HM" , "334", "053", "TERRITORY", "009" },
             { "HN" , "340", "013", "TERRITORY", "019" },
             { "HR" , "191", "039", "TERRITORY", "150" },
             { "HT" , "332", "029", "TERRITORY", "019" },
@@ -176,7 +181,7 @@ public class RegionTest extends TestFmwk {
             { "IL" , "376", "145", "TERRITORY", "142" },
             { "IM" , "833", "154", "TERRITORY", "150" },
             { "IN" , "356", "034", "TERRITORY", "142" },
-            { "IO" , "086", "QO" , "TERRITORY", "009" },
+            { "IO" , "086", "014", "TERRITORY", "002" },
             { "IQ" , "368", "145", "TERRITORY", "142" },
             { "IR" , "364", "034", "TERRITORY", "142" },
             { "IS" , "352", "154", "TERRITORY", "150" },
@@ -291,7 +296,7 @@ public class RegionTest extends TestFmwk {
             { "TA" , "-1" , "QO", "TERRITORY", "009" },
             { "TC" , "796", "029", "TERRITORY", "019" },
             { "TD" , "148", "017", "TERRITORY", "002" },
-            { "TF" , "260", "QO" , "TERRITORY", "009" },
+            { "TF" , "260", "014", "TERRITORY", "002" },
             { "TG" , "768", "011", "TERRITORY", "002" },
             { "TH" , "764", "035", "TERRITORY", "142" },
             { "TJ" , "762", "143", "TERRITORY", "142" },
@@ -308,7 +313,7 @@ public class RegionTest extends TestFmwk {
             { "TZ" , "834", "014", "TERRITORY", "002" },
             { "UA" , "804", "151", "TERRITORY", "150" },
             { "UG" , "800", "014", "TERRITORY", "002" },
-            { "UM" , "581", "QO" , "TERRITORY", "009" },
+            { "UM" , "581", "057", "TERRITORY", "009" },
             { "US" , "840", "021", "TERRITORY", "019" },
             { "UY" , "858", "005", "TERRITORY", "019" },
             { "UZ" , "860", "143", "TERRITORY", "142" },
@@ -333,7 +338,7 @@ public class RegionTest extends TestFmwk {
 
     /**
      * Test for known regions.
-     */    
+     */
     @Test
     public void TestKnownRegions() {
 
@@ -436,7 +441,7 @@ public class RegionTest extends TestFmwk {
     }
 
     @Test
-    public void TestGetContainedRegions() {        
+    public void TestGetContainedRegions() {
         for (String [] rd : knownRegions ) {
             try {
                 Region r = Region.getInstance(rd[0]);
@@ -446,7 +451,7 @@ public class RegionTest extends TestFmwk {
                 Set<Region> containedRegions = r.getContainedRegions();
                 for (Region cr : containedRegions ) {
                     if ( cr.getContainingRegion() != r) {
-                        errln("Region: " + r.toString() + " contains region: " + cr.toString() + ". Expected containing region of this region to be the original region, but got: " + 
+                        errln("Region: " + r.toString() + " contains region: " + cr.toString() + ". Expected containing region of this region to be the original region, but got: " +
                                 ( cr.getContainingRegion() == null ? "NULL" : cr.getContainingRegion().toString()));
                     }
                 }
@@ -457,7 +462,7 @@ public class RegionTest extends TestFmwk {
     }
 
     @Test
-    public void TestGetContainedRegionsWithType() {        
+    public void TestGetContainedRegionsWithType() {
         for (String [] rd : knownRegions ) {
             try {
                 Region r = Region.getInstance(rd[0]);
@@ -467,7 +472,7 @@ public class RegionTest extends TestFmwk {
                 Set<Region> containedRegions = r.getContainedRegions(Region.RegionType.TERRITORY);
                 for (Region cr : containedRegions ) {
                     if ( cr.getContainingRegion(Region.RegionType.CONTINENT) != r) {
-                        errln("Continent: " + r.toString() + " contains territory: " + cr.toString() + ". Expected containing continent of this region to be the original continent, but got: " + 
+                        errln("Continent: " + r.toString() + " contains territory: " + cr.toString() + ". Expected containing continent of this region to be the original continent, but got: " +
                                 ( cr.getContainingRegion() == null ? "NULL" : cr.getContainingRegion().toString()));
                     }
                 }
@@ -478,17 +483,17 @@ public class RegionTest extends TestFmwk {
     }
 
     @Test
-    public void TestGetContainingRegionWithType() {        
+    public void TestGetContainingRegionWithType() {
         for (String [] rd : knownRegions ) {
             try {
                 Region r = Region.getInstance(rd[0]);
                 Region c = r.getContainingRegion(Region.RegionType.CONTINENT);
-                if (rd[4] == null) {                   
+                if (rd[4] == null) {
                     if ( c != null) {
                         errln("Containing continent for " + r.toString() + " should have been NULL.  Got: " + c.toString());
                     }
                 } else {
-                    Region p = Region.getInstance(rd[4]);                   
+                    Region p = Region.getInstance(rd[4]);
                     if ( !p.equals(c)) {
                         errln("Expected containing continent of region " + r.toString() + " to be " + p.toString() + ". Got: " + ( c == null ? "NULL" : c.toString()) );
                     }
@@ -500,17 +505,17 @@ public class RegionTest extends TestFmwk {
     }
 
     @Test
-    public void TestGetContainingRegion() {        
+    public void TestGetContainingRegion() {
         for (String [] rd : knownRegions ) {
             try {
                 Region r = Region.getInstance(rd[0]);
                 Region c = r.getContainingRegion();
-                if (rd[2] == null) {                   
+                if (rd[2] == null) {
                     if ( c != null) {
                         errln("Containing region for " + r.toString() + " should have been NULL.  Got: " + c.toString());
                     }
                 } else {
-                    Region p = Region.getInstance(rd[2]);                   
+                    Region p = Region.getInstance(rd[2]);
                     if ( !p.equals(c)) {
                         errln("Expected containing region of region " + r.toString() + " to be " + p.toString() + ". Got: " + ( c == null ? "NULL" : c.toString()) );
                     }
@@ -546,7 +551,7 @@ public class RegionTest extends TestFmwk {
                         }
                     } catch (IllegalArgumentException ex ) {
                         errln("Known region " + data[i] + " was not recognized.");
-                    }                    
+                    }
                 }
             } catch (IllegalArgumentException ex ) {
                 errln("Known region " + inputID + " was not recognized.");
@@ -555,7 +560,7 @@ public class RegionTest extends TestFmwk {
     }
 
     @Test
-    public void TestContains() {        
+    public void TestContains() {
         for (String [] rd : knownRegions ) {
             try {
                 Region r = Region.getInstance(rd[0]);
@@ -583,6 +588,46 @@ public class RegionTest extends TestFmwk {
             errln("Available territories and all territories contained in world should be the same set.\n" +
                     "Available          = " + availableTerritories.toString() + "\n" +
                     "Contained in World = " + containedInWorld.toString());
+        }
+    }
+    
+    @Test
+    public void TestGroupingChildren() {
+        String[][][] testGroupings = {
+            { { "003" }, { "013", "021", "029" } },
+            { { "419" }, { "005", "013", "029" } },
+            { { "EU" },  { "AT", "BE", "BG", "CY", "CZ", "DE", "DK", "EE", "ES", "FI", "FR",
+                           "GR", "HR", "HU", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PL",
+                           "PT", "RO", "SE", "SI", "SK" } }
+        };
+        
+        for (String[][] testCase : testGroupings) {
+            String groupingCode = testCase[0][0];
+            String[] expectedChildren = testCase[1];
+            
+            try {
+                Region grouping = Region.getInstance(groupingCode);
+                Set<Region> actualChildren = grouping.getContainedRegions();
+                List<String> actualChildIDs = new java.util.ArrayList();
+                for (Region childRegion : actualChildren) {
+                    actualChildIDs.add(childRegion.toString());
+                }
+                java.util.Collections.sort(actualChildIDs);
+                
+                for (int i = 0; i < actualChildIDs.size() && i < expectedChildren.length; i++) {
+                    if (!expectedChildren[i].equals(actualChildIDs.get(i))) {
+                        errln("Mismatch in child list for " + groupingCode + " at position "
+                            + i + ": expected " + expectedChildren[i] + ", got " + actualChildIDs.get(i));
+                    }
+                }
+                if (expectedChildren.length != actualChildIDs.size()) {
+                    errln("Wrong number of children for " + groupingCode + ": expected "
+                            + expectedChildren.length + ", got " + actualChildIDs.size());
+                }
+                
+            } catch (IllegalArgumentException ex) {
+                errln("Known region " + groupingCode + " was not recognized");
+            }
         }
     }
 }

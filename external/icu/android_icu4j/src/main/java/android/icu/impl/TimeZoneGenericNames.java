@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2011-2016, International Business Machines Corporation and
@@ -55,6 +55,7 @@ public class TimeZoneGenericNames implements Serializable, Freezable<TimeZoneGen
 
     /**
      * Generic name type enum
+     * @hide Only a subset of ICU is exposed in Android
      */
     public enum GenericNameType {
         LOCATION ("LONG", "SHORT"),
@@ -79,6 +80,7 @@ public class TimeZoneGenericNames implements Serializable, Freezable<TimeZoneGen
 
     /**
      * Format pattern enum used for composing location and partial location names
+     * @hide Only a subset of ICU is exposed in Android
      */
     public enum Pattern {
         // The format pattern such as "{0} Time", where {0} is the country or city.
@@ -464,7 +466,7 @@ public class TimeZoneGenericNames implements Serializable, Freezable<TimeZoneGen
     /**
      * Private method returning LocaleDisplayNames instance for the locale of this
      * instance. Because LocaleDisplayNames is only used for generic
-     * location formant and partial location format, the LocaleDisplayNames
+     * location format and partial location format, the LocaleDisplayNames
      * is instantiated lazily.
      *
      * @return the instance of LocaleDisplayNames for the locale of this object.
@@ -598,6 +600,7 @@ public class TimeZoneGenericNames implements Serializable, Freezable<TimeZoneGen
     /**
      * A class used for returning the name search result used by
      * {@link TimeZoneGenericNames#find(String, int, EnumSet)}.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public static class GenericMatchInfo {
         final GenericNameType nameType;

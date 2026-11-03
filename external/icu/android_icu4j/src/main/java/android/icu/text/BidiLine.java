@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 *******************************************************************************
 *   Copyright (C) 2001-2014, International Business Machines
@@ -25,7 +25,7 @@ final class BidiLine {
      * text in a single paragraph or in a line of a single paragraph
      * which has already been processed according to
      * the Unicode 3.0 Bidi algorithm as defined in
-     * http://www.unicode.org/unicode/reports/tr9/ , version 13,
+     * https://www.unicode.org/reports/tr9/ , version 13,
      * also described in The Unicode Standard, Version 4.0.1 .
      *
      * This means that there is a Bidi object with a levels
@@ -94,7 +94,7 @@ final class BidiLine {
            are already set to paragraph level.
            Setting trailingWSStart to pBidi->length will avoid changing the
            level of B chars from 0 to paraLevel in getLevels when
-           orderParagraphsLTR==TRUE
+           orderParagraphsLTR==true
         */
         if (dirProps[start - 1] == Bidi.B) {
             bidi.trailingWSStart = start;   /* currently == bidi.length */

@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 1996-2015, International Business Machines Corporation and    *
@@ -15,6 +15,8 @@ import java.util.Locale;
 import java.util.Random;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.math.BigDecimal;
@@ -24,11 +26,14 @@ import android.icu.text.DisplayContext;
 import android.icu.text.NumberFormat;
 import android.icu.text.RuleBasedNumberFormat;
 import android.icu.util.ULocale;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * This does not test lenient parse mode, since testing the default implementation
  * introduces a dependency on collation.  See RbnfLenientScannerTest.
  */
+@MainTestShard
+@RunWith(JUnit4.class)
 public class RbnfTest extends TestFmwk {
     static String fracRules =
         "%main:\n" +
@@ -294,6 +299,17 @@ public class RbnfTest extends TestFmwk {
         };
 
         doTest(formatter, testData, true);
+
+        String[][] testDataLenient = {
+                { "fifty-7", "57" },
+                { " fifty-7", "57" },
+                { "  fifty-7", "57" },
+                { "2 thousand six    HUNDRED fifty-7", "2,657" },
+                { "fifteen hundred and zero", "1,500" },
+                { "FOurhundred     thiRTY six", "436" }
+        };
+
+        doParsingTest(formatter, testDataLenient, true);
     }
 
     /**
@@ -348,6 +364,12 @@ public class RbnfTest extends TestFmwk {
         };
 
         doTest(formatter, testData, true);
+
+        String[][] testDataLenient = {
+                { "2-51-33", "10,293" },
+        };
+
+        doParsingTest(formatter, testDataLenient, true);
     }
 
     /**
@@ -423,6 +445,13 @@ public class RbnfTest extends TestFmwk {
         };
 
         doTest(formatter, testData, true);
+
+        String[][] testDataLenient = {
+                { "trente-et-un", "31" },
+                { "un cent quatre vingt dix huit", "198" },
+        };
+
+        doParsingTest(formatter, testDataLenient, true);
     }
 
     /**
@@ -527,6 +556,12 @@ public class RbnfTest extends TestFmwk {
         };
 
         doTest(formatter, testData, true);
+
+        String[][] testDataLenient = {
+                { "ein Tausend sechs Hundert fuenfunddreissig", "1,635" },
+        };
+
+        doParsingTest(formatter, testDataLenient, true);
     }
 
     /**
@@ -789,6 +824,35 @@ public class RbnfTest extends TestFmwk {
     }
 
     @Test
+    public void TestNorwegianSpellout()
+    {
+        Locale noLocale = new Locale("no", "", "");
+        Locale nbLocale = new Locale("nb", "", "");
+        RuleBasedNumberFormat noFormatter = new RuleBasedNumberFormat(noLocale,
+                RuleBasedNumberFormat.SPELLOUT);
+        RuleBasedNumberFormat nbFormatter = new RuleBasedNumberFormat(nbLocale,
+                RuleBasedNumberFormat.SPELLOUT);
+
+        String[][] testDataDefault = {
+                { "1", "\u00E9n" },
+                { "2", "to" },
+                { "3", "tre" },
+                { "4", "fire" },
+                { "101", "hundre og \u00E9n" },
+                { "123", "hundre og tjue\u00ADtre" },
+                { "1,001", "tusen og \u00E9n" },
+                { "1,100", "tusen hundre" },
+                { "6.789", "seks komma sju \u00E5tte ni" },
+                { "-5.678", "minus fem komma seks sju \u00E5tte" },
+        };
+
+        logln("testing default rules");
+        doTest(noFormatter, testDataDefault, true);
+        doTest(nbFormatter, testDataDefault, true);
+
+    }
+
+    @Test
     public void TestSwedishSpellout()
     {
         Locale locale = new Locale("sv", "", "");
@@ -844,6 +908,26 @@ public class RbnfTest extends TestFmwk {
         };
 
         formatter.setDefaultRuleSet("%spellout-numbering-year");
+        logln("testing year rules");
+        doTest(formatter, testDataYear, true);
+    }
+
+    @Test
+    public void TestJpanyear()
+    {
+        Locale locale = new Locale("ja");
+        RuleBasedNumberFormat formatter = new RuleBasedNumberFormat(locale,
+                RuleBasedNumberFormat.SPELLOUT);
+
+        String[][] testDataYear = {
+                { "0",  "0" },
+                { "1",  "\u5143" }, // 元
+                { "2",  "2" },
+                { "10", "10" },
+                { "31", "31" },
+        };
+
+        formatter.setDefaultRuleSet("%spellout-numbering-year-latn");
         logln("testing year rules");
         doTest(formatter, testDataYear, true);
     }
@@ -949,9 +1033,9 @@ public class RbnfTest extends TestFmwk {
 
     @Test
     public void TestRuleSetDisplayName() {
-        /**
+        /*
          * Spellout rules for U.K. English.
-         * I borrow the rule sets for TestRuleSetDisplayName()
+         * This was borrowed from the rule sets for TestRuleSetDisplayName()
          */
         final String ukEnglish =
                 "%simplified:\n"
@@ -1095,6 +1179,10 @@ public class RbnfTest extends TestFmwk {
                 " (ordinal) "
                 //" (duration) " // English only
         };
+        boolean[] lenientMode = {
+                false, // non-lenient mode
+                true // lenient mode
+        };
         double[] numbers = {45.678, 1, 2, 10, 11, 100, 110, 200, 1000, 1111, -1111};
         int count = numbers.length;
         Random r = (count <= numbers.length ? null : createRandom());
@@ -1120,25 +1208,25 @@ public class RbnfTest extends TestFmwk {
                         logln(loc.getName() + names[j] + "success format: " + n + " -> " + s);
                     }
 
-                    try {
-                        // RBNF parse is extremely slow when lenient option is enabled.
-                        // non-lenient parse
-                        fmt.setLenientParseMode(false);
-                        Number num = fmt.parse(s);
-                        if (isVerbose()) {
-                            logln(loc.getName() + names[j] + "success parse: " + s + " -> " + num);
+                    for (int k = 0; k < lenientMode.length; k++) {
+                        try {
+                            fmt.setLenientParseMode(lenientMode[k]);
+                            Number num = fmt.parse(s);
+                            if (isVerbose()) {
+                                logln(loc.getName() + names[j] + "success parse: " + s + " -> " + num);
+                            }
+                            if (j != 0) {
+                                // TODO: Fix the ordinal rules.
+                                continue;
+                            }
+                            if (n != num.doubleValue()) {
+                                errors.append("\n" + loc + names[j] + "got " + num + " expected " + n);
+                            }
+                        } catch (ParseException pe) {
+                            String msg = loc.getName() + names[j] + "ERROR:" + pe.getMessage();
+                            logln(msg);
+                            errors.append("\n" + msg);
                         }
-                        if (j != 0) {
-                            // TODO: Fix the ordinal rules.
-                            continue;
-                        }
-                        if (n != num.doubleValue()) {
-                            errors.append("\n" + loc + names[j] + "got " + num + " expected " + n);
-                        }
-                    } catch (ParseException pe) {
-                        String msg = loc.getName() + names[j] + "ERROR:" + pe.getMessage();
-                        logln(msg);
-                        errors.append("\n" + msg);
                     }
                 }
             }
@@ -1148,10 +1236,12 @@ public class RbnfTest extends TestFmwk {
         }
     }
 
-    void doTest(RuleBasedNumberFormat formatter, String[][] testData,
-                boolean testParsing) {
-        //        NumberFormat decFmt = NumberFormat.getInstance(Locale.US);
-        NumberFormat decFmt = new DecimalFormat("#,###.################");
+    NumberFormat createDecimalFormatter() {
+        return new DecimalFormat("#,###.################");
+    }
+
+    void doTest(RuleBasedNumberFormat formatter, String[][] testData, boolean testParsing) {
+        NumberFormat decFmt = createDecimalFormatter();
         try {
             for (int i = 0; i < testData.length; i++) {
                 String number = testData[i][0];
@@ -1182,6 +1272,35 @@ public class RbnfTest extends TestFmwk {
         catch (Throwable e) {
             e.printStackTrace();
             errln("Test failed with exception: " + e.toString());
+        }
+    }
+
+    void doParsingTest(RuleBasedNumberFormat formatter, String[][] testData, boolean lenient) {
+        NumberFormat decFmt = createDecimalFormatter();
+
+        if (lenient) {
+            formatter.setLenientParseMode(true);
+        }
+        for (int i = 0; i < testData.length; i++) {
+            try {
+                String s = testData[i][0];
+                Number expectedNumber = decFmt.parse(testData[i][1]);
+                if (isVerbose()) {
+                    logln("test[" + i + "] spellout value: (" + s + ") target: " + expectedNumber);
+                }
+
+                Number num = formatter.parse(s);
+                if (isVerbose()) {
+                    logln("success parse: (" + s + ") -> " + num);
+                }
+
+                if (expectedNumber.doubleValue() != num.doubleValue()) {
+                    errln("\nParsing (" + s + ") failed: got " + num + " expected " + expectedNumber);
+                }
+            } catch (Throwable e) {
+                e.printStackTrace();
+                errln("Test failed with exception: " + e.toString());
+            }
         }
     }
 
@@ -1310,13 +1429,13 @@ public class RbnfTest extends TestFmwk {
             rbnf.getRuleSetDisplayName("", new ULocale("en_US"));
             errln("RuleBasedNumberFormat.getRuleSetDisplayName(String ruleSetName, ULocale loc) " +
                     "was suppose to have an exception.");
-        } catch(Exception e){}
+        } catch(Exception ignored){}
 
         try{
             rbnf.getRuleSetDisplayName("dummy", new ULocale("en_US"));
             errln("RuleBasedNumberFormat.getRuleSetDisplayName(String ruleSetName, ULocale loc) " +
                     "was suppose to have an exception.");
-        } catch(Exception e){}
+        } catch(Exception ignored){}
     }
 
     /* Test the method
@@ -1652,6 +1771,10 @@ public class RbnfTest extends TestFmwk {
         RuleBasedNumberFormat rbnf = new RuleBasedNumberFormat(ULocale.US, RuleBasedNumberFormat.SPELLOUT);
 
         String[][] enTestFullData = {
+                {"-9007199254740991", "minus nine quadrillion seven trillion one hundred ninety-nine billion two hundred fifty-four million seven hundred forty thousand nine hundred ninety-one"}, // Maximum precision in both a double and a long
+                {"9007199254740991", "nine quadrillion seven trillion one hundred ninety-nine billion two hundred fifty-four million seven hundred forty thousand nine hundred ninety-one"}, // Maximum precision in both a double and a long
+                {"-9007199254740992", "minus nine quadrillion seven trillion one hundred ninety-nine billion two hundred fifty-four million seven hundred forty thousand nine hundred ninety-two"}, // Only precisely contained in a long
+                {"9007199254740992", "nine quadrillion seven trillion one hundred ninety-nine billion two hundred fifty-four million seven hundred forty thousand nine hundred ninety-two"}, // Only precisely contained in a long
                 {"9999999999999998", "nine quadrillion nine hundred ninety-nine trillion nine hundred ninety-nine billion nine hundred ninety-nine million nine hundred ninety-nine thousand nine hundred ninety-eight"},
                 {"9999999999999999", "nine quadrillion nine hundred ninety-nine trillion nine hundred ninety-nine billion nine hundred ninety-nine million nine hundred ninety-nine thousand nine hundred ninety-nine"},
                 {"999999999999999999", "nine hundred ninety-nine quadrillion nine hundred ninety-nine trillion nine hundred ninety-nine billion nine hundred ninety-nine million nine hundred ninety-nine thousand nine hundred ninety-nine"},
@@ -1665,8 +1788,68 @@ public class RbnfTest extends TestFmwk {
                 {"9223372036854775000", "9,223,372,036,854,775,000"}, // Below 64-bit precision
                 {"9223372036854775806", "9,223,372,036,854,775,806"}, // Maximum 64-bit precision - 1
                 {"9223372036854775807", "9,223,372,036,854,775,807"}, // Maximum 64-bit precision
-                {"9223372036854775808", "9,223,372,036,854,775,808"}, // We've gone beyond 64-bit precision
+                {"9223372036854775808", "9,223,372,036,854,775,808"}, // We've gone beyond 64-bit precision. This can only be represented with BigDecimal.
         };
         doTest(rbnf, enTestFullData, false);
+    }
+
+    @Test
+    public void testCompactDecimalFormatStyle() {
+        // This is not a common use case, but we're testing it anyway.
+        final String numberPattern = "=###0.#####=;"
+                + "1000: <###0.00< K;"
+                + "1000000: <###0.00< M;"
+                + "1000000000: <###0.00< B;"
+                + "1000000000000: <###0.00< T;"
+                + "1000000000000000: <###0.00< Q;";
+        RuleBasedNumberFormat rbnf = new RuleBasedNumberFormat(numberPattern, ULocale.US);
+
+        String[][] enTestFullData = {
+                {"1000", "1.00 K"},
+                {"1234", "1.23 K"},
+                {"999994", "999.99 K"},
+                {"999995", "1000.00 K"},
+                {"1000000", "1.00 M"},
+                {"1200000", "1.20 M"},
+                {"1200000000", "1.20 B"},
+                {"1200000000000", "1.20 T"},
+                {"1200000000000000", "1.20 Q"},
+                {"4503599627370495", "4.50 Q"},
+                {"4503599627370496", "4.50 Q"},
+                {"8990000000000000", "8.99 Q"},
+                {"9008000000000000", "9.00 Q"}, // Number doesn't precisely fit into a double
+                {"9456000000000000", "9.00 Q"},  // Number doesn't precisely fit into a double
+                {"10000000000000000", "10.00 Q"},  // Number doesn't precisely fit into a double
+                {"9223372036854775807", "9223.00 Q"}, // Maximum 64-bit precision
+                {"9223372036854775808", "9,223,372,036,854,775,808"}, // We've gone beyond 64-bit precision. This can only be represented with BigDecimal.
+        };
+        doTest(rbnf, enTestFullData, false);
+    }
+
+    private void assertEquals(String expected, String result) {
+        if (!expected.equals(result)) {
+            errln("Expected: " + expected + " Got: " + result);
+        }
+    }
+
+    @Test
+    public void testRoundingUnrealNumbers() {
+        RuleBasedNumberFormat rbnf = new RuleBasedNumberFormat(ULocale.US, RuleBasedNumberFormat.SPELLOUT);
+        rbnf.setRoundingMode(BigDecimal.ROUND_HALF_UP);
+        rbnf.setMaximumFractionDigits(3);
+        assertEquals("zero point one", rbnf.format(0.1));
+        assertEquals("zero point zero zero one", rbnf.format(0.0005));
+        assertEquals("infinity", rbnf.format(Double.POSITIVE_INFINITY));
+        assertEquals("not a number", rbnf.format(Double.NaN));
+    }
+
+    @Test
+    public void TestNumberingSystem() {
+        RuleBasedNumberFormat rbnf = new RuleBasedNumberFormat(ULocale.US, RuleBasedNumberFormat.NUMBERING_SYSTEM);
+
+        assertEquals("Wrong result with default rule set", "123", rbnf.format(123));
+
+        rbnf.setDefaultRuleSet("%ethiopic");
+        assertEquals("Wrong result with Ethiopic rule set", "፻፳፫", rbnf.format(123));
     }
 }

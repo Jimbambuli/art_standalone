@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2016, International Business Machines Corporation and         *
@@ -14,10 +14,12 @@ import java.util.List;
 import org.junit.Test;
 
 import android.icu.dev.test.TestBoilerplate;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * Moved from UnicodeMapTest
  */
+@MainTestShard
 public class StringBoilerplateTest extends TestBoilerplate<String> {
     public void TestStringBoilerplate() throws Exception {
     }

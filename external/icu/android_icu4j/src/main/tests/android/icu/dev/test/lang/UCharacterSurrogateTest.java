@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /**
  *******************************************************************************
  * Copyright (C) 2004-2008, International Business Machines Corporation and         *
@@ -10,22 +10,29 @@
 
 package android.icu.dev.test.lang;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
 import android.icu.dev.test.TestFmwk;
 import android.icu.impl.Utility;
 import android.icu.lang.UCharacter;
 import android.icu.text.UTF16;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * Test JDK 1.5 cover APIs.
  */
+@MainTestShard
+@RunWith(JUnit4.class)
 public final class UCharacterSurrogateTest extends TestFmwk {
-    @org.junit.Test
+    @Test
     public void TestUnicodeBlockForName() {
-      String[] names = {"Latin-1 Supplement", 
+      String[] names = {"Latin-1 Supplement",
                         "Optical Character Recognition",
-                        "CJK Unified Ideographs Extension A", 
+                        "CJK Unified Ideographs Extension A",
                         "Supplemental Arrows-B",
-                        "Supplemental arrows b", 
+                        "Supplemental arrows b",
                         "supp-lement-al arrowsb",
                         "Supplementary Private Use Area-B",
                         "supplementary_Private_Use_Area-b",
@@ -42,7 +49,7 @@ public final class UCharacterSurrogateTest extends TestFmwk {
         }
     }
 
-    @org.junit.Test
+    @Test
     public void TestIsValidCodePoint() {
         if (UCharacter.isValidCodePoint(-1))
             errln("-1");
@@ -54,7 +61,7 @@ public final class UCharacterSurrogateTest extends TestFmwk {
             errln("0x110000");
     }
 
-    @org.junit.Test
+    @Test
     public void TestIsSupplementaryCodePoint() {
         if (UCharacter.isSupplementaryCodePoint(-1))
             errln("-1");
@@ -72,56 +79,64 @@ public final class UCharacterSurrogateTest extends TestFmwk {
             errln("0x110000");
     }
 
-    @org.junit.Test
+    @Test
     public void TestIsHighSurrogate() {
-        if (UCharacter
-                .isHighSurrogate((char) (UCharacter.MIN_HIGH_SURROGATE - 1)))
+        // Test with both int & char values.
+        if (UCharacter.isHighSurrogate(UCharacter.MIN_HIGH_SURROGATE - 1) ||
+                UCharacter.isHighSurrogate((char) (UCharacter.MIN_HIGH_SURROGATE - 1)))
             errln("0xd7ff");
         if (!UCharacter.isHighSurrogate(UCharacter.MIN_HIGH_SURROGATE))
             errln("0xd800");
         if (!UCharacter.isHighSurrogate(UCharacter.MAX_HIGH_SURROGATE))
             errln("0xdbff");
-        if (UCharacter
-                .isHighSurrogate((char) (UCharacter.MAX_HIGH_SURROGATE + 1)))
+        if (UCharacter.isHighSurrogate(UCharacter.MAX_HIGH_SURROGATE + 1) ||
+                UCharacter.isHighSurrogate((char) (UCharacter.MAX_HIGH_SURROGATE + 1)))
             errln("0xdc00");
     }
 
-    @org.junit.Test
+    @Test
     public void TestIsLowSurrogate() {
-        if (UCharacter
-                .isLowSurrogate((char) (UCharacter.MIN_LOW_SURROGATE - 1)))
+        // Test with both int & char values.
+        if (UCharacter.isLowSurrogate(UCharacter.MIN_LOW_SURROGATE - 1) ||
+                UCharacter.isLowSurrogate((char) (UCharacter.MIN_LOW_SURROGATE - 1)))
             errln("0xdbff");
         if (!UCharacter.isLowSurrogate(UCharacter.MIN_LOW_SURROGATE))
             errln("0xdc00");
         if (!UCharacter.isLowSurrogate(UCharacter.MAX_LOW_SURROGATE))
             errln("0xdfff");
-        if (UCharacter
-                .isLowSurrogate((char) (UCharacter.MAX_LOW_SURROGATE + 1)))
+        if (UCharacter.isLowSurrogate(UCharacter.MAX_LOW_SURROGATE + 1) ||
+                UCharacter.isLowSurrogate((char) (UCharacter.MAX_LOW_SURROGATE + 1)))
             errln("0xe000");
     }
 
-    @org.junit.Test
+    @Test
     public void TestIsSurrogatePair() {
+        // Test with both int & char values.
         if (UCharacter.isSurrogatePair(
-                (char) (UCharacter.MIN_HIGH_SURROGATE - 1),
-                UCharacter.MIN_LOW_SURROGATE))
+                UCharacter.MIN_HIGH_SURROGATE - 1, UCharacter.MIN_LOW_SURROGATE) ||
+                UCharacter.isSurrogatePair(
+                        (char) (UCharacter.MIN_HIGH_SURROGATE - 1), UCharacter.MIN_LOW_SURROGATE))
             errln("0xd7ff,0xdc00");
         if (UCharacter.isSurrogatePair(
-                (char) (UCharacter.MAX_HIGH_SURROGATE + 1),
-                UCharacter.MIN_LOW_SURROGATE))
+                UCharacter.MAX_HIGH_SURROGATE + 1, UCharacter.MIN_LOW_SURROGATE) ||
+                UCharacter.isSurrogatePair(
+                        (char) (UCharacter.MAX_HIGH_SURROGATE + 1), UCharacter.MIN_LOW_SURROGATE))
             errln("0xd800,0xdc00");
-        if (UCharacter.isSurrogatePair(UCharacter.MIN_HIGH_SURROGATE,
-                (char) (UCharacter.MIN_LOW_SURROGATE - 1)))
+        if (UCharacter.isSurrogatePair(
+                UCharacter.MIN_HIGH_SURROGATE, UCharacter.MIN_LOW_SURROGATE - 1) ||
+                UCharacter.isSurrogatePair(
+                        UCharacter.MIN_HIGH_SURROGATE, (char) (UCharacter.MIN_LOW_SURROGATE - 1)))
             errln("0xd800,0xdbff");
-        if (UCharacter.isSurrogatePair(UCharacter.MIN_HIGH_SURROGATE,
-                (char) (UCharacter.MAX_LOW_SURROGATE + 1)))
+        if (UCharacter.isSurrogatePair(
+                UCharacter.MIN_HIGH_SURROGATE, UCharacter.MAX_LOW_SURROGATE + 1) ||
+                UCharacter.isSurrogatePair(
+                        UCharacter.MIN_HIGH_SURROGATE, (char) (UCharacter.MAX_LOW_SURROGATE + 1)))
             errln("0xd800,0xe000");
-        if (!UCharacter.isSurrogatePair(UCharacter.MIN_HIGH_SURROGATE,
-                UCharacter.MIN_LOW_SURROGATE))
+        if (!UCharacter.isSurrogatePair(UCharacter.MIN_HIGH_SURROGATE, UCharacter.MIN_LOW_SURROGATE))
             errln("0xd800,0xdc00");
     }
 
-    @org.junit.Test
+    @Test
     public void TestCharCount() {
         UCharacter.charCount(-1);
         UCharacter.charCount(UCharacter.MAX_CODE_POINT + 1);
@@ -131,7 +146,7 @@ public final class UCharacterSurrogateTest extends TestFmwk {
             errln("0x010000");
     }
 
-    @org.junit.Test
+    @Test
     public void TestToCodePoint() {
         final char[] pairs = {(char) (UCharacter.MIN_HIGH_SURROGATE + 0),
                 (char) (UCharacter.MIN_LOW_SURROGATE + 0),
@@ -153,10 +168,13 @@ public final class UCharacterSurrogateTest extends TestFmwk {
                 errln(Integer.toHexString(pairs[i]) + ", " + pairs[i + 1]);
                 break;
             }
+            // Also test with int values.
+            int cp2 = UCharacter.toCodePoint(pairs[i], pairs[i + 1]);
+            assertEquals("pairs at " + i, cp, cp2);
         }
     }
 
-    @org.junit.Test
+    @Test
     public void TestCodePointAtBefore() {
         String s = "" + UCharacter.MIN_HIGH_SURROGATE + // isolated high
                 UCharacter.MIN_HIGH_SURROGATE + // pair
@@ -202,7 +220,7 @@ public final class UCharacterSurrogateTest extends TestFmwk {
 
     }
 
-    @org.junit.Test
+    @Test
     public void TestToChars() {
         char[] chars = new char[3];
         int cp = UCharacter.toCodePoint(UCharacter.MIN_HIGH_SURROGATE,
@@ -222,7 +240,7 @@ public final class UCharacterSurrogateTest extends TestFmwk {
         }
     }
 
-    @org.junit.Test
+    @Test
     public void TestCodePointCount() {
         class Test {
             String str(String s, int start, int limit) {
@@ -283,7 +301,7 @@ public final class UCharacterSurrogateTest extends TestFmwk {
         test.test("\ud800\udc00\udc00", 0, 3, 2);
     }
 
-    @org.junit.Test
+    @Test
     public void TestOffsetByCodePoints() {
         class Test {
             String str(String s, int start, int count, int index, int offset) {

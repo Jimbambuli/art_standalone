@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  * Copyright (C) 1998-2007 International Business Machines Corporation and
  * Unicode, Inc. All Rights Reserved.<br>
@@ -13,6 +13,7 @@
 package android.icu.dev.test.normalizer;
 
 import android.icu.dev.test.UTF16Util;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * Implements Unicode Normalization Forms C, D, KC, KD.<br>
@@ -21,6 +22,7 @@ import android.icu.dev.test.UTF16Util;
  * Updates for supplementary code points:
  * Vladimir Weinstein & Markus Scherer
  */
+@MainTestShard
 public class UnicodeNormalizer {
 //    static final String copyright = "Copyright (C) 1998-2003 International Business Machines Corporation and Unicode, Inc.";
 

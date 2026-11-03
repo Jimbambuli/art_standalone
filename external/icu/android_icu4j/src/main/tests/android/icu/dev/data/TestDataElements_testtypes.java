@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /**
  *******************************************************************************
  * Copyright (C) 2001-2008, International Business Machines Corporation and    *
@@ -9,7 +9,9 @@
  */
 package android.icu.dev.data;
 import java.util.ListResourceBundle;
+import android.icu.testsharding.MainTestShard;
 
+@MainTestShard
 public class TestDataElements_testtypes extends ListResourceBundle {
     /**
      * Overrides ListResourceBundle

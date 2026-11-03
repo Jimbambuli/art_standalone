@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 1996-2016, International Business Machines Corporation and    *
@@ -27,6 +27,7 @@ import android.icu.text.UTF16;
 import android.icu.text.UnicodeSet;
 import android.icu.text.UnicodeSetIterator;
 import android.icu.util.Freezable;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * Class for mapping Unicode characters and strings to values, optimized for single code points, 
@@ -37,8 +38,11 @@ import android.icu.util.Freezable;
  * that is, a put(x,null) is the same as remove(x).<br>
  * At this point "" is also not allowed as a key, although that may change.
  * @author markdavis
+ *
+ * @internal CLDR
  */
 
+@MainTestShard
 public final class UnicodeMap<T> implements Cloneable, Freezable<UnicodeMap<T>>, StringTransform, Iterable<String> {
     /**
      * For serialization
@@ -244,7 +248,7 @@ public final class UnicodeMap<T> implements Cloneable, Freezable<UnicodeMap<T>>,
     /**
      * Add a gap from index to index+count-1.
      * The values there are undefined, and must be set.
-     * Logically grows arrays to accomodate. Actual growth is limited
+     * Logically grows arrays to accommodate. Actual growth is limited
      * @param index
      * @param count
      */

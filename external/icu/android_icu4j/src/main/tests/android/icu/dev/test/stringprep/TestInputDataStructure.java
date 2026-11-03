@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 
  *******************************************************************************
@@ -13,10 +13,12 @@ package android.icu.dev.test.stringprep;
 
 import org.junit.Ignore;
 import org.junit.Test;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author limaoyu
  */
+@MainTestShard
 public class TestInputDataStructure {
     
     // TODO(junit): not running before - added empty test to keep failures away

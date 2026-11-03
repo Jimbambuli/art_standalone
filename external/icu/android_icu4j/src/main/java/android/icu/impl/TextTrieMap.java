@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  * ********************************************************************************
  * Copyright (C) 2007-2011, International Business Machines Corporation and others.
@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.ListIterator;
 
 import android.icu.lang.UCharacter;
+import android.icu.text.UnicodeSet;
 
 /**
  * TextTrieMap is a trie implementation for supporting
@@ -25,6 +26,14 @@ public class TextTrieMap<V> {
 
     private Node _root = new Node();
     boolean _ignoreCase;
+
+    /**
+     * @hide Only a subset of ICU is exposed in Android
+     */
+    public static class Output {
+        public int matchLength;
+        public boolean partialMatch;
+    }
 
     /**
      * Constructs a TextTrieMap object.
@@ -75,25 +84,29 @@ public class TextTrieMap<V> {
         return get(text, start, null);
     }
 
-    public Iterator<V> get(CharSequence text, int start, int[] matchLen) {
+    public Iterator<V> get(CharSequence text, int start, Output output) {
         LongestMatchHandler<V> handler = new LongestMatchHandler<V>();
-        find(text, start, handler);
-        if (matchLen != null && matchLen.length > 0) {
-            matchLen[0] = handler.getMatchLength();
+        find(text, start, handler, output);
+        if (output != null) {
+            output.matchLength = handler.getMatchLength();
         }
         return handler.getMatches();
     }
 
     public void find(CharSequence text, ResultHandler<V> handler) {
-        find(text, 0, handler);
+        find(text, 0, handler, null);
     }
 
     public void find(CharSequence text, int offset, ResultHandler<V> handler) {
-        CharIterator chitr = new CharIterator(text, offset, _ignoreCase);
-        find(_root, chitr, handler);
+        find(text, offset, handler, null);
     }
 
-    private synchronized void find(Node node, CharIterator chitr, ResultHandler<V> handler) {
+    private void find(CharSequence text, int offset, ResultHandler<V> handler, Output output) {
+        CharIterator chitr = new CharIterator(text, offset, _ignoreCase);
+        find(_root, chitr, handler, output);
+    }
+
+    private synchronized void find(Node node, CharIterator chitr, ResultHandler<V> handler, Output output) {
         Iterator<V> values = node.values();
         if (values != null) {
             if (!handler.handlePrefixMatch(chitr.processedLength(), values)) {
@@ -101,12 +114,19 @@ public class TextTrieMap<V> {
             }
         }
 
-        Node nextMatch = node.findMatch(chitr);
+        Node nextMatch = node.findMatch(chitr, output);
         if (nextMatch != null) {
-            find(nextMatch, chitr, handler);
+            find(nextMatch, chitr, handler, output);
         }
     }
 
+    public void putLeadCodePoints(UnicodeSet output) {
+        _root.putLeadCodePoints(output);
+    }
+
+    /**
+     * @hide Only a subset of ICU is exposed in Android
+     */
     public static class CharIterator implements Iterator<Character> {
         private boolean _ignoreCase;
         private CharSequence _text;
@@ -167,7 +187,7 @@ public class TextTrieMap<V> {
          */
         @Override
         public void remove() {
-            throw new UnsupportedOperationException("remove() not supproted");
+            throw new UnsupportedOperationException("remove() not supported");
         }
 
         public int nextIndex() {
@@ -185,6 +205,7 @@ public class TextTrieMap<V> {
     /**
      * Callback handler for processing prefix matches used by
      * find method.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public interface ResultHandler<V> {
         /**
@@ -236,6 +257,10 @@ public class TextTrieMap<V> {
             _children = children;
         }
 
+        public int charCount() {
+          return _text == null ? 0 : _text.length;
+        }
+
         public Iterator<V> values() {
             if (_values == null) {
                 return null;
@@ -251,11 +276,14 @@ public class TextTrieMap<V> {
             add(toCharArray(buf), 0, value);
         }
 
-        public Node findMatch(CharIterator chitr) {
+        public Node findMatch(CharIterator chitr, Output output) {
             if (_children == null) {
                 return null;
             }
             if (!chitr.hasNext()) {
+                if (output != null) {
+                    output.partialMatch = true;
+                }
                 return null;
             }
             Node match = null;
@@ -265,13 +293,34 @@ public class TextTrieMap<V> {
                     break;
                 }
                 if (ch == child._text[0]) {
-                    if (child.matchFollowing(chitr)) {
+                    if (child.matchFollowing(chitr, output)) {
                         match = child;
                     }
                     break;
                 }
             }
             return match;
+        }
+
+        public void putLeadCodePoints(UnicodeSet output) {
+            if (_children == null) {
+                return;
+            }
+            for (Node child : _children) {
+                char c0 = child._text[0];
+                if (!UCharacter.isHighSurrogate(c0)) {
+                    output.add(c0);
+                } else if (child.charCount() >= 2) {
+                    output.add(Character.codePointAt(child._text, 0));
+                } else if (child._children != null) {
+                    // Construct all possible code points from grandchildren.
+                    for (Node grandchild : child._children) {
+                        char c1 = grandchild._text[0];
+                        int cp = Character.toCodePoint(c0, c1);
+                        output.add(cp);
+                    }
+                }
+            }
         }
 
         private void add(char[] text, int offset, V value) {
@@ -312,11 +361,14 @@ public class TextTrieMap<V> {
             litr.add(new Node(subArray(text, offset), addValue(null, value), null));
         }
 
-        private boolean matchFollowing(CharIterator chitr) {
+        private boolean matchFollowing(CharIterator chitr, Output output) {
             boolean matched = true;
             int idx = 1;
             while (idx < _text.length) {
                 if(!chitr.hasNext()) {
+                    if (output != null) {
+                        output.partialMatch = true;
+                    }
                     matched = false;
                     break;
                 }

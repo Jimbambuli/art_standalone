@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 1996-2011, International Business Machines Corporation and    *
@@ -19,6 +19,7 @@ import java.util.List;
 import android.icu.dev.test.serializable.SerializableTestUtility.Handler;
 import android.icu.util.TimeZone;
 import android.icu.util.VersionInfo;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * This class writes the test objects for each class to a file. The work is
@@ -26,6 +27,7 @@ import android.icu.util.VersionInfo;
  * a CoverageTest w/ a non-null path, which tells it to write the data.
  *
  */
+@MainTestShard
 public class SerializableWriter
 {
     String path;

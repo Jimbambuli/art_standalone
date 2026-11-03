@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /**
  *******************************************************************************
  * Copyright (C) 2001-2015, International Business Machines Corporation and
@@ -16,7 +16,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Locale;
+import java.util.MissingResourceException;
 
+import android.icu.impl.breakiter.LSTMBreakEngine;
+import android.icu.lang.UScript;
+import android.icu.testsharding.MainTestShard;
+
+@MainTestShard
 public final class TestUtil {
     /**
      * Path to test data in icu4jtest.jar
@@ -27,14 +33,18 @@ public final class TestUtil {
      * Return an input stream on the data file at path 'name' rooted at the data path
      */
     public static final InputStream getDataStream(String name) throws IOException {
+        String path = DATA_PATH + name;
         InputStream is = null;
         try {
-            is = TestUtil.class.getResourceAsStream(DATA_PATH + name);
+            is = TestUtil.class.getResourceAsStream(path);
         } catch (Throwable t) {
             IOException ex =
-                new IOException("data resource '" + name + "' not found");
+                new IOException("data resource '" + path + "' not found");
             ex.initCause(t);
             throw ex;
+        }
+        if (is == null) {
+            throw new IOException("data resource '" + path + "' not found");
         }
         return is;
     }
@@ -109,8 +119,8 @@ public final class TestUtil {
      * Escape unprintable characters using <backslash>uxxxx notation
      * for U+0000 to U+FFFF and <backslash>Uxxxxxxxx for U+10000 and
      * above.  If the character is printable ASCII, then do nothing
-     * and return FALSE.  Otherwise, append the escaped notation and
-     * return TRUE.
+     * and return false.  Otherwise, append the escaped notation and
+     * return true.
      */
     public static boolean escapeUnprintable(StringBuffer result, int c) {
         if (isUnprintable(c)) {
@@ -172,6 +182,7 @@ public final class TestUtil {
             lock.inc();
         }
 
+        @Override
         public void run() {
             try {
                 synchronized (lock) {
@@ -232,17 +243,71 @@ public final class TestUtil {
         return vendor;
     }
 
+    public enum JavaRuntimeName {
+        Unknown,
+        OpenJDK,
+        Android
+    }
+
+    public static JavaRuntimeName getJavaRuntimeName() {
+        JavaRuntimeName name = JavaRuntimeName.Unknown;
+        String javaRuntimeNameProp = System.getProperty("java.runtime.name");
+        if (javaRuntimeNameProp.startsWith("OpenJDK")) {
+            name = JavaRuntimeName.OpenJDK;
+        } else if (javaRuntimeNameProp.startsWith("Android")) {
+            name = JavaRuntimeName.Android;
+        }
+        return name;
+    }
+
     public static int getJavaVersion() {
         int ver = -1;
         String verstr = System.getProperty("java.version");
         if (verstr != null) {
-            String[] numbers = verstr.split("\\.");
-            try {
-                ver = Integer.parseInt(numbers[1]);
-            } catch (NumberFormatException e) {
-                ver = -1;
+            String majorVerStr = null;
+            if (verstr.startsWith("1.")) {
+                String[] numbers = verstr.split("\\.");
+                if (numbers.length > 1) {
+                    majorVerStr = numbers[1];
+                }
+            } else {
+                String[] numbers = verstr.split("\\.|-");
+                if (numbers.length > 0) {
+                    majorVerStr = numbers[0];
+                }
+            }
+            if (majorVerStr != null) {
+                try {
+                    ver = Integer.parseInt(majorVerStr);
+                } catch (NumberFormatException e) {
+                    ver = -1;
+                }
             }
         }
         return ver;
+    }
+
+    private static boolean lstmDataIsBuilt() {
+        try {
+            LSTMBreakEngine.createData(UScript.THAI);
+            return true;
+        } catch (MissingResourceException e) {
+            // do nothing
+        }
+        try {
+            LSTMBreakEngine.createData(UScript.MYANMAR);
+            return true;
+        } catch (MissingResourceException e) {
+            // do nothing
+        }
+        return false;
+    }
+
+    public static boolean skipLSTMTest() {
+        return ! lstmDataIsBuilt();
+    }
+
+    public static boolean skipDictionaryTest() {
+        return lstmDataIsBuilt();
     }
 }

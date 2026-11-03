@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /**
  *******************************************************************************
  * Copyright (C) 2000-2010, International Business Machines Corporation and    *
@@ -11,7 +11,9 @@ package android.icu.dev.test.translit;
 
 import android.icu.text.UTF16;
 import android.icu.text.UnicodeSet;
+import android.icu.testsharding.MainTestShard;
 
+@MainTestShard
 public final class TestUtility {
 
     public static String hex(char ch) {

@@ -1,20 +1,25 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 package android.icu.dev.test.rbbi;
 
 import java.text.CharacterIterator;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.text.BreakIterator;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author sgill
  *
  */
+@MainTestShard
+@RunWith(JUnit4.class)
 public class AbstractBreakIteratorTests extends TestFmwk {
 
     private class AbstractBreakIterator extends BreakIterator {

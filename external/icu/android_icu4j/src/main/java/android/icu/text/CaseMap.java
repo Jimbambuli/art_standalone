@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2017 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 package android.icu.text;
 
 import java.util.Locale;
@@ -15,13 +15,11 @@ import android.icu.util.ULocale;
  * "Setters" return instances with the union of the current and new options set.
  *
  * This class is not intended for public subclassing.
- *
- * @hide Only a subset of ICU is exposed in Android
- * @hide draft / provisional / internal are hidden on Android
  */
 public abstract class CaseMap {
     /**
      * @deprecated This API is ICU internal only.
+     * @hide original deprecated declaration
      * @hide draft / provisional / internal are hidden on Android
      */
     @Deprecated
@@ -38,22 +36,18 @@ public abstract class CaseMap {
 
     /**
      * @return Lowercasing object with default options.
-     * @hide draft / provisional / internal are hidden on Android
      */
     public static Lower toLower() { return Lower.DEFAULT; }
     /**
      * @return Uppercasing object with default options.
-     * @hide draft / provisional / internal are hidden on Android
      */
     public static Upper toUpper() { return Upper.DEFAULT; }
     /**
      * @return Titlecasing object with default options.
-     * @hide draft / provisional / internal are hidden on Android
      */
     public static Title toTitle() { return Title.DEFAULT; }
     /**
      * @return Case folding object with default options.
-     * @hide draft / provisional / internal are hidden on Android
      */
     public static Fold fold() { return Fold.DEFAULT; }
 
@@ -62,7 +56,6 @@ public abstract class CaseMap {
      * omits unchanged text when case-mapping with {@link Edits}.
      *
      * @return an options object with this option.
-     * @hide draft / provisional / internal are hidden on Android
      */
     public abstract CaseMap omitUnchangedText();
 
@@ -70,7 +63,6 @@ public abstract class CaseMap {
      * Lowercasing options and methods. Immutable.
      *
      * @see #toLower()
-     * @hide draft / provisional / internal are hidden on Android
      */
     public static final class Lower extends CaseMap {
         private static final Lower DEFAULT = new Lower(0);
@@ -79,11 +71,26 @@ public abstract class CaseMap {
 
         /**
          * {@inheritDoc}
-         * @hide draft / provisional / internal are hidden on Android
          */
         @Override
         public Lower omitUnchangedText() {
             return OMIT_UNCHANGED;
+        }
+
+        /**
+         * Lowercases a string.
+         * Casing is locale-dependent and context-sensitive.
+         * The result may be longer or shorter than the original.
+         *
+         * @param locale    The locale ID. Can be null for {@link Locale#getDefault}.
+         *                  (See {@link ULocale#toLocale}.)
+         * @param src       The original string.
+         * @return the result string.
+         *
+         * @see UCharacter#toLowerCase(Locale, String)
+         */
+        public String apply(Locale locale, CharSequence src) {
+            return CaseMapImpl.toLower(getCaseLocale(locale), internalOptions, src);
         }
 
         /**
@@ -101,7 +108,6 @@ public abstract class CaseMap {
          * @return dest with the result string (or only changes) appended.
          *
          * @see UCharacter#toLowerCase(Locale, String)
-         * @hide draft / provisional / internal are hidden on Android
          */
          public <A extends Appendable> A apply(
                  Locale locale, CharSequence src, A dest, Edits edits) {
@@ -113,7 +119,6 @@ public abstract class CaseMap {
      * Uppercasing options and methods. Immutable.
      *
      * @see #toUpper()
-     * @hide draft / provisional / internal are hidden on Android
      */
     public static final class Upper extends CaseMap {
         private static final Upper DEFAULT = new Upper(0);
@@ -122,11 +127,26 @@ public abstract class CaseMap {
 
         /**
          * {@inheritDoc}
-         * @hide draft / provisional / internal are hidden on Android
          */
         @Override
         public Upper omitUnchangedText() {
             return OMIT_UNCHANGED;
+        }
+
+        /**
+         * Uppercases a string.
+         * Casing is locale-dependent and context-sensitive.
+         * The result may be longer or shorter than the original.
+         *
+         * @param locale    The locale ID. Can be null for {@link Locale#getDefault}.
+         *                  (See {@link ULocale#toLocale}.)
+         * @param src       The original string.
+         * @return the result string.
+         *
+         * @see UCharacter#toUpperCase(Locale, String)
+         */
+        public String apply(Locale locale, CharSequence src) {
+            return CaseMapImpl.toUpper(getCaseLocale(locale), internalOptions, src);
         }
 
         /**
@@ -144,7 +164,6 @@ public abstract class CaseMap {
          * @return dest with the result string (or only changes) appended.
          *
          * @see UCharacter#toUpperCase(Locale, String)
-         * @hide draft / provisional / internal are hidden on Android
          */
          public <A extends Appendable> A apply(
                  Locale locale, CharSequence src, A dest, Edits edits) {
@@ -156,7 +175,6 @@ public abstract class CaseMap {
      * Titlecasing options and methods. Immutable.
      *
      * @see #toTitle()
-     * @hide draft / provisional / internal are hidden on Android
      */
     public static final class Title extends CaseMap {
         private static final Title DEFAULT = new Title(0);
@@ -164,8 +182,39 @@ public abstract class CaseMap {
         private Title(int opt) { super(opt); }
 
         /**
+         * Returns an instance that behaves like this one but
+         * titlecases the string as a whole rather than each word.
+         * (Titlecases only the character at index 0, possibly adjusted.)
+         *
+         * <p>It is an error to specify multiple titlecasing iterator options together,
+         * including both an option and an explicit BreakIterator.
+         *
+         * @return an options object with this option.
+         * @see #adjustToCased()
+         */
+        public Title wholeString() {
+            return new Title(CaseMapImpl.addTitleIteratorOption(
+                    internalOptions, CaseMapImpl.TITLECASE_WHOLE_STRING));
+        }
+
+        /**
+         * Returns an instance that behaves like this one but
+         * titlecases sentences rather than words.
+         * (Titlecases only the first character of each sentence, possibly adjusted.)
+         *
+         * <p>It is an error to specify multiple titlecasing iterator options together,
+         * including both an option and an explicit BreakIterator.
+         *
+         * @return an options object with this option.
+         * @see #adjustToCased()
+         */
+        public Title sentences() {
+            return new Title(CaseMapImpl.addTitleIteratorOption(
+                    internalOptions, CaseMapImpl.TITLECASE_SENTENCES));
+        }
+
+        /**
          * {@inheritDoc}
-         * @hide draft / provisional / internal are hidden on Android
          */
         @Override
         public Title omitUnchangedText() {
@@ -179,41 +228,89 @@ public abstract class CaseMap {
          * Returns an instance that behaves like this one but
          * does not lowercase non-initial parts of words when titlecasing.
          *
-         * <p>By default, titlecasing will titlecase the first cased character
-         * of a word and lowercase all other characters.
+         * <p>By default, titlecasing will titlecase the character at each
+         * (possibly adjusted) BreakIterator index and
+         * lowercase all other characters up to the next iterator index.
          * With this option, the other characters will not be modified.
          *
          * @return an options object with this option.
          * @see UCharacter#TITLECASE_NO_LOWERCASE
-         * @hide draft / provisional / internal are hidden on Android
+         * @see #adjustToCased()
          */
         public Title noLowercase() {
             return new Title(internalOptions | UCharacter.TITLECASE_NO_LOWERCASE);
         }
 
-        // TODO: update references to the Unicode Standard for recent version
         /**
          * Returns an instance that behaves like this one but
-         * does not adjust the titlecasing indexes from BreakIterator::next() indexes;
+         * does not adjust the titlecasing BreakIterator indexes;
          * titlecases exactly the characters at breaks from the iterator.
          *
          * <p>By default, titlecasing will take each break iterator index,
-         * adjust it by looking for the next cased character, and titlecase that one.
-         * Other characters are lowercased.
+         * adjust it to the next relevant character (see {@link #adjustToCased()}),
+         * and titlecase that one.
          *
-         * <p>This follows Unicode 4 &amp; 5 section 3.13 Default Case Operations:
-         *
-         * R3  toTitlecase(X): Find the word boundaries based on Unicode Standard Annex
-         * #29, "Text Boundaries." Between each pair of word boundaries, find the first
-         * cased character F. If F exists, map F to default_title(F); then map each
-         * subsequent character C to default_lower(C).
+         * <p>Other characters are lowercased.
          *
          * @return an options object with this option.
          * @see UCharacter#TITLECASE_NO_BREAK_ADJUSTMENT
-         * @hide draft / provisional / internal are hidden on Android
          */
         public Title noBreakAdjustment() {
-            return new Title(internalOptions | UCharacter.TITLECASE_NO_BREAK_ADJUSTMENT);
+            return new Title(CaseMapImpl.addTitleAdjustmentOption(
+                    internalOptions, UCharacter.TITLECASE_NO_BREAK_ADJUSTMENT));
+        }
+
+        /**
+         * Returns an instance that behaves like this one but
+         * adjusts each titlecasing BreakIterator index to the next cased character.
+         * (See the Unicode Standard, chapter 3, Default Case Conversion, R3 toTitlecase(X).)
+         *
+         * <p>This used to be the default index adjustment in ICU.
+         * Since ICU 60, the default index adjustment is to the next character that is
+         * a letter, number, symbol, or private use code point.
+         * (Uncased modifier letters are skipped.)
+         * The difference in behavior is small for word titlecasing,
+         * but the new adjustment is much better for whole-string and sentence titlecasing:
+         * It yields "49ers" and "«丰(abc)»" instead of "49Ers" and "«丰(Abc)»".
+         *
+         * <p>It is an error to specify multiple titlecasing adjustment options together.
+         *
+         * @return an options object with this option.
+         * @see #noBreakAdjustment()
+         */
+        public Title adjustToCased() {
+            return new Title(CaseMapImpl.addTitleAdjustmentOption(
+                    internalOptions, CaseMapImpl.TITLECASE_ADJUST_TO_CASED));
+        }
+
+        /**
+         * Titlecases a string.
+         * Casing is locale-dependent and context-sensitive.
+         * The result may be longer or shorter than the original.
+         *
+         * <p>Titlecasing uses a break iterator to find the first characters of words
+         * that are to be titlecased. It titlecases those characters and lowercases
+         * all others. (This can be modified with options bits.)
+         *
+         * @param locale    The locale ID. Can be null for {@link Locale#getDefault}.
+         *                  (See {@link ULocale#toLocale}.)
+         * @param iter      A break iterator to find the first characters of words that are to be titlecased.
+         *                  It is set to the source string (setText())
+         *                  and used one or more times for iteration (first() and next()).
+         *                  If null, then a word break iterator for the locale is used
+         *                  (or something equivalent).
+         * @param src       The original string.
+         * @return the result string.
+         *
+         * @see UCharacter#toUpperCase(Locale, String)
+         */
+        public String apply(Locale locale, BreakIterator iter, CharSequence src) {
+            if (iter == null && locale == null) {
+                locale = Locale.getDefault();
+            }
+            iter = CaseMapImpl.getTitleBreakIterator(locale, internalOptions, iter);
+            iter.setText(src);
+            return CaseMapImpl.toTitle(getCaseLocale(locale), internalOptions, iter, src);
         }
 
         /**
@@ -240,14 +337,14 @@ public abstract class CaseMap {
          * @return dest with the result string (or only changes) appended.
          *
          * @see UCharacter#toTitleCase(Locale, String, BreakIterator, int)
-         * @hide draft / provisional / internal are hidden on Android
          */
          public <A extends Appendable> A apply(
                  Locale locale, BreakIterator iter, CharSequence src, A dest, Edits edits) {
-             if (iter == null) {
-                 iter = BreakIterator.getWordInstance(locale);
+             if (iter == null && locale == null) {
+                 locale = Locale.getDefault();
              }
-             iter.setText(src.toString());
+             iter = CaseMapImpl.getTitleBreakIterator(locale, internalOptions, iter);
+             iter.setText(src);
              return CaseMapImpl.toTitle(
                      getCaseLocale(locale), internalOptions, iter, src, dest, edits);
          }
@@ -257,7 +354,6 @@ public abstract class CaseMap {
      * Case folding options and methods. Immutable.
      *
      * @see #fold()
-     * @hide draft / provisional / internal are hidden on Android
      */
     public static final class Fold extends CaseMap {
         private static final Fold DEFAULT = new Fold(0);
@@ -269,7 +365,6 @@ public abstract class CaseMap {
 
         /**
          * {@inheritDoc}
-         * @hide draft / provisional / internal are hidden on Android
          */
         @Override
         public Fold omitUnchangedText() {
@@ -287,7 +382,6 @@ public abstract class CaseMap {
          *
          * @return an options object with this option.
          * @see UCharacter#FOLD_CASE_EXCLUDE_SPECIAL_I
-         * @hide draft / provisional / internal are hidden on Android
          */
         public Fold turkic() {
             return (internalOptions & CaseMapImpl.OMIT_UNCHANGED_TEXT) == 0 ?
@@ -295,13 +389,29 @@ public abstract class CaseMap {
         }
 
         /**
-         * Case-folds a string and optionally records edits (see {@link #omitUnchangedText}).
+         * Case-folds a string.
+         * The result may be longer or shorter than the original.
          *
          * <p>Case-folding is locale-independent and not context-sensitive,
          * but there is an option for whether to include or exclude mappings for dotted I
          * and dotless i that are marked with 'T' in CaseFolding.txt.
          *
-         * <p>The result may be longer or shorter than the original.
+         * @param src       The original string.
+         * @return the result string.
+         *
+         * @see UCharacter#foldCase(String, int)
+         */
+        public String apply(CharSequence src) {
+            return CaseMapImpl.fold(internalOptions, src);
+        }
+
+        /**
+         * Case-folds a string and optionally records edits (see {@link #omitUnchangedText}).
+         * The result may be longer or shorter than the original.
+         *
+         * <p>Case-folding is locale-independent and not context-sensitive,
+         * but there is an option for whether to include or exclude mappings for dotted I
+         * and dotless i that are marked with 'T' in CaseFolding.txt.
          *
          * @param src       The original string.
          * @param dest      A buffer for the result string. Must not be null.
@@ -311,7 +421,6 @@ public abstract class CaseMap {
          * @return dest with the result string (or only changes) appended.
          *
          * @see UCharacter#foldCase(String, int)
-         * @hide draft / provisional / internal are hidden on Android
          */
          public <A extends Appendable> A apply(CharSequence src, A dest, Edits edits) {
              return CaseMapImpl.fold(internalOptions, src, dest, edits);

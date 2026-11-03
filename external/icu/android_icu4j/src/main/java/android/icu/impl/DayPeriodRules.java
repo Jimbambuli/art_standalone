@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2016, International Business Machines Corporation and
@@ -20,6 +20,9 @@ import android.icu.util.UResourceBundle;
  * @hide Only a subset of ICU is exposed in Android
  */
 public final class DayPeriodRules {
+    /**
+     * @hide Only a subset of ICU is exposed in Android
+     */
     public enum DayPeriod {
         MIDNIGHT,
         NOON,
@@ -246,7 +249,7 @@ public final class DayPeriodRules {
      * @return a DayPeriodRules object for `locale`.
      */
     public static DayPeriodRules getInstance(ULocale locale) {
-        String localeCode = locale.getName();
+        String localeCode = locale.getBaseName();
         if (localeCode.isEmpty()) { localeCode = "root"; }
 
         Integer ruleSetNum = null;

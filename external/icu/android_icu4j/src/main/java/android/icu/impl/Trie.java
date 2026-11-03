@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  ******************************************************************************
  * Copyright (C) 1996-2015, International Business Machines Corporation and
@@ -55,6 +55,7 @@ public abstract class Trie
     * This interface specifies methods to be implemented in order for
     * com.ibm.impl.Trie, to surrogate offset information encapsulated within
     * the data.
+     * @hide Only a subset of ICU is exposed in Android
     */
     public static interface DataManipulate
     {

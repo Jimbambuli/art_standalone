@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 1996-2016, International Business Machines Corporation and
@@ -276,7 +276,7 @@ import android.icu.util.UResourceBundleIterator;
  *   <tr>
  *     <td style="width: 5%; vertical-align: top;"></td>
  *     <td style="width: 8%; vertical-align: top;">x.0:</td>
- *     <td valign="top">The rule is a <em>master rule</em>. If the full stop in
+ *     <td valign="top">The rule is a <em>default rule</em>. If the full stop in
  *     the middle of the rule name is replaced with the decimal point
  *     that is used in the language or DecimalFormatSymbols, then that rule will
  *     have precedence when formatting and parsing this rule. For example, some
@@ -314,9 +314,9 @@ import android.icu.util.UResourceBundleIterator;
  * algorithms: If the rule set is a regular rule set, do the following:
  *
  * <ul>
- *   <li>If the rule set includes a master rule (and the number was passed in as a <tt>double</tt>),
- *     use the master rule.&nbsp; (If the number being formatted was passed in as a <tt>long</tt>,
- *     the master rule is ignored.)</li>
+ *   <li>If the rule set includes a default rule (and the number was passed in as a <tt>double</tt>),
+ *     use the default rule.&nbsp; (If the number being formatted was passed in as a <tt>long</tt>,
+ *     the default rule is ignored.)</li>
  *   <li>If the number is negative, use the negative-number rule.</li>
  *   <li>If the number has a fractional part and is greater than 1, use the improper fraction
  *     rule.</li>
@@ -378,7 +378,7 @@ import android.icu.util.UResourceBundleIterator;
  *   <tr>
  *     <td style="width: 37;"></td>
  *     <td style="width: 23;"></td>
- *     <td style="width: 165; vertical-align: top;">in fraction or master rule</td>
+ *     <td style="width: 165; vertical-align: top;">in fraction or default rule</td>
  *     <td>Isolate the number's fractional part and format it.</td>
  *   </tr>
  *   <tr>
@@ -416,7 +416,7 @@ import android.icu.util.UResourceBundleIterator;
  *   <tr>
  *     <td style="width: 37;"></td>
  *     <td style="width: 23;"></td>
- *     <td style="width: 165; vertical-align: top;">in fraction or master rule</td>
+ *     <td style="width: 165; vertical-align: top;">in fraction or default rule</td>
  *     <td>Isolate the number's integral part and format it.</td>
  *   </tr>
  *   <tr>
@@ -453,7 +453,7 @@ import android.icu.util.UResourceBundleIterator;
  *   <tr>
  *     <td style="width: 37;"></td>
  *     <td style="width: 23;"></td>
- *     <td style="width: 165; vertical-align: top;">in master rule</td>
+ *     <td style="width: 165; vertical-align: top;">in default rule</td>
  *     <td>Omit the optional text if the number is an integer (same as specifying both an x.x
  *     rule and an x.0 rule)</td>
  *   </tr>
@@ -928,13 +928,9 @@ public class RuleBasedNumberFormat extends NumberFormat {
     }
 
     /**
-     * Mock implementation of hashCode(). This implementation always returns a constant
-     * value. When Java assertion is enabled, this method triggers an assertion failure.
-     * @deprecated This API is ICU internal only.
-     * @hide draft / provisional / internal are hidden on Android
+     * {@inheritDoc}
      */
     @Override
-    @Deprecated
     public int hashCode() {
         return super.hashCode();
     }
@@ -1135,7 +1131,7 @@ public class RuleBasedNumberFormat extends NumberFormat {
 
     /**
      * Formats the specified number according to the specified rule set.
-     * (If the specified rule set specifies a master ["x.0"] rule, this function
+     * (If the specified rule set specifies a default ["x.0"] rule, this function
      * ignores it.  Convert the number to a double first if you ned it.)  This
      * function preserves all the precision in the long-- it doesn't convert it
      * to a double.
@@ -1179,7 +1175,7 @@ public class RuleBasedNumberFormat extends NumberFormat {
     /**
      * Formats the specified number using the formatter's default rule set.
      * (The default rule set is the last public rule set defined in the description.)
-     * (If the specified rule set specifies a master ["x.0"] rule, this function
+     * (If the specified rule set specifies a default ["x.0"] rule, this function
      * ignores it.  Convert the number to a double first if you ned it.)  This
      * function preserves all the precision in the long-- it doesn't convert it
      * to a double.
@@ -1240,7 +1236,7 @@ public class RuleBasedNumberFormat extends NumberFormat {
     public StringBuffer format(android.icu.math.BigDecimal number,
                                StringBuffer toAppendTo,
                                FieldPosition pos) {
-        if (MIN_VALUE.compareTo(number) >= 0 || MAX_VALUE.compareTo(number) <= 0) {
+        if (MIN_VALUE.compareTo(number) > 0 || MAX_VALUE.compareTo(number) < 0) {
             // We're outside of our normal range that this framework can handle.
             // The DecimalFormat will provide more accurate results.
             return getDecimalFormat().format(number, toAppendTo, pos);
@@ -1294,7 +1290,7 @@ public class RuleBasedNumberFormat extends NumberFormat {
 
             // try parsing the string with the rule set.  If it gets past the
             // high-water mark, update the high-water mark and the result
-            tempResult = ruleSets[i].parse(workingText, workingPos, Double.MAX_VALUE);
+            tempResult = ruleSets[i].parse(workingText, workingPos, Double.MAX_VALUE, 0);
             if (workingPos.getIndex() > highWaterMark.getIndex()) {
                 result = tempResult;
                 highWaterMark.setIndex(workingPos.getIndex());
@@ -1667,7 +1663,7 @@ public class RuleBasedNumberFormat extends NumberFormat {
         initLocalizations(localizations);
 
         // start by stripping the trailing whitespace from all the rules
-        // (this is all the whitespace follwing each semicolon in the
+        // (this is all the whitespace following each semicolon in the
         // description).  This allows us to look for rule-set boundaries
         // by searching for ";%" without having to worry about whitespace
         // between the ; and the %
@@ -1693,7 +1689,7 @@ public class RuleBasedNumberFormat extends NumberFormat {
 
         // our rule list is an array of the appropriate size
         ruleSets = new NFRuleSet[numRuleSets];
-        ruleSetsMap = new HashMap<String, NFRuleSet>(numRuleSets * 2 + 1);
+        ruleSetsMap = new HashMap<>(numRuleSets * 2 + 1);
         defaultRuleSet = null;
 
         // Used to count the number of public rule sets
@@ -1806,7 +1802,7 @@ public class RuleBasedNumberFormat extends NumberFormat {
         if (localizations != null) {
             publicRuleSetNames = localizations[0].clone();
 
-            Map<String, String[]> m = new HashMap<String, String[]>();
+            Map<String, String[]> m = new HashMap<>();
             for (int i = 1; i < localizations.length; ++i) {
                 String[] data = localizations[i];
                 String loc = data[0];
@@ -1914,7 +1910,7 @@ public class RuleBasedNumberFormat extends NumberFormat {
         // position of 0 and the number being formatted) to the rule set
         // for formatting
         StringBuilder result = new StringBuilder();
-        if (getRoundingMode() != BigDecimal.ROUND_UNNECESSARY) {
+        if (getRoundingMode() != BigDecimal.ROUND_UNNECESSARY && !Double.isNaN(number) && !Double.isInfinite(number)) {
             // We convert to a string because BigDecimal insists on excessive precision.
             number = new BigDecimal(Double.toString(number)).setScale(getMaximumFractionDigits(), roundingMode).doubleValue();
         }
@@ -1988,8 +1984,10 @@ public class RuleBasedNumberFormat extends NumberFormat {
      * Adjust capitalization of formatted result for display context
      */
     private String adjustForContext(String result) {
-        if (result != null && result.length() > 0 && UCharacter.isLowerCase(result.codePointAt(0))) {
-            DisplayContext capitalization = getContext(DisplayContext.Type.CAPITALIZATION);
+        DisplayContext capitalization = getContext(DisplayContext.Type.CAPITALIZATION);
+        if (capitalization != DisplayContext.CAPITALIZATION_NONE && result != null && result.length() > 0
+            && UCharacter.isLowerCase(result.codePointAt(0)))
+        {
             if (  capitalization==DisplayContext.CAPITALIZATION_FOR_BEGINNING_OF_SENTENCE ||
                   (capitalization == DisplayContext.CAPITALIZATION_FOR_UI_LIST_OR_MENU && capitalizationForListOrMenu) ||
                   (capitalization == DisplayContext.CAPITALIZATION_FOR_STANDALONE && capitalizationForStandAlone) ) {

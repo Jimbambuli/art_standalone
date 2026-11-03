@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2007-2008, International Business Machines Corporation and    *
@@ -12,11 +12,14 @@ package android.icu.dev.test.timezone;
 import java.util.Date;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.text.DateFormat;
 import android.icu.util.AnnualTimeZoneRule;
 import android.icu.util.BasicTimeZone;
+import android.icu.util.BasicTimeZone.LocalOption;
 import android.icu.util.Calendar;
 import android.icu.util.DateTimeRule;
 import android.icu.util.GregorianCalendar;
@@ -24,10 +27,13 @@ import android.icu.util.InitialTimeZoneRule;
 import android.icu.util.RuleBasedTimeZone;
 import android.icu.util.SimpleTimeZone;
 import android.icu.util.TimeZone;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * Testing getOffset APIs using local time
  */
+@MainTestShard
+@RunWith(JUnit4.class)
 public class TimeZoneOffsetLocalTest extends TestFmwk {
     /*
      * Testing getOffset APIs around rule transition by local standard/wall time.
@@ -67,10 +73,10 @@ public class TimeZoneOffsetLocalTest extends TestFmwk {
             -8*HOUR,
         };
 
-        
+
         // Expected offsets by getOffset(long time, boolean local, int[] offsets) with local = true
-        // or getOffsetFromLocal(long time, int nonExistingTimeOpt, int duplicatedTimeOpt, int[] offsets)
-        // with nonExistingTimeOpt = LOCAL_STD/duplicatedTimeOpt = LOCAL_STD
+        // or getOffsetFromLocal(long time, LocalOption nonExistingTimeOpt, LocalOption duplicatedTimeOpt, int[] offsets)
+        // with nonExistingTimeOpt = STANDARD_*/duplicatedTimeOpt = STANDARD_*
         int[][] OFFSETS2 = {
             // April 2, 2006
             {-8*HOUR, 0},
@@ -87,8 +93,8 @@ public class TimeZoneOffsetLocalTest extends TestFmwk {
             {-8*HOUR, 0},
         };
 
-        // Expected offsets by getOffsetFromLocal(long time, int nonExistingTimeOpt, int duplicatedTimeOpt, int[] offsets)
-        // with nonExistingTimeOpt = LOCAL_DST/duplicatedTimeOpt = LOCAL_DST
+        // Expected offsets by getOffsetFromLocal(long time, LocalOption nonExistingTimeOpt, LocalOption duplicatedTimeOpt, int[] offsets)
+        // with nonExistingTimeOpt = DAYLIGHT_*/duplicatedTimeOpt = DAYLIGHT_*
         int[][] OFFSETS3 = {
             // April 2, 2006
             {-8*HOUR, 0},
@@ -182,39 +188,39 @@ public class TimeZoneOffsetLocalTest extends TestFmwk {
             }
         }
 
-        // Test getOffsetFromLocal(long time, int nonExistingTimeOpt, int duplicatedTimeOpt, int[] offsets)
-        // with nonExistingTimeOpt = LOCAL_STD/duplicatedTimeOpt = LOCAL_STD
+        // Test getOffsetFromLocal(long time, LocalOption nonExistingTimeOpt, LocalOption duplicatedTimeOpt, int[] offsets)
+        // with nonExistingTimeOpt = STANDARD_*/duplicatedTimeOpt = STANDARD_*
         for (int i = 0; i < TESTZONES.length; i++) {
             for (int m = 0; m < MILLIS.length; m++) {
-                TESTZONES[i].getOffsetFromLocal(MILLIS[m], BasicTimeZone.LOCAL_STD, BasicTimeZone.LOCAL_STD, offsets);
+                TESTZONES[i].getOffsetFromLocal(MILLIS[m], LocalOption.STANDARD_FORMER, LocalOption.STANDARD_LATTER, offsets);
                 if (offsets[0] != OFFSETS2[m][0] || offsets[1] != OFFSETS2[m][1]) {
                     errln("Bad offset returned by " + TESTZONES[i].getID() + " at "
-                            + df.format(new Date(MILLIS[m])) + "(wall/STD/STD) - Got: "
+                            + df.format(new Date(MILLIS[m])) + "(wall/STANDARD_FORMER/STANDARD_LATTER) - Got: "
                             + offsets[0] + "/" + offsets[1]
                             + " Expected: " + OFFSETS2[m][0] + "/" + OFFSETS2[m][1]);
                 }
             }
         }
 
-        // Test getOffsetFromLocal(long time, int nonExistingTimeOpt, int duplicatedTimeOpt, int[] offsets)
-        // with nonExistingTimeOpt = LOCAL_DST/duplicatedTimeOpt = LOCAL_DST
+        // Test getOffsetFromLocal(long time, LocalOption nonExistingTimeOpt, LocalOption duplicatedTimeOpt, int[] offsets)
+        // with nonExistingTimeOpt = DAYLIGHT_*/duplicatedTimeOpt = DAYLIGHT_*
         for (int i = 0; i < TESTZONES.length; i++) {
             for (int m = 0; m < MILLIS.length; m++) {
-                TESTZONES[i].getOffsetFromLocal(MILLIS[m], BasicTimeZone.LOCAL_DST, BasicTimeZone.LOCAL_DST, offsets);
+                TESTZONES[i].getOffsetFromLocal(MILLIS[m], LocalOption.DAYLIGHT_LATTER, LocalOption.DAYLIGHT_FORMER, offsets);
                 if (offsets[0] != OFFSETS3[m][0] || offsets[1] != OFFSETS3[m][1]) {
                     errln("Bad offset returned by " + TESTZONES[i].getID() + " at "
-                            + df.format(new Date(MILLIS[m])) + "(wall/DST/DST) - Got: "
+                            + df.format(new Date(MILLIS[m])) + "(wall/DAYLIGHT_LATTER/DAYLIGHT_FORMER) - Got: "
                             + offsets[0] + "/" + offsets[1]
                             + " Expected: " + OFFSETS3[m][0] + "/" + OFFSETS3[m][1]);
                 }
             }
         }
 
-        // Test getOffsetFromLocal(long time, int nonExistingTimeOpt, int duplicatedTimeOpt, int[] offsets)
-        // with nonExistingTimeOpt = LOCAL_FORMER/duplicatedTimeOpt = LOCAL_LATTER
+        // Test getOffsetFromLocal(long time, LocalOption nonExistingTimeOpt, LocalOption duplicatedTimeOpt, int[] offsets)
+        // with nonExistingTimeOpt = FORMER/duplicatedTimeOpt = LATTER
         for (int i = 0; i < TESTZONES.length; i++) {
             for (int m = 0; m < MILLIS.length; m++) {
-                TESTZONES[i].getOffsetFromLocal(MILLIS[m], BasicTimeZone.LOCAL_FORMER, BasicTimeZone.LOCAL_LATTER, offsets);
+                TESTZONES[i].getOffsetFromLocal(MILLIS[m], LocalOption.FORMER, LocalOption.LATTER, offsets);
                 if (offsets[0] != OFFSETS2[m][0] || offsets[1] != OFFSETS2[m][1]) {
                     errln("Bad offset returned by " + TESTZONES[i].getID() + " at "
                             + df.format(new Date(MILLIS[m])) + "(wall/FORMER/LATTER) - Got: "
@@ -224,11 +230,11 @@ public class TimeZoneOffsetLocalTest extends TestFmwk {
             }
         }
 
-        // Test getOffsetFromLocal(long time, int nonExistingTimeOpt, int duplicatedTimeOpt, int[] offsets)
-        // with nonExistingTimeOpt = LOCAL_LATTER/duplicatedTimeOpt = LOCAL_FORMER
+        // Test getOffsetFromLocal(long time, LocalOption nonExistingTimeOpt, LocalOption duplicatedTimeOpt, int[] offsets)
+        // with nonExistingTimeOpt = LATTER/duplicatedTimeOpt = FORMER
         for (int i = 0; i < TESTZONES.length; i++) {
             for (int m = 0; m < MILLIS.length; m++) {
-                TESTZONES[i].getOffsetFromLocal(MILLIS[m], BasicTimeZone.LOCAL_LATTER, BasicTimeZone.LOCAL_FORMER, offsets);
+                TESTZONES[i].getOffsetFromLocal(MILLIS[m], LocalOption.LATTER, LocalOption.FORMER, offsets);
                 if (offsets[0] != OFFSETS3[m][0] || offsets[1] != OFFSETS3[m][1]) {
                     errln("Bad offset returned by " + TESTZONES[i].getID() + " at "
                             + df.format(new Date(MILLIS[m])) + "(wall/LATTER/FORMER) - Got: "

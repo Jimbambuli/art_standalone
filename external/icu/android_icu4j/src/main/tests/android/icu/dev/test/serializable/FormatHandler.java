@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (c) 2004-2014, International Business Machines
@@ -14,12 +14,13 @@ import java.text.AttributedCharacterIterator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Objects;
 
 import android.icu.impl.DateNumberFormat;
 import android.icu.impl.TZDBTimeZoneNames;
 import android.icu.impl.TimeZoneGenericNames;
 import android.icu.impl.TimeZoneGenericNames.GenericNameType;
-import android.icu.impl.Utility;
+import android.icu.number.NumberRangeFormatter;
 import android.icu.text.ChineseDateFormat;
 import android.icu.text.ChineseDateFormatSymbols;
 import android.icu.text.CompactDecimalFormat;
@@ -31,10 +32,12 @@ import android.icu.text.DateIntervalInfo;
 import android.icu.text.DecimalFormat;
 import android.icu.text.DecimalFormatSymbols;
 import android.icu.text.DurationFormat;
+import android.icu.text.ListFormatter;
 import android.icu.text.MessageFormat;
 import android.icu.text.NumberFormat;
 import android.icu.text.PluralFormat;
 import android.icu.text.PluralRules;
+import android.icu.text.RelativeDateTimeFormatter;
 import android.icu.text.RuleBasedNumberFormat;
 import android.icu.text.SelectFormat;
 import android.icu.text.SimpleDateFormat;
@@ -50,6 +53,7 @@ import android.icu.util.TimeUnit;
 import android.icu.util.TimeUnitAmount;
 import android.icu.util.TimeZone;
 import android.icu.util.ULocale;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author emader
@@ -57,6 +61,7 @@ import android.icu.util.ULocale;
  * TODO To change the template for this generated type comment go to
  * Window - Preferences - Java - Code Style - Code Templates
  */
+@MainTestShard
 public class FormatHandler
 {
     /*
@@ -1076,7 +1081,7 @@ public class FormatHandler
             ULocale uloc = ULocale.forLocale(Locale.US);
             NumberFormat formats[] = {
                 /*
-                 * The code below was used to genereate the
+                 * The code below was used to generate the
                  * serialized NumberFormat objects in ICU 3.6:
                  *
                  *    NumberFormat.getInstance(Locale.US)
@@ -1107,7 +1112,16 @@ public class FormatHandler
             NumberFormat format_b = (NumberFormat) b;
             double number = 1234.56;
 
-            return format_a.format(number).equals(format_b.format(number));
+            // In CLDR 34, French changed grouping separator from \u00a0 to \u202f;
+            // here we undo that in formatted result so serialization tests don't fail
+            String result_a = format_a.format(number).replace('\u202f', '\u00a0');
+            String result_b = format_b.format(number).replace('\u202f', '\u00a0');
+            boolean equal = result_a.equals(result_b);
+            if (!equal) {
+                System.out.println(format_a+" "+format_b);
+                System.out.println(result_a+" "+result_b);
+            }
+            return equal;
         }
     }
 
@@ -1192,7 +1206,7 @@ public class FormatHandler
                    // beginning at 20, we use the >> to mark the position where
                    // the result of formatting the number's ones digit.  Thus,
                    // we only need a new rule at every multiple of 10.  Text in
-                   // backets is omitted if the value being formatted is an
+                   // brackets is omitted if the value being formatted is an
                    // even multiple of 10.
                 "20: twenty[->>];\n" +
                 "30: thirty[->>];\n" +
@@ -1349,7 +1363,7 @@ public class FormatHandler
                 "40: quarante[->%%alt-ones>];\n" +
                 "50: cinquante[->%%alt-ones>];\n" +
                    // rule for 60.  The /20 causes this rule's multiplier to be
-                   // 20 rather than 10, allowinhg us to recurse for all values
+                   // 20 rather than 10, allowing us to recurse for all values
                    // from 60 to 79...
                 "60/20: soixante[->%%alt-ones>];\n" +
                    // ...except for 71, which must be special-cased
@@ -1372,7 +1386,7 @@ public class FormatHandler
                    // of 1,000.  This prevents us from getting "onze cents cent
                    // vingt-deux" ("eleven hundred one hundred twenty-two").
                 "1100>: onze cents[ >>];\n" +
-                   // at 1,200, we go back to formating in thousands, so we
+                   // at 1,200, we go back to formatting in thousands, so we
                    // repeat the rule for 1,000
                 "1200: mille >>;\n" +
                    // at 2,000, the multiplier is added
@@ -1711,7 +1725,17 @@ public class FormatHandler
             char chars_a[] = getCharSymbols(dfs_a);
             char chars_b[] = getCharSymbols(dfs_b);
 
-            return SerializableTestUtility.compareStrings(strings_a, strings_b) && SerializableTestUtility.compareChars(chars_a, chars_b);
+            // Spot-check char-to-string conversion (ICU 58)
+            String percent_a1 = Character.toString(dfs_a.getPercent());
+            String percent_a2 = dfs_a.getPercentString();
+            String percent_b1 = Character.toString(dfs_b.getPercent());
+            String percent_b2 = dfs_b.getPercentString();
+
+            return SerializableTestUtility.compareStrings(strings_a, strings_b)
+                    && SerializableTestUtility.compareChars(chars_a, chars_b)
+                    && percent_a1.equals(percent_b1)
+                    && percent_a2.equals(percent_b2)
+                    && percent_a1.equals(percent_a2);
         }
     }
 
@@ -1773,6 +1797,81 @@ public class FormatHandler
         public Object[] getTestObjects()
         {
             return new Object[] {MessageFormat.Field.ARGUMENT};
+        }
+
+        @Override
+        public boolean hasSameBehavior(Object a, Object b)
+        {
+            return (a == b);
+        }
+    }
+
+    public static class RelativeDateTimeFormatterFieldHandler implements SerializableTestUtility.Handler
+    {
+        @Override
+        public Object[] getTestObjects()
+        {
+            return new Object[] {RelativeDateTimeFormatter.Field.LITERAL};
+        }
+
+        @Override
+        public boolean hasSameBehavior(Object a, Object b)
+        {
+            return (a == b);
+        }
+    }
+
+    public static class DateIntervalSpanFieldHandler implements SerializableTestUtility.Handler
+    {
+        @Override
+        public Object[] getTestObjects()
+        {
+            return new Object[] {DateIntervalFormat.SpanField.DATE_INTERVAL_SPAN};
+        }
+
+        @Override
+        public boolean hasSameBehavior(Object a, Object b)
+        {
+            return (a == b);
+        }
+    }
+
+    public static class ListFormatterFieldHandler implements SerializableTestUtility.Handler
+    {
+        @Override
+        public Object[] getTestObjects()
+        {
+            return new Object[] {ListFormatter.Field.ELEMENT, ListFormatter.Field.LITERAL};
+        }
+
+        @Override
+        public boolean hasSameBehavior(Object a, Object b)
+        {
+            return (a == b);
+        }
+    }
+
+    public static class ListFormatterSpanFieldHandler implements SerializableTestUtility.Handler
+    {
+        @Override
+        public Object[] getTestObjects()
+        {
+            return new Object[] {ListFormatter.SpanField.LIST_SPAN};
+        }
+
+        @Override
+        public boolean hasSameBehavior(Object a, Object b)
+        {
+            return (a == b);
+        }
+    }
+
+    public static class NumberRangeFormatterSpanFieldHandler implements SerializableTestUtility.Handler
+    {
+        @Override
+        public Object[] getTestObjects()
+        {
+            return new Object[] {NumberRangeFormatter.SpanField.NUMBER_RANGE_SPAN};
         }
 
         @Override
@@ -1857,16 +1956,18 @@ public class FormatHandler
                 // The difference of locale data for localized GMT format
                 // will produce different format result.  This is a temporary
                 // workaround for the issue.
-                DateFormatSymbols dfsa = ((SimpleDateFormat)dfa).getDateFormatSymbols();
-                DateFormatSymbols tmp = (DateFormatSymbols)((SimpleDateFormat)dfb).getDateFormatSymbols().clone();
+                // Hmm, this test had tmp backwards, it needs to override a behavior
+                // with certain symbols from b. Fixed in ICU 60.
+                DateFormatSymbols dfsb = ((SimpleDateFormat)dfb).getDateFormatSymbols();
+                DateFormatSymbols tmp = (DateFormatSymbols)((SimpleDateFormat)dfa).getDateFormatSymbols().clone();
 
                 TimeZoneFormat tmptzf = (TimeZoneFormat)((SimpleDateFormat)dfb).getTimeZoneFormat().clone();
 
-                tmp.setMonths(dfsa.getMonths());
-                tmp.setShortMonths(dfsa.getShortMonths());
-                tmp.setWeekdays(dfsa.getWeekdays());
-                tmp.setShortWeekdays(dfsa.getShortWeekdays());
-                tmp.setAmPmStrings(dfsa.getAmPmStrings());
+                tmp.setMonths(dfsb.getMonths());
+                tmp.setShortMonths(dfsb.getShortMonths());
+                tmp.setWeekdays(dfsb.getWeekdays());
+                tmp.setShortWeekdays(dfsb.getShortWeekdays());
+                tmp.setAmPmStrings(dfsb.getAmPmStrings());
 
                 ((SimpleDateFormat)dfa).setDateFormatSymbols(tmp);
                 ((SimpleDateFormat)dfa).setTimeZoneFormat(tmptzf);
@@ -2360,7 +2461,7 @@ public class FormatHandler
                     for (long date : DATES) {
                         String nameA = tzgna.getDisplayName(tz, nt, date);
                         String nameB = tzgnb.getDisplayName(tz, nt, date);
-                        if (!Utility.objectEquals(nameA, nameB)) {
+                        if (!Objects.equals(nameA, nameB)) {
                             return false;
                         }
                     }
@@ -2406,7 +2507,7 @@ public class FormatHandler
                     for (long date : DATES) {
                         String nameA = tzdbna.getDisplayName(tzid, nt, date);
                         String nameB = tzdbnb.getDisplayName(tzid, nt, date);
-                        if (!Utility.objectEquals(nameA, nameB)) {
+                        if (!Objects.equals(nameA, nameB)) {
                             return false;
                         }
                     }

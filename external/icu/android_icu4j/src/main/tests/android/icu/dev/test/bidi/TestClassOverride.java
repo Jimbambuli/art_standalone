@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 *******************************************************************************
 *   Copyright (C) 2007-2013, International Business Machines
@@ -14,6 +14,7 @@ import org.junit.Test;
 
 import android.icu.text.Bidi;
 import android.icu.text.BidiClassifier;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * Regression test for Bidi class override.
@@ -21,6 +22,7 @@ import android.icu.text.BidiClassifier;
  * @author Lina Kemmel, Matitiahu Allouche
  */
 
+@MainTestShard
 public class TestClassOverride extends BidiFmwk {
 
     private static final int DEF = TestData.DEF;

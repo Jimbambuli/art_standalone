@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2005-2016, International Business Machines Corporation and         *
@@ -21,12 +21,14 @@ import android.icu.dev.test.serializable.SerializableTestUtility.Handler;
 
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author sgill
  * @author emader
  *
  */
+@MainTestShard
 @RunWith(JUnitParamsRunner.class)
 public class CoverageTest extends TestFmwk {
 

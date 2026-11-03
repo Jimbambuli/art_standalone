@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2004-2016, Google Inc, International Business Machines
@@ -15,23 +15,27 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import android.icu.impl.CollectionSet;
 import android.icu.impl.ICUData;
 import android.icu.impl.ICUResourceBundle;
-import android.icu.impl.Pair;
 import android.icu.impl.UResource;
+import android.icu.impl.units.MeasureUnitImpl;
+import android.icu.impl.units.SingleUnitImpl;
 import android.icu.text.UnicodeSet;
+
 
 /**
  * A unit such as length, mass, volume, currency, etc.  A unit is
  * coupled with a numeric amount to produce a Measure. MeasureUnit objects are immutable.
  * All subclasses must guarantee that. (However, subclassing is discouraged.)
-
  *
  * @see android.icu.util.Measure
  * @author Alan Liu
@@ -43,10 +47,11 @@ public class MeasureUnit implements Serializable {
     // All access to the cache or cacheIsPopulated flag must be synchronized on class MeasureUnit,
     // i.e. from synchronized static methods. Beware of non-static methods.
     private static final Map<String, Map<String,MeasureUnit>> cache
-        = new HashMap<String, Map<String,MeasureUnit>>();
+        = new HashMap<>();
     private static boolean cacheIsPopulated = false;
 
     /**
+     * If type set to null, measureUnitImpl is in use instead of type and subType.
      * @deprecated This API is ICU internal only.
      * @hide original deprecated declaration
      * @hide draft / provisional / internal are hidden on Android
@@ -55,12 +60,240 @@ public class MeasureUnit implements Serializable {
     protected final String type;
 
     /**
+     * If subType set to null, measureUnitImpl is in use instead of type and subType.
      * @deprecated This API is ICU internal only.
      * @hide original deprecated declaration
      * @hide draft / provisional / internal are hidden on Android
      */
     @Deprecated
     protected final String subType;
+
+    /**
+     * Used by new draft APIs in ICU 68.
+     *
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    private MeasureUnitImpl measureUnitImpl;
+
+    /**
+     * Enumeration for unit complexity. There are three levels:
+     * <ul>
+     * <li>SINGLE: A single unit, optionally with a power and/or SI or binary prefix.
+     * Examples: hectare, square-kilometer, kilojoule, per-second, mebibyte.</li>
+     * <li>COMPOUND: A unit composed of the product of multiple single units. Examples:
+     * meter-per-second, kilowatt-hour, kilogram-meter-per-square-second.</li>
+     * <li>MIXED: A unit composed of the sum of multiple single units. Examples: foot-and-inch,
+     * hour-and-minute-and-second, degree-and-arcminute-and-arcsecond.</li>
+     * </ul>
+     * The complexity determines which operations are available. For example, you cannot set the power
+     * or prefix of a compound unit.
+     */
+    public enum Complexity {
+        /**
+         * A single unit, like kilojoule.
+         */
+        SINGLE,
+
+        /**
+         * A compound unit, like meter-per-second.
+         */
+        COMPOUND,
+
+        /**
+         * A mixed unit, like hour-and-minute.
+         */
+        MIXED
+    }
+
+    /**
+     * Enumeration for SI and binary prefixes, e.g. "kilo-", "nano-", "mebi-".
+     */
+    public enum MeasurePrefix {
+
+        /**
+         * SI prefix: yotta, 10^24.
+         */
+        YOTTA(24, "yotta", 10),
+
+        /**
+         * SI prefix: zetta, 10^21.
+         */
+        ZETTA(21, "zetta", 10),
+
+        /**
+         * SI prefix: exa, 10^18.
+         */
+        EXA(18, "exa", 10),
+
+        /**
+         * SI prefix: peta, 10^15.
+         */
+        PETA(15, "peta", 10),
+
+        /**
+         * SI prefix: tera, 10^12.
+         */
+        TERA(12, "tera", 10),
+
+        /**
+         * SI prefix: giga, 10^9.
+         */
+        GIGA(9, "giga", 10),
+
+        /**
+         * SI prefix: mega, 10^6.
+         */
+        MEGA(6, "mega", 10),
+
+        /**
+         * SI prefix: kilo, 10^3.
+         */
+        KILO(3, "kilo", 10),
+
+        /**
+         * SI prefix: hecto, 10^2.
+         */
+        HECTO(2, "hecto", 10),
+
+        /**
+         * SI prefix: deka, 10^1.
+         */
+        DEKA(1, "deka", 10),
+
+        /**
+         * The absence of an SI prefix.
+         */
+        ONE(0, "", 10),
+
+        /**
+         * SI prefix: deci, 10^-1.
+         */
+        DECI(-1, "deci", 10),
+
+        /**
+         * SI prefix: centi, 10^-2.
+         */
+        CENTI(-2, "centi", 10),
+
+        /**
+         * SI prefix: milli, 10^-3.
+         */
+        MILLI(-3, "milli", 10),
+
+        /**
+         * SI prefix: micro, 10^-6.
+         */
+        MICRO(-6, "micro", 10),
+
+        /**
+         * SI prefix: nano, 10^-9.
+         */
+        NANO(-9, "nano", 10),
+
+        /**
+         * SI prefix: pico, 10^-12.
+         */
+        PICO(-12, "pico", 10),
+
+        /**
+         * SI prefix: femto, 10^-15.
+         */
+        FEMTO(-15, "femto", 10),
+
+        /**
+         * SI prefix: atto, 10^-18.
+         */
+        ATTO(-18, "atto", 10),
+
+        /**
+         * SI prefix: zepto, 10^-21.
+         */
+        ZEPTO(-21, "zepto", 10),
+
+        /**
+         * SI prefix: yocto, 10^-24.
+         */
+        YOCTO(-24, "yocto", 10),
+
+        /**
+         * IEC binary prefix: kibi, 1024^1.
+         */
+        KIBI(1, "kibi", 1024),
+
+        /**
+         * IEC binary prefix: mebi, 1024^2.
+         */
+        MEBI(2, "mebi", 1024),
+
+        /**
+         * IEC binary prefix: gibi, 1024^3.
+         */
+        GIBI(3, "gibi", 1024),
+
+        /**
+         * IEC binary prefix: tebi, 1024^4.
+         */
+        TEBI(4, "tebi", 1024),
+
+        /**
+         * IEC binary prefix: pebi, 1024^5.
+         */
+        PEBI(5, "pebi", 1024),
+
+        /**
+         * IEC binary prefix: exbi, 1024^6.
+         */
+        EXBI(6, "exbi", 1024),
+
+        /**
+         * IEC binary prefix: zebi, 1024^7.
+         */
+        ZEBI(7, "zebi", 1024),
+
+        /**
+         * IEC binary prefix: yobi, 1024^8.
+         */
+        YOBI(8, "yobi", 1024);
+
+        private final int base;
+        private final int power;
+        private final String identifier;
+
+        MeasurePrefix(int power, String identifier, int base) {
+            this.base = base;
+            this.power = power;
+            this.identifier = identifier;
+        }
+
+        /**
+         * Returns the identifier of the prefix.
+         *
+         * @deprecated This API is ICU internal only.
+         * @hide draft / provisional / internal are hidden on Android
+         */
+        @Deprecated
+        public String getIdentifier() {
+            return identifier;
+        }
+
+        /**
+         * Returns the base of the prefix. For example:
+         * - if the prefix is "centi", the base will be 10.
+         * - if the prefix is "gibi", the base will be 1024.
+         */
+        public int getBase() {
+            return base;
+        }
+
+        /**
+         * Returns the power of the prefix. For example:
+         * - if the prefix is "centi", the power will be -2.
+         * - if the prefix is "gibi", the power will be 3 (for base 1024).
+         */
+        public int getPower() {
+            return power;
+        }
+    }
 
     /**
      * @deprecated This API is ICU internal only.
@@ -74,7 +307,53 @@ public class MeasureUnit implements Serializable {
     }
 
     /**
-     * Get the type, such as "length"
+     * Construct a MeasureUnit from a CLDR Core Unit Identifier, defined in UTS
+     * 35. (Core unit identifiers and mixed unit identifiers are supported, long
+     * unit identifiers are not.) Validates and canonicalizes the identifier.
+     *
+     * Note: dimensionless <code>MeasureUnit</code> is <code>null</code>
+     *
+     * <pre>
+     * MeasureUnit example = MeasureUnit::forIdentifier("furlong-per-nanosecond")
+     * </pre>
+     *
+     * @param identifier CLDR Unit Identifier
+     * @throws IllegalArgumentException if the identifier is invalid.
+     */
+    public static MeasureUnit forIdentifier(String identifier) {
+        if (identifier == null || identifier.isEmpty()) {
+            return NoUnit.BASE;
+        }
+
+        return MeasureUnitImpl.forIdentifier(identifier).build();
+    }
+
+    /**
+     * @deprecated Internal API for ICU use only.
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    @Deprecated
+    public static MeasureUnit fromMeasureUnitImpl(MeasureUnitImpl measureUnitImpl) {
+        measureUnitImpl.serialize();
+        String identifier = measureUnitImpl.getIdentifier();
+        MeasureUnit result = MeasureUnit.findBySubType(identifier);
+        if (result != null) {
+            return result;
+        }
+
+        return new MeasureUnit(measureUnitImpl);
+    }
+
+    private MeasureUnit(MeasureUnitImpl measureUnitImpl) {
+        type = null;
+        subType = null;
+        this.measureUnitImpl = measureUnitImpl.copy();
+    }
+
+
+
+    /**
+     * Get the type, such as "length". May return null.
      */
     public String getType() {
         return type;
@@ -82,13 +361,176 @@ public class MeasureUnit implements Serializable {
 
 
     /**
-     * Get the subType, such as “foot”.
+     * Get the subType, such as “foot”. May return null.
      */
     public String getSubtype() {
         return subType;
     }
 
+    /**
+     * Get CLDR Unit Identifier for this MeasureUnit, as defined in UTS 35.
+     *
+     * @return The string form of this unit.
+     */
+    public String getIdentifier() {
+        String result = measureUnitImpl == null ? getSubtype() : measureUnitImpl.getIdentifier();
+        return result == null ? "" : result;
+    }
 
+    /**
+     * Compute the complexity of the unit. See Complexity for more information.
+     *
+     * @return The unit complexity.
+     */
+    public Complexity getComplexity() {
+        if (measureUnitImpl == null) {
+            return MeasureUnitImpl.forIdentifier(getIdentifier()).getComplexity();
+        }
+
+        return measureUnitImpl.getComplexity();
+    }
+
+    /**
+     * Creates a MeasureUnit which is this SINGLE unit augmented with the specified prefix.
+     * For example, MeasurePrefix.KILO for "kilo", or MeasurePrefix.KIBI for "kibi".
+     * May return `this` if this unit already has that prefix.
+     * <p>
+     * There is sufficient locale data to format all standard prefixes.
+     * <p>
+     * NOTE: Only works on SINGLE units. If this is a COMPOUND or MIXED unit, an error will
+     * occur. For more information, see `Complexity`.
+     *
+     * @param prefix The prefix, from MeasurePrefix.
+     * @return A new SINGLE unit.
+     * @throws UnsupportedOperationException if this unit is a COMPOUND or MIXED unit.
+     */
+    public MeasureUnit withPrefix(MeasurePrefix prefix) {
+        SingleUnitImpl singleUnit = getSingleUnitImpl();
+        singleUnit.setPrefix(prefix);
+        return singleUnit.build();
+    }
+
+    /**
+     * Returns the current SI or binary prefix of this SINGLE unit. For example,
+     * if the unit has the prefix "kilo", then MeasurePrefix.KILO is returned.
+     * <p>
+     * NOTE: Only works on SINGLE units. If this is a COMPOUND or MIXED unit, an
+     * error will occur. For more information, see `Complexity`.
+     *
+     * @return The prefix of this SINGLE unit, from MeasurePrefix.
+     * @throws UnsupportedOperationException if the unit is COMPOUND or MIXED.
+     */
+    public MeasurePrefix getPrefix() {
+        return getSingleUnitImpl().getPrefix();
+    }
+
+    /**
+     * Returns the dimensionality (power) of this MeasureUnit. For example, if the unit is square,
+     * then 2 is returned.
+     * <p>
+     * NOTE: Only works on SINGLE units. If this is a COMPOUND or MIXED unit, an exception will be thrown.
+     * For more information, see `Complexity`.
+     *
+     * @return The dimensionality (power) of this simple unit.
+     * @throws UnsupportedOperationException if the unit is COMPOUND or MIXED.
+     */
+    public int getDimensionality() {
+        return getSingleUnitImpl().getDimensionality();
+    }
+
+    /**
+     * Creates a MeasureUnit which is this SINGLE unit augmented with the specified dimensionality
+     * (power). For example, if dimensionality is 2, the unit will be squared.
+     * <p>
+     * NOTE: Only works on SINGLE units. If this is a COMPOUND or MIXED unit, an exception is thrown.
+     * For more information, see `Complexity`.
+     *
+     * @param dimensionality The dimensionality (power).
+     * @return A new SINGLE unit.
+     * @throws UnsupportedOperationException if the unit is COMPOUND or MIXED.
+     */
+    public MeasureUnit withDimensionality(int dimensionality) {
+        SingleUnitImpl singleUnit = getSingleUnitImpl();
+        singleUnit.setDimensionality(dimensionality);
+        return singleUnit.build();
+    }
+
+    /**
+     * Computes the reciprocal of this MeasureUnit, with the numerator and denominator flipped.
+     * <p>
+     * For example, if the receiver is "meter-per-second", the unit "second-per-meter" is returned.
+     * <p>
+     * NOTE: Only works on SINGLE and COMPOUND units. If this is a MIXED unit, an error will
+     * occur. For more information, see `Complexity`.
+     *
+     * @return The reciprocal of the target unit.
+     * @throws UnsupportedOperationException if the unit is MIXED.
+     */
+    public MeasureUnit reciprocal() {
+        MeasureUnitImpl measureUnit = getCopyOfMeasureUnitImpl();
+        measureUnit.takeReciprocal();
+        return measureUnit.build();
+    }
+
+    /**
+     * Computes the product of this unit with another unit. This is a way to build units from
+     * constituent parts.
+     * <p>
+     * The numerator and denominator are preserved through this operation.
+     * <p>
+     * For example, if the receiver is "kilowatt" and the argument is "hour-per-day", then the
+     * unit "kilowatt-hour-per-day" is returned.
+     * <p>
+     * NOTE: Only works on SINGLE and COMPOUND units. If either unit (receivee and argument) is a
+     * MIXED unit, an error will occur. For more information, see `Complexity`.
+     *
+     * @param other The MeasureUnit to multiply with the target.
+     * @return The product of the target unit with the provided unit.
+     * @throws UnsupportedOperationException if the unit is MIXED.
+     */
+    public MeasureUnit product(MeasureUnit other) {
+        MeasureUnitImpl implCopy = getCopyOfMeasureUnitImpl();
+
+        if (other == null /* dimensionless */) {
+            return implCopy.build();
+        }
+
+        final MeasureUnitImpl otherImplRef = other.getMaybeReferenceOfMeasureUnitImpl();
+        if (implCopy.getComplexity() == Complexity.MIXED || otherImplRef.getComplexity() == Complexity.MIXED) {
+            throw new UnsupportedOperationException();
+        }
+
+        for (SingleUnitImpl singleUnit :
+                otherImplRef.getSingleUnits()) {
+            implCopy.appendSingleUnit(singleUnit);
+        }
+
+        return implCopy.build();
+    }
+
+    /**
+     * Returns the list of SINGLE units contained within a sequence of COMPOUND units.
+     * <p>
+     * Examples:
+     * - Given "meter-kilogram-per-second", three units will be returned: "meter",
+     * "kilogram", and "per-second".
+     * - Given "hour+minute+second", three units will be returned: "hour", "minute",
+     * and "second".
+     * <p>
+     * If this is a SINGLE unit, a list of length 1 will be returned.
+     *
+     * @return An unmodifiable list of single units
+     */
+    public List<MeasureUnit> splitToSingleUnits() {
+        final ArrayList<SingleUnitImpl> singleUnits =
+            getMaybeReferenceOfMeasureUnitImpl().getSingleUnits();
+        List<MeasureUnit> result = new ArrayList<>(singleUnits.size());
+        for (SingleUnitImpl singleUnit : singleUnits) {
+            result.add(singleUnit.build());
+        }
+
+        return result;
+    }
 
     /**
      * {@inheritDoc}
@@ -109,8 +551,8 @@ public class MeasureUnit implements Serializable {
         if (!(rhs instanceof MeasureUnit)) {
             return false;
         }
-        MeasureUnit c = (MeasureUnit) rhs;
-        return type.equals(c.type) && subType.equals(c.subType);
+
+        return this.getIdentifier().equals(((MeasureUnit) rhs).getIdentifier());
     }
 
     /**
@@ -118,13 +560,14 @@ public class MeasureUnit implements Serializable {
      */
     @Override
     public String toString() {
-        return type + "-" + subType;
+        String result = measureUnitImpl == null ? type + "-" + subType : measureUnitImpl.getIdentifier();
+        return result == null ? "" : result;
     }
 
     /**
      * Get all of the available units' types. Returned set is unmodifiable.
      */
-    public synchronized static Set<String> getAvailableTypes() {
+    public static Set<String> getAvailableTypes() {
         populateCache();
         return Collections.unmodifiableSet(cache.keySet());
     }
@@ -134,21 +577,22 @@ public class MeasureUnit implements Serializable {
      * @param type the type
      * @return the available units for type. Returned set is unmodifiable.
      */
-    public synchronized static Set<MeasureUnit> getAvailable(String type) {
+    public static Set<MeasureUnit> getAvailable(String type) {
         populateCache();
         Map<String, MeasureUnit> units = cache.get(type);
         // Train users not to modify returned set from the start giving us more
         // flexibility for implementation.
+        // Use CollectionSet instead of HashSet for better performance.
         return units == null ? Collections.<MeasureUnit>emptySet()
-                : Collections.unmodifiableSet(new HashSet<MeasureUnit>(units.values()));
+                : Collections.unmodifiableSet(new CollectionSet<>(units.values()));
     }
 
     /**
      * Get all of the available units. Returned set is unmodifiable.
      */
     public synchronized static Set<MeasureUnit> getAvailable() {
-        Set<MeasureUnit> result = new HashSet<MeasureUnit>();
-        for (String type : new HashSet<String>(MeasureUnit.getAvailableTypes())) {
+        Set<MeasureUnit> result = new HashSet<>();
+        for (String type : new HashSet<>(MeasureUnit.getAvailableTypes())) {
             for (MeasureUnit unit : MeasureUnit.getAvailable(type)) {
                 result.add(unit);
             }
@@ -159,7 +603,7 @@ public class MeasureUnit implements Serializable {
     }
 
     /**
-     * Create a MeasureUnit instance (creates a singleton instance).
+     * Creates a MeasureUnit instance (creates a singleton instance) or returns one from the cache.
      * <p>
      * Normally this method should not be used, since there will be no formatting data
      * available for it, and it may not be returned by getAvailable().
@@ -191,14 +635,18 @@ public class MeasureUnit implements Serializable {
     }
 
     /**
-     * For ICU use only.
      * @deprecated This API is ICU internal only.
-     * @hide original deprecated declaration
      * @hide draft / provisional / internal are hidden on Android
      */
     @Deprecated
-    public static MeasureUnit resolveUnitPerUnit(MeasureUnit unit, MeasureUnit perUnit) {
-        return unitPerUnitToSingleUnit.get(Pair.of(unit, perUnit));
+    public static MeasureUnit findBySubType(String subType) {
+        populateCache();
+        for (Map<String, MeasureUnit> unitsForType : cache.values()) {
+            if (unitsForType.containsKey(subType)) {
+                return unitsForType.get(subType);
+            }
+        }
+        return null;
     }
 
     static final UnicodeSet ASCII = new UnicodeSet('a', 'z').freeze();
@@ -249,8 +697,8 @@ public class MeasureUnit implements Serializable {
         public void put(UResource.Key key, UResource.Value value, boolean noFallback) {
             UResource.Table unitTypesTable = value.getTable();
             for (int i2 = 0; unitTypesTable.getKeyAndValue(i2, key, value); ++i2) {
-                // Skip "compound" since it is treated differently from the other units
-                if (key.contentEquals("compound")) {
+                // Skip "compound" and "coordinate" since they are treated differently from the other units
+                if (key.contentEquals("compound") || key.contentEquals("coordinate")) {
                     continue;
                 }
 
@@ -287,11 +735,9 @@ public class MeasureUnit implements Serializable {
      * Adding of others is deferred until later to avoid circular static init
      * dependencies with classes Currency and TimeUnit.
      *
-     * <p>Synchronization: this function must be called from static synchronized methods only.
-     *
      * @hide draft / provisional / internal are hidden on Android
      */
-    static private void populateCache() {
+    static synchronized private void populateCache() {
         if (cacheIsPopulated) {
             return;
         }
@@ -330,7 +776,7 @@ public class MeasureUnit implements Serializable {
     protected synchronized static MeasureUnit addUnit(String type, String unitName, Factory factory) {
         Map<String, MeasureUnit> tmp = cache.get(type);
         if (tmp == null) {
-            cache.put(type, tmp = new HashMap<String, MeasureUnit>());
+            cache.put(type, tmp = new HashMap<>());
         } else {
             // "intern" the type by setting to first item's type.
             type = tmp.entrySet().iterator().next().getValue().type;
@@ -351,7 +797,7 @@ public class MeasureUnit implements Serializable {
 // the "End generated MeasureUnit constants" comment is auto generated code
 // and must not be edited manually. For instructions on how to correctly
 // update this code, refer to:
-// http://site.icu-project.org/design/formatting/measureformat/updating-measure-unit
+// docs/processes/release/tasks/updating-measure-unit.md
 //
     // Start generated MeasureUnit constants
 
@@ -361,9 +807,9 @@ public class MeasureUnit implements Serializable {
     public static final MeasureUnit G_FORCE = MeasureUnit.internalGetInstance("acceleration", "g-force");
 
     /**
-     * Constant for unit of acceleration: meter-per-second-squared
+     * Constant for unit of acceleration: meter-per-square-second
      */
-    public static final MeasureUnit METER_PER_SECOND_SQUARED = MeasureUnit.internalGetInstance("acceleration", "meter-per-second-squared");
+    public static final MeasureUnit METER_PER_SECOND_SQUARED = MeasureUnit.internalGetInstance("acceleration", "meter-per-square-second");
 
     /**
      * Constant for unit of angle: arc-minute
@@ -394,6 +840,12 @@ public class MeasureUnit implements Serializable {
      * Constant for unit of area: acre
      */
     public static final MeasureUnit ACRE = MeasureUnit.internalGetInstance("area", "acre");
+
+    /**
+     * Constant for unit of area: dunam
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit DUNAM = MeasureUnit.internalGetInstance("area", "dunam");
 
     /**
      * Constant for unit of area: hectare
@@ -436,32 +888,61 @@ public class MeasureUnit implements Serializable {
     public static final MeasureUnit SQUARE_YARD = MeasureUnit.internalGetInstance("area", "square-yard");
 
     /**
+     * Constant for unit of concentr: item
+     */
+    public static final MeasureUnit ITEM = MeasureUnit.internalGetInstance("concentr", "item");
+
+    /**
      * Constant for unit of concentr: karat
      */
     public static final MeasureUnit KARAT = MeasureUnit.internalGetInstance("concentr", "karat");
 
     /**
+     * Constant for unit of concentr: milligram-ofglucose-per-deciliter
+     */
+    public static final MeasureUnit MILLIGRAM_OFGLUCOSE_PER_DECILITER = MeasureUnit.internalGetInstance("concentr", "milligram-ofglucose-per-deciliter");
+
+    /**
      * Constant for unit of concentr: milligram-per-deciliter
-     * @hide draft / provisional / internal are hidden on Android
      */
     public static final MeasureUnit MILLIGRAM_PER_DECILITER = MeasureUnit.internalGetInstance("concentr", "milligram-per-deciliter");
 
     /**
      * Constant for unit of concentr: millimole-per-liter
-     * @hide draft / provisional / internal are hidden on Android
      */
     public static final MeasureUnit MILLIMOLE_PER_LITER = MeasureUnit.internalGetInstance("concentr", "millimole-per-liter");
 
     /**
-     * Constant for unit of concentr: part-per-million
-     * @hide draft / provisional / internal are hidden on Android
+     * Constant for unit of concentr: mole
+     * @hide unsupported on Android
      */
-    public static final MeasureUnit PART_PER_MILLION = MeasureUnit.internalGetInstance("concentr", "part-per-million");
+    public static final MeasureUnit MOLE = MeasureUnit.internalGetInstance("concentr", "mole");
 
     /**
-     * Constant for unit of consumption: liter-per-100kilometers
+     * Constant for unit of concentr: percent
      */
-    public static final MeasureUnit LITER_PER_100KILOMETERS = MeasureUnit.internalGetInstance("consumption", "liter-per-100kilometers");
+    public static final MeasureUnit PERCENT = MeasureUnit.internalGetInstance("concentr", "percent");
+
+    /**
+     * Constant for unit of concentr: permille
+     */
+    public static final MeasureUnit PERMILLE = MeasureUnit.internalGetInstance("concentr", "permille");
+
+    /**
+     * Constant for unit of concentr: permillion
+     */
+    public static final MeasureUnit PART_PER_MILLION = MeasureUnit.internalGetInstance("concentr", "permillion");
+
+    /**
+     * Constant for unit of concentr: permyriad
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit PERMYRIAD = MeasureUnit.internalGetInstance("concentr", "permyriad");
+
+    /**
+     * Constant for unit of consumption: liter-per-100-kilometer
+     */
+    public static final MeasureUnit LITER_PER_100KILOMETERS = MeasureUnit.internalGetInstance("consumption", "liter-per-100-kilometer");
 
     /**
      * Constant for unit of consumption: liter-per-kilometer
@@ -475,33 +956,8 @@ public class MeasureUnit implements Serializable {
 
     /**
      * Constant for unit of consumption: mile-per-gallon-imperial
-     * @hide draft / provisional / internal are hidden on Android
      */
     public static final MeasureUnit MILE_PER_GALLON_IMPERIAL = MeasureUnit.internalGetInstance("consumption", "mile-per-gallon-imperial");
-
-    /**
-     * Constant for unit of coordinate: east
-     * @hide draft / provisional / internal are hidden on Android
-     */
-    public static final MeasureUnit EAST = MeasureUnit.internalGetInstance("coordinate", "east");
-
-    /**
-     * Constant for unit of coordinate: north
-     * @hide draft / provisional / internal are hidden on Android
-     */
-    public static final MeasureUnit NORTH = MeasureUnit.internalGetInstance("coordinate", "north");
-
-    /**
-     * Constant for unit of coordinate: south
-     * @hide draft / provisional / internal are hidden on Android
-     */
-    public static final MeasureUnit SOUTH = MeasureUnit.internalGetInstance("coordinate", "south");
-
-    /**
-     * Constant for unit of coordinate: west
-     * @hide draft / provisional / internal are hidden on Android
-     */
-    public static final MeasureUnit WEST = MeasureUnit.internalGetInstance("coordinate", "west");
 
     /**
      * Constant for unit of digital: bit
@@ -544,6 +1000,11 @@ public class MeasureUnit implements Serializable {
     public static final MeasureUnit MEGABYTE = MeasureUnit.internalGetInstance("digital", "megabyte");
 
     /**
+     * Constant for unit of digital: petabyte
+     */
+    public static final MeasureUnit PETABYTE = MeasureUnit.internalGetInstance("digital", "petabyte");
+
+    /**
      * Constant for unit of digital: terabit
      */
     public static final MeasureUnit TERABIT = MeasureUnit.internalGetInstance("digital", "terabit");
@@ -562,6 +1023,17 @@ public class MeasureUnit implements Serializable {
      * Constant for unit of duration: day
      */
     public static final TimeUnit DAY = (TimeUnit) MeasureUnit.internalGetInstance("duration", "day");
+
+    /**
+     * Constant for unit of duration: day-person
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit DAY_PERSON = MeasureUnit.internalGetInstance("duration", "day-person");
+
+    /**
+     * Constant for unit of duration: decade
+     */
+    public static final MeasureUnit DECADE = MeasureUnit.internalGetInstance("duration", "decade");
 
     /**
      * Constant for unit of duration: hour
@@ -589,9 +1061,21 @@ public class MeasureUnit implements Serializable {
     public static final TimeUnit MONTH = (TimeUnit) MeasureUnit.internalGetInstance("duration", "month");
 
     /**
+     * Constant for unit of duration: month-person
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit MONTH_PERSON = MeasureUnit.internalGetInstance("duration", "month-person");
+
+    /**
      * Constant for unit of duration: nanosecond
      */
     public static final MeasureUnit NANOSECOND = MeasureUnit.internalGetInstance("duration", "nanosecond");
+
+    /**
+     * Constant for unit of duration: quarter
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    public static final MeasureUnit QUARTER = MeasureUnit.internalGetInstance("duration", "quarter");
 
     /**
      * Constant for unit of duration: second
@@ -604,9 +1088,21 @@ public class MeasureUnit implements Serializable {
     public static final TimeUnit WEEK = (TimeUnit) MeasureUnit.internalGetInstance("duration", "week");
 
     /**
+     * Constant for unit of duration: week-person
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit WEEK_PERSON = MeasureUnit.internalGetInstance("duration", "week-person");
+
+    /**
      * Constant for unit of duration: year
      */
     public static final TimeUnit YEAR = (TimeUnit) MeasureUnit.internalGetInstance("duration", "year");
+
+    /**
+     * Constant for unit of duration: year-person
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit YEAR_PERSON = MeasureUnit.internalGetInstance("duration", "year-person");
 
     /**
      * Constant for unit of electric: ampere
@@ -629,9 +1125,21 @@ public class MeasureUnit implements Serializable {
     public static final MeasureUnit VOLT = MeasureUnit.internalGetInstance("electric", "volt");
 
     /**
+     * Constant for unit of energy: british-thermal-unit
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit BRITISH_THERMAL_UNIT = MeasureUnit.internalGetInstance("energy", "british-thermal-unit");
+
+    /**
      * Constant for unit of energy: calorie
      */
     public static final MeasureUnit CALORIE = MeasureUnit.internalGetInstance("energy", "calorie");
+
+    /**
+     * Constant for unit of energy: electronvolt
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit ELECTRONVOLT = MeasureUnit.internalGetInstance("energy", "electronvolt");
 
     /**
      * Constant for unit of energy: foodcalorie
@@ -659,6 +1167,29 @@ public class MeasureUnit implements Serializable {
     public static final MeasureUnit KILOWATT_HOUR = MeasureUnit.internalGetInstance("energy", "kilowatt-hour");
 
     /**
+     * Constant for unit of energy: therm-us
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit THERM_US = MeasureUnit.internalGetInstance("energy", "therm-us");
+
+    /**
+     * Constant for unit of force: kilowatt-hour-per-100-kilometer
+     */
+    public static final MeasureUnit KILOWATT_HOUR_PER_100_KILOMETER = MeasureUnit.internalGetInstance("force", "kilowatt-hour-per-100-kilometer");
+
+    /**
+     * Constant for unit of force: newton
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit NEWTON = MeasureUnit.internalGetInstance("force", "newton");
+
+    /**
+     * Constant for unit of force: pound-force
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit POUND_FORCE = MeasureUnit.internalGetInstance("force", "pound-force");
+
+    /**
      * Constant for unit of frequency: gigahertz
      */
     public static final MeasureUnit GIGAHERTZ = MeasureUnit.internalGetInstance("frequency", "gigahertz");
@@ -679,6 +1210,46 @@ public class MeasureUnit implements Serializable {
     public static final MeasureUnit MEGAHERTZ = MeasureUnit.internalGetInstance("frequency", "megahertz");
 
     /**
+     * Constant for unit of graphics: dot
+     */
+    public static final MeasureUnit DOT = MeasureUnit.internalGetInstance("graphics", "dot");
+
+    /**
+     * Constant for unit of graphics: dot-per-centimeter
+     */
+    public static final MeasureUnit DOT_PER_CENTIMETER = MeasureUnit.internalGetInstance("graphics", "dot-per-centimeter");
+
+    /**
+     * Constant for unit of graphics: dot-per-inch
+     */
+    public static final MeasureUnit DOT_PER_INCH = MeasureUnit.internalGetInstance("graphics", "dot-per-inch");
+
+    /**
+     * Constant for unit of graphics: em
+     */
+    public static final MeasureUnit EM = MeasureUnit.internalGetInstance("graphics", "em");
+
+    /**
+     * Constant for unit of graphics: megapixel
+     */
+    public static final MeasureUnit MEGAPIXEL = MeasureUnit.internalGetInstance("graphics", "megapixel");
+
+    /**
+     * Constant for unit of graphics: pixel
+     */
+    public static final MeasureUnit PIXEL = MeasureUnit.internalGetInstance("graphics", "pixel");
+
+    /**
+     * Constant for unit of graphics: pixel-per-centimeter
+     */
+    public static final MeasureUnit PIXEL_PER_CENTIMETER = MeasureUnit.internalGetInstance("graphics", "pixel-per-centimeter");
+
+    /**
+     * Constant for unit of graphics: pixel-per-inch
+     */
+    public static final MeasureUnit PIXEL_PER_INCH = MeasureUnit.internalGetInstance("graphics", "pixel-per-inch");
+
+    /**
      * Constant for unit of length: astronomical-unit
      */
     public static final MeasureUnit ASTRONOMICAL_UNIT = MeasureUnit.internalGetInstance("length", "astronomical-unit");
@@ -692,6 +1263,12 @@ public class MeasureUnit implements Serializable {
      * Constant for unit of length: decimeter
      */
     public static final MeasureUnit DECIMETER = MeasureUnit.internalGetInstance("length", "decimeter");
+
+    /**
+     * Constant for unit of length: earth-radius
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit EARTH_RADIUS = MeasureUnit.internalGetInstance("length", "earth-radius");
 
     /**
      * Constant for unit of length: fathom
@@ -769,9 +1346,30 @@ public class MeasureUnit implements Serializable {
     public static final MeasureUnit PICOMETER = MeasureUnit.internalGetInstance("length", "picometer");
 
     /**
+     * Constant for unit of length: point
+     */
+    public static final MeasureUnit POINT = MeasureUnit.internalGetInstance("length", "point");
+
+    /**
+     * Constant for unit of length: solar-radius
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit SOLAR_RADIUS = MeasureUnit.internalGetInstance("length", "solar-radius");
+
+    /**
      * Constant for unit of length: yard
      */
     public static final MeasureUnit YARD = MeasureUnit.internalGetInstance("length", "yard");
+
+    /**
+     * Constant for unit of light: candela
+     */
+    public static final MeasureUnit CANDELA = MeasureUnit.internalGetInstance("light", "candela");
+
+    /**
+     * Constant for unit of light: lumen
+     */
+    public static final MeasureUnit LUMEN = MeasureUnit.internalGetInstance("light", "lumen");
 
     /**
      * Constant for unit of light: lux
@@ -779,9 +1377,33 @@ public class MeasureUnit implements Serializable {
     public static final MeasureUnit LUX = MeasureUnit.internalGetInstance("light", "lux");
 
     /**
+     * Constant for unit of light: solar-luminosity
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit SOLAR_LUMINOSITY = MeasureUnit.internalGetInstance("light", "solar-luminosity");
+
+    /**
      * Constant for unit of mass: carat
      */
     public static final MeasureUnit CARAT = MeasureUnit.internalGetInstance("mass", "carat");
+
+    /**
+     * Constant for unit of mass: dalton
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit DALTON = MeasureUnit.internalGetInstance("mass", "dalton");
+
+    /**
+     * Constant for unit of mass: earth-mass
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit EARTH_MASS = MeasureUnit.internalGetInstance("mass", "earth-mass");
+
+    /**
+     * Constant for unit of mass: grain
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit GRAIN = MeasureUnit.internalGetInstance("mass", "grain");
 
     /**
      * Constant for unit of mass: gram
@@ -794,9 +1416,11 @@ public class MeasureUnit implements Serializable {
     public static final MeasureUnit KILOGRAM = MeasureUnit.internalGetInstance("mass", "kilogram");
 
     /**
-     * Constant for unit of mass: metric-ton
+     * Constant for unit of mass: metric-ton (renamed to tonne in CLDR 42 / ICU 72).
+     * Note: In ICU 74 this will be deprecated in favor of TONNE, which is currently
+     * draft but will become stable in ICU 74, and which uses the preferred naming.
      */
-    public static final MeasureUnit METRIC_TON = MeasureUnit.internalGetInstance("mass", "metric-ton");
+    public static final MeasureUnit METRIC_TON = MeasureUnit.internalGetInstance("mass", "tonne");
 
     /**
      * Constant for unit of mass: microgram
@@ -824,6 +1448,12 @@ public class MeasureUnit implements Serializable {
     public static final MeasureUnit POUND = MeasureUnit.internalGetInstance("mass", "pound");
 
     /**
+     * Constant for unit of mass: solar-mass
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit SOLAR_MASS = MeasureUnit.internalGetInstance("mass", "solar-mass");
+
+    /**
      * Constant for unit of mass: stone
      */
     public static final MeasureUnit STONE = MeasureUnit.internalGetInstance("mass", "stone");
@@ -832,6 +1462,12 @@ public class MeasureUnit implements Serializable {
      * Constant for unit of mass: ton
      */
     public static final MeasureUnit TON = MeasureUnit.internalGetInstance("mass", "ton");
+
+    /**
+     * Constant for unit of mass: tonne
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    public static final MeasureUnit TONNE = MeasureUnit.internalGetInstance("mass", "tonne");
 
     /**
      * Constant for unit of power: gigawatt
@@ -864,14 +1500,37 @@ public class MeasureUnit implements Serializable {
     public static final MeasureUnit WATT = MeasureUnit.internalGetInstance("power", "watt");
 
     /**
+     * Constant for unit of pressure: atmosphere
+     */
+    public static final MeasureUnit ATMOSPHERE = MeasureUnit.internalGetInstance("pressure", "atmosphere");
+
+    /**
+     * Constant for unit of pressure: bar
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit BAR = MeasureUnit.internalGetInstance("pressure", "bar");
+
+    /**
      * Constant for unit of pressure: hectopascal
      */
     public static final MeasureUnit HECTOPASCAL = MeasureUnit.internalGetInstance("pressure", "hectopascal");
 
     /**
-     * Constant for unit of pressure: inch-hg
+     * Constant for unit of pressure: inch-ofhg
      */
-    public static final MeasureUnit INCH_HG = MeasureUnit.internalGetInstance("pressure", "inch-hg");
+    public static final MeasureUnit INCH_HG = MeasureUnit.internalGetInstance("pressure", "inch-ofhg");
+
+    /**
+     * Constant for unit of pressure: kilopascal
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit KILOPASCAL = MeasureUnit.internalGetInstance("pressure", "kilopascal");
+
+    /**
+     * Constant for unit of pressure: megapascal
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit MEGAPASCAL = MeasureUnit.internalGetInstance("pressure", "megapascal");
 
     /**
      * Constant for unit of pressure: millibar
@@ -879,14 +1538,20 @@ public class MeasureUnit implements Serializable {
     public static final MeasureUnit MILLIBAR = MeasureUnit.internalGetInstance("pressure", "millibar");
 
     /**
-     * Constant for unit of pressure: millimeter-of-mercury
+     * Constant for unit of pressure: millimeter-ofhg
      */
-    public static final MeasureUnit MILLIMETER_OF_MERCURY = MeasureUnit.internalGetInstance("pressure", "millimeter-of-mercury");
+    public static final MeasureUnit MILLIMETER_OF_MERCURY = MeasureUnit.internalGetInstance("pressure", "millimeter-ofhg");
 
     /**
-     * Constant for unit of pressure: pound-per-square-inch
+     * Constant for unit of pressure: pascal
+     * @hide unsupported on Android
      */
-    public static final MeasureUnit POUND_PER_SQUARE_INCH = MeasureUnit.internalGetInstance("pressure", "pound-per-square-inch");
+    public static final MeasureUnit PASCAL = MeasureUnit.internalGetInstance("pressure", "pascal");
+
+    /**
+     * Constant for unit of pressure: pound-force-per-square-inch
+     */
+    public static final MeasureUnit POUND_PER_SQUARE_INCH = MeasureUnit.internalGetInstance("pressure", "pound-force-per-square-inch");
 
     /**
      * Constant for unit of speed: kilometer-per-hour
@@ -929,9 +1594,27 @@ public class MeasureUnit implements Serializable {
     public static final MeasureUnit KELVIN = MeasureUnit.internalGetInstance("temperature", "kelvin");
 
     /**
+     * Constant for unit of torque: newton-meter
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit NEWTON_METER = MeasureUnit.internalGetInstance("torque", "newton-meter");
+
+    /**
+     * Constant for unit of torque: pound-force-foot
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit POUND_FOOT = MeasureUnit.internalGetInstance("torque", "pound-force-foot");
+
+    /**
      * Constant for unit of volume: acre-foot
      */
     public static final MeasureUnit ACRE_FOOT = MeasureUnit.internalGetInstance("volume", "acre-foot");
+
+    /**
+     * Constant for unit of volume: barrel
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit BARREL = MeasureUnit.internalGetInstance("volume", "barrel");
 
     /**
      * Constant for unit of volume: bushel
@@ -994,9 +1677,39 @@ public class MeasureUnit implements Serializable {
     public static final MeasureUnit DECILITER = MeasureUnit.internalGetInstance("volume", "deciliter");
 
     /**
+     * Constant for unit of volume: dessert-spoon
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit DESSERT_SPOON = MeasureUnit.internalGetInstance("volume", "dessert-spoon");
+
+    /**
+     * Constant for unit of volume: dessert-spoon-imperial
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit DESSERT_SPOON_IMPERIAL = MeasureUnit.internalGetInstance("volume", "dessert-spoon-imperial");
+
+    /**
+     * Constant for unit of volume: dram
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit DRAM = MeasureUnit.internalGetInstance("volume", "dram");
+
+    /**
+     * Constant for unit of volume: drop
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit DROP = MeasureUnit.internalGetInstance("volume", "drop");
+
+    /**
      * Constant for unit of volume: fluid-ounce
      */
     public static final MeasureUnit FLUID_OUNCE = MeasureUnit.internalGetInstance("volume", "fluid-ounce");
+
+    /**
+     * Constant for unit of volume: fluid-ounce-imperial
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit FLUID_OUNCE_IMPERIAL = MeasureUnit.internalGetInstance("volume", "fluid-ounce-imperial");
 
     /**
      * Constant for unit of volume: gallon
@@ -1005,7 +1718,6 @@ public class MeasureUnit implements Serializable {
 
     /**
      * Constant for unit of volume: gallon-imperial
-     * @hide draft / provisional / internal are hidden on Android
      */
     public static final MeasureUnit GALLON_IMPERIAL = MeasureUnit.internalGetInstance("volume", "gallon-imperial");
 
@@ -1013,6 +1725,12 @@ public class MeasureUnit implements Serializable {
      * Constant for unit of volume: hectoliter
      */
     public static final MeasureUnit HECTOLITER = MeasureUnit.internalGetInstance("volume", "hectoliter");
+
+    /**
+     * Constant for unit of volume: jigger
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit JIGGER = MeasureUnit.internalGetInstance("volume", "jigger");
 
     /**
      * Constant for unit of volume: liter
@@ -1030,6 +1748,12 @@ public class MeasureUnit implements Serializable {
     public static final MeasureUnit MILLILITER = MeasureUnit.internalGetInstance("volume", "milliliter");
 
     /**
+     * Constant for unit of volume: pinch
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit PINCH = MeasureUnit.internalGetInstance("volume", "pinch");
+
+    /**
      * Constant for unit of volume: pint
      */
     public static final MeasureUnit PINT = MeasureUnit.internalGetInstance("volume", "pint");
@@ -1045,6 +1769,12 @@ public class MeasureUnit implements Serializable {
     public static final MeasureUnit QUART = MeasureUnit.internalGetInstance("volume", "quart");
 
     /**
+     * Constant for unit of volume: quart-imperial
+     * @hide unsupported on Android
+     */
+    public static final MeasureUnit QUART_IMPERIAL = MeasureUnit.internalGetInstance("volume", "quart-imperial");
+
+    /**
      * Constant for unit of volume: tablespoon
      */
     public static final MeasureUnit TABLESPOON = MeasureUnit.internalGetInstance("volume", "tablespoon");
@@ -1054,25 +1784,49 @@ public class MeasureUnit implements Serializable {
      */
     public static final MeasureUnit TEASPOON = MeasureUnit.internalGetInstance("volume", "teaspoon");
 
-    private static HashMap<Pair<MeasureUnit, MeasureUnit>, MeasureUnit>unitPerUnitToSingleUnit =
-            new HashMap<Pair<MeasureUnit, MeasureUnit>, MeasureUnit>();
-
-    static {
-        unitPerUnitToSingleUnit.put(Pair.<MeasureUnit, MeasureUnit>of(MeasureUnit.LITER, MeasureUnit.KILOMETER), MeasureUnit.LITER_PER_KILOMETER);
-        unitPerUnitToSingleUnit.put(Pair.<MeasureUnit, MeasureUnit>of(MeasureUnit.POUND, MeasureUnit.SQUARE_INCH), MeasureUnit.POUND_PER_SQUARE_INCH);
-        unitPerUnitToSingleUnit.put(Pair.<MeasureUnit, MeasureUnit>of(MeasureUnit.MILE, MeasureUnit.HOUR), MeasureUnit.MILE_PER_HOUR);
-        unitPerUnitToSingleUnit.put(Pair.<MeasureUnit, MeasureUnit>of(MeasureUnit.MILLIGRAM, MeasureUnit.DECILITER), MeasureUnit.MILLIGRAM_PER_DECILITER);
-        unitPerUnitToSingleUnit.put(Pair.<MeasureUnit, MeasureUnit>of(MeasureUnit.MILE, MeasureUnit.GALLON_IMPERIAL), MeasureUnit.MILE_PER_GALLON_IMPERIAL);
-        unitPerUnitToSingleUnit.put(Pair.<MeasureUnit, MeasureUnit>of(MeasureUnit.KILOMETER, MeasureUnit.HOUR), MeasureUnit.KILOMETER_PER_HOUR);
-        unitPerUnitToSingleUnit.put(Pair.<MeasureUnit, MeasureUnit>of(MeasureUnit.MILE, MeasureUnit.GALLON), MeasureUnit.MILE_PER_GALLON);
-        unitPerUnitToSingleUnit.put(Pair.<MeasureUnit, MeasureUnit>of(MeasureUnit.METER, MeasureUnit.SECOND), MeasureUnit.METER_PER_SECOND);
-    }
-
     // End generated MeasureUnit constants
+
     /* Private */
 
     private Object writeReplace() throws ObjectStreamException {
         return new MeasureUnitProxy(type, subType);
+    }
+
+    /**
+     *
+     * @return this object as a SingleUnitImpl.
+     * @throws UnsupportedOperationException if this object could not be converted to a single unit.
+     */
+    // In ICU4C, this is SingleUnitImpl::forMeasureUnit().
+    private SingleUnitImpl getSingleUnitImpl() {
+        if (measureUnitImpl == null) {
+            return MeasureUnitImpl.forIdentifier(getIdentifier()).getSingleUnitImpl();
+        }
+
+        return measureUnitImpl.getSingleUnitImpl();
+    }
+
+    /**
+     *
+     * @return this object in a MeasureUnitImpl form.
+     * @deprecated This API is ICU internal only.
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    @Deprecated
+    public MeasureUnitImpl getCopyOfMeasureUnitImpl() {
+        return this.measureUnitImpl == null ?
+                MeasureUnitImpl.forIdentifier(getIdentifier()) :
+                this.measureUnitImpl.copy();
+    }
+
+    /**
+     *
+     * @return this object in a MeasureUnitImpl form.
+     */
+    private MeasureUnitImpl getMaybeReferenceOfMeasureUnitImpl() {
+        return this.measureUnitImpl == null ?
+                MeasureUnitImpl.forIdentifier(getIdentifier()) :
+                this.measureUnitImpl;
     }
 
     static final class MeasureUnitProxy implements Externalizable {

@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 *******************************************************************************
 * Copyright (C) 2010-2014, International Business Machines
@@ -9,23 +9,36 @@
 */
 package android.icu.dev.test.normalizer;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
+import android.icu.dev.test.TestUtil;
 import android.icu.impl.Normalizer2Impl.UTF16Plus;
+import android.icu.impl.Punycode;
+import android.icu.impl.Utility;
 import android.icu.text.IDNA;
+import android.icu.text.StringPrepParseException;
+import android.icu.util.ICUInputTooLongException;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * UTS #46 (IDNA2008) test.
  * @author Markus Scherer
  * @since 2010jul10
  */
+@MainTestShard
+@RunWith(JUnit4.class)
 public class UTS46Test extends TestFmwk {
     public UTS46Test() {
         int commonOptions=
@@ -98,9 +111,103 @@ public class UTS46Test extends TestFmwk {
         }
     }
 
+    @Test
+    public void TestInvalidPunycodeDigits() {
+        IDNA idna=IDNA.getUTS46Instance(0);
+        StringBuilder result=new StringBuilder();
+        IDNA.Info info=new IDNA.Info();
+        idna.nameToUnicode("xn--pleP", result, info);  // P=U+0050
+        assertFalse("nameToUnicode() should succeed",
+                info.getErrors().contains(IDNA.Error.PUNYCODE));
+        assertEquals("normal result", "ᔼᔴ", result.toString());
+
+        info=new IDNA.Info();
+        idna.nameToUnicode("xn--pleѐ", result, info);  // ends with non-ASCII U+0450
+        assertTrue("nameToUnicode() should detect non-ASCII",
+                info.getErrors().contains(IDNA.Error.PUNYCODE));
+
+        // Test with ASCII characters adjacent to LDH.
+        info=new IDNA.Info();
+        idna.nameToUnicode("xn--PLE/", result, info);
+        assertTrue("nameToUnicode() should detect '/'",
+                info.getErrors().contains(IDNA.Error.PUNYCODE));
+
+        info=new IDNA.Info();
+        idna.nameToUnicode("xn--ple:", result, info);
+        assertTrue("nameToUnicode() should detect ':'",
+                info.getErrors().contains(IDNA.Error.PUNYCODE));
+
+        info=new IDNA.Info();
+        idna.nameToUnicode("xn--ple@", result, info);
+        assertTrue("nameToUnicode() should detect '@'",
+                info.getErrors().contains(IDNA.Error.PUNYCODE));
+
+        info=new IDNA.Info();
+        idna.nameToUnicode("xn--ple[", result, info);
+        assertTrue("nameToUnicode() should detect '['",
+                info.getErrors().contains(IDNA.Error.PUNYCODE));
+
+        info=new IDNA.Info();
+        idna.nameToUnicode("xn--ple`", result, info);
+        assertTrue("nameToUnicode() should detect '`'",
+                info.getErrors().contains(IDNA.Error.PUNYCODE));
+
+        info=new IDNA.Info();
+        idna.nameToUnicode("xn--ple{", result, info);
+        assertTrue("nameToUnicode() should detect '{'",
+                info.getErrors().contains(IDNA.Error.PUNYCODE));
+    }
+
+    @Test
+    public void TestACELabelEdgeCases() {
+        // In IDNA2008, these labels fail the round-trip validation from comparing
+        // the ToUnicode input with the back-to-ToASCII output.
+        IDNA idna=IDNA.getUTS46Instance(0);
+        StringBuilder result=new StringBuilder();
+        IDNA.Info info=new IDNA.Info();
+        idna.labelToUnicode("xn--", result, info);
+        assertTrue("empty xn--", info.getErrors().contains(IDNA.Error.INVALID_ACE_LABEL));
+
+        info=new IDNA.Info();
+        idna.labelToUnicode("xN--ASCII-", result, info);
+        assertTrue("nothing but ASCII", info.getErrors().contains(IDNA.Error.INVALID_ACE_LABEL));
+
+        // Different error: The Punycode decoding procedure does not consume the last delimiter
+        // if it is right after the xn-- so the main decoding loop fails because the hyphen
+        // is not a valid Punycode digit.
+        info=new IDNA.Info();
+        idna.labelToUnicode("Xn---", result, info);
+        assertTrue("empty Xn---", info.getErrors().contains(IDNA.Error.PUNYCODE));
+    }
+
+    @Test
+    public void TestTooLong() {
+        // ICU-13727: Limit input length for n^2 algorithm
+        // where well-formed strings are at most 59 characters long.
+        int count = 50000;
+        StringBuilder sb = new StringBuilder(count);
+        for (int i = 0; i < count; ++i) {
+            sb.append('a');
+        }
+        try {
+            Punycode.encode(sb, null);
+            fail("encode: expected an exception for too-long input");
+        } catch(ICUInputTooLongException expected) {
+        } catch(StringPrepParseException e) {
+            fail("encode: unexpected StringPrepParseException for too-long input: " + e);
+        }
+        try {
+            Punycode.decode(sb, null);
+            fail("decode: expected an exception for too-long input");
+        } catch(ICUInputTooLongException expected) {
+        } catch(StringPrepParseException e) {
+            fail("decode: unexpected StringPrepParseException for too-long input: " + e);
+        }
+    }
+
     private static final Map<String, IDNA.Error> errorNamesToErrors;
     static {
-        errorNamesToErrors=new TreeMap<String, IDNA.Error>();
+        errorNamesToErrors=new TreeMap<>();
         errorNamesToErrors.put("UIDNA_ERROR_EMPTY_LABEL", IDNA.Error.EMPTY_LABEL);
         errorNamesToErrors.put("UIDNA_ERROR_LABEL_TOO_LONG", IDNA.Error.LABEL_TOO_LONG);
         errorNamesToErrors.put("UIDNA_ERROR_DOMAIN_NAME_TOO_LONG", IDNA.Error.DOMAIN_NAME_TOO_LONG);
@@ -378,13 +485,13 @@ public class UTS46Test extends TestFmwk {
           "UIDNA_ERROR_EMPTY_LABEL|UIDNA_ERROR_LEADING_HYPHEN|UIDNA_ERROR_TRAILING_HYPHEN|"+
           "UIDNA_ERROR_HYPHEN_3_4" },
         { "a..c", "B", "a..c", "UIDNA_ERROR_EMPTY_LABEL" },
-        { "a.xn--.c", "B", "a..c", "UIDNA_ERROR_EMPTY_LABEL" },
+        { "a.xn--.c", "B", "a.xn--\uFFFD.c", "UIDNA_ERROR_INVALID_ACE_LABEL" },
         { "a.-b.", "B", "a.-b.", "UIDNA_ERROR_LEADING_HYPHEN" },
         { "a.b-.c", "B", "a.b-.c", "UIDNA_ERROR_TRAILING_HYPHEN" },
         { "a.-.c", "B", "a.-.c", "UIDNA_ERROR_LEADING_HYPHEN|UIDNA_ERROR_TRAILING_HYPHEN" },
         { "a.bc--de.f", "B", "a.bc--de.f", "UIDNA_ERROR_HYPHEN_3_4" },
         { "\u00E4.\u00AD.c", "B", "\u00E4..c", "UIDNA_ERROR_EMPTY_LABEL" },
-        { "\u00E4.xn--.c", "B", "\u00E4..c", "UIDNA_ERROR_EMPTY_LABEL" },
+        { "\u00E4.xn--.c", "B", "\u00E4.xn--\uFFFD.c", "UIDNA_ERROR_INVALID_ACE_LABEL" },
         { "\u00E4.-b.", "B", "\u00E4.-b.", "UIDNA_ERROR_LEADING_HYPHEN" },
         { "\u00E4.b-.c", "B", "\u00E4.b-.c", "UIDNA_ERROR_TRAILING_HYPHEN" },
         { "\u00E4.-.c", "B", "\u00E4.-.c", "UIDNA_ERROR_LEADING_HYPHEN|UIDNA_ERROR_TRAILING_HYPHEN" },
@@ -414,8 +521,11 @@ public class UTS46Test extends TestFmwk {
         { "\u05D07\u05EA", "B", "\u05D07\u05EA", "" },
         { "\u05D0\u0667\u05EA", "B", "\u05D0\u0667\u05EA", "" },  // Arabic 7 in the middle
         { "a7\u0667z", "B", "a7\u0667z", "UIDNA_ERROR_BIDI" },  // AN digit in LTR
+        { "a7\u0667", "B", "a7\u0667", "UIDNA_ERROR_BIDI" },  // AN digit in LTR
         { "\u05D07\u0667\u05EA", "B",  // mixed EN/AN digits in RTL
           "\u05D07\u0667\u05EA", "UIDNA_ERROR_BIDI" },
+        { "\u05D07\u0667", "B",  // mixed EN/AN digits in RTL
+          "\u05D07\u0667", "UIDNA_ERROR_BIDI" },
         // ZWJ
         { "\u0BB9\u0BCD\u200D", "N", "\u0BB9\u0BCD\u200D", "" },  // Virama+ZWJ
         { "\u0BB9\u200D", "N", "\u0BB9\u200D", "UIDNA_ERROR_CONTEXTJ" },  // no Virama
@@ -714,6 +824,114 @@ public class UTS46Test extends TestFmwk {
                     continue;
                 }
             }
+        }
+    }
+
+    private void checkIdnaTestResult(String line, String type,
+            String expected, CharSequence result, String status, IDNA.Info info) {
+        // An error in toUnicode or toASCII is indicated by a value in square brackets,
+        // such as "[B5 B6]".
+        boolean expectedHasErrors = false;
+        if (!status.isEmpty()) {
+            if (status.charAt(0) != '[') {
+                errln(String.format("%s  status field does not start with '[': %s\n    %s",
+                        type, status, line));
+            }
+            if (!status.equals("[]")) {
+                expectedHasErrors = true;
+            }
+        }
+        if (expectedHasErrors != info.hasErrors()) {
+            errln(String.format(
+                    "%s  expected errors %s %b != %b = actual has errors: %s\n    %s",
+                    type, status, expectedHasErrors, info.hasErrors(), info.getErrors(), line));
+        }
+        if (!expectedHasErrors && !UTF16Plus.equal(expected, result)) {
+            errln(String.format("%s  expected != actual\n    %s", type, line));
+            errln("    " + expected);
+            errln("    " + result);
+        }
+    }
+
+    @Test
+    public void IdnaTest() throws IOException {
+        BufferedReader idnaTestFile = TestUtil.getDataReader("unicode/IdnaTestV2.txt", "UTF-8");
+        Pattern semi = Pattern.compile(";");
+        try {
+            String line;
+            while ((line = idnaTestFile.readLine()) != null) {
+                // Remove trailing comments and whitespace.
+                int commentStart = line.indexOf('#');
+                if (commentStart >= 0) {
+                    line = line.substring(0, commentStart);
+                }
+                String[] fields = semi.split(line, -1);
+                if (fields.length <= 1) {
+                    continue;  // Skip empty and comment-only lines.
+                }
+
+                // IdnaTestV2.txt (since Unicode 11)
+                // Column 1: source
+                // The source string to be tested
+                String source = Utility.unescape(fields[0].trim());
+
+                // Column 2: toUnicode
+                // The result of applying toUnicode to the source, with Transitional_Processing=false.
+                // A blank value means the same as the source value.
+                String toUnicode = Utility.unescape(fields[1].trim());
+                if (toUnicode.isEmpty()) {
+                    toUnicode = source;
+                }
+
+                // Column 3: toUnicodeStatus
+                // A set of status codes, each corresponding to a particular test.
+                // A blank value means [].
+                String toUnicodeStatus = fields[2].trim();
+
+                // Column 4: toAsciiN
+                // The result of applying toASCII to the source, with Transitional_Processing=false.
+                // A blank value means the same as the toUnicode value.
+                String toAsciiN = Utility.unescape(fields[3].trim());
+                if (toAsciiN.isEmpty()) {
+                    toAsciiN = toUnicode;
+                }
+
+                // Column 5: toAsciiNStatus
+                // A set of status codes, each corresponding to a particular test.
+                // A blank value means the same as the toUnicodeStatus value.
+                String toAsciiNStatus = fields[4].trim();
+                if (toAsciiNStatus.isEmpty()) {
+                    toAsciiNStatus = toUnicodeStatus;
+                }
+
+                // Column 6: toAsciiT
+                // The result of applying toASCII to the source, with Transitional_Processing=true.
+                // A blank value means the same as the toAsciiN value.
+                String toAsciiT = Utility.unescape(fields[5].trim());
+                if (toAsciiT.isEmpty()) {
+                    toAsciiT = toAsciiN;
+                }
+
+                // Column 7: toAsciiTStatus
+                // A set of status codes, each corresponding to a particular test.
+                // A blank value means the same as the toAsciiNStatus value.
+                String toAsciiTStatus = fields[6].trim();
+                if (toAsciiTStatus.isEmpty()) {
+                    toAsciiTStatus = toAsciiNStatus;
+                }
+
+                // ToASCII/ToUnicode, transitional/nontransitional
+                StringBuilder uN, aN, aT;
+                IDNA.Info uNInfo, aNInfo, aTInfo;
+                nontrans.nameToUnicode(source, uN = new StringBuilder(), uNInfo = new IDNA.Info());
+                checkIdnaTestResult(line, "toUnicodeNontrans", toUnicode, uN, toUnicodeStatus, uNInfo);
+                nontrans.nameToASCII(source, aN = new StringBuilder(), aNInfo = new IDNA.Info());
+                checkIdnaTestResult(line, "toASCIINontrans", toAsciiN, aN, toAsciiNStatus, aNInfo);
+                trans.nameToASCII(source, aT = new StringBuilder(), aTInfo = new IDNA.Info());
+                checkIdnaTestResult(line, "toASCIITrans", toAsciiT, aT, toAsciiTStatus, aTInfo);
+            }
+        } finally {
+            idnaTestFile.close();
         }
     }
 

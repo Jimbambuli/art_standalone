@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*********************************************************************
  * Copyright (C) 2000-2014, International Business Machines
  * Corporation and others. All Rights Reserved.
@@ -63,10 +63,6 @@ import android.icu.util.ULocale.Category;
  * <li>Dershowitz and Reingold, <i>Calendrical Calculations</i>,
  * Cambridge University Press, 1997</li>
  * 
- * <li>Helmer Aslaksen's
- * <a href="http://www.math.nus.edu.sg/aslaksen/calendar/chinese.shtml">
- * Chinese Calendar page</a></li>
- *
  * <li>The <a href="http://www.tondering.dk/claus/calendar.html">
  * Calendar FAQ</a></li>
  *
@@ -277,7 +273,7 @@ public class ChineseCalendar extends Calendar {
      * @param aLocale The given locale
      */
     public ChineseCalendar(Locale aLocale) {
-        this(TimeZone.getDefault(), ULocale.forLocale(aLocale), CHINESE_EPOCH_YEAR, CHINA_ZONE);
+        this(TimeZone.forLocaleOrDefault(aLocale), ULocale.forLocale(aLocale), CHINESE_EPOCH_YEAR, CHINA_ZONE);
     }
 
     /**
@@ -307,7 +303,7 @@ public class ChineseCalendar extends Calendar {
      * @param locale the given ulocale
      */
     public ChineseCalendar(ULocale locale) {
-        this(TimeZone.getDefault(), locale, CHINESE_EPOCH_YEAR, CHINA_ZONE);
+        this(TimeZone.forULocaleOrDefault(locale), locale, CHINESE_EPOCH_YEAR, CHINA_ZONE);
     }
 
     /**

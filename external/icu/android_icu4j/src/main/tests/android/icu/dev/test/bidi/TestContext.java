@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 *******************************************************************************
 *   Copyright (C) 2007-2011, International Business Machines
@@ -13,6 +13,7 @@ package android.icu.dev.test.bidi;
 import org.junit.Test;
 
 import android.icu.text.Bidi;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * Regression test for doing transformations in context
@@ -20,6 +21,7 @@ import android.icu.text.Bidi;
  * @author Matitiahu Allouche
  */
 
+@MainTestShard
 public class TestContext extends BidiFmwk {
 
     private class ContextCase {

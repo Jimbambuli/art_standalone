@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 ***************************************************************************
 *   Copyright (C) 2002-2009 International Business Machines Corporation   *
@@ -40,7 +40,7 @@ class RBBISymbolTable implements SymbolTable{
     }
 
     //
-    //  RBBISymbolTable::lookup       This function from the abstract symbol table inteface
+    //  RBBISymbolTable::lookup       This function from the abstract symbol table interface
     //                                looks up a variable name and returns a UnicodeString
     //                                containing the substitution text.
     //

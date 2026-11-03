@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2008, International Business Machines Corporation and         *
@@ -14,26 +14,31 @@ import java.util.List;
 import java.util.ListIterator;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.lang.UCharacter;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author aheninger
  *
  */
+@MainTestShard
+@RunWith(JUnit4.class)
 public class UCharacterThreadTest extends TestFmwk {
   // constructor -----------------------------------------------------------
-    
+
     /**
-    * Private constructor to prevent initialisation
+    * Private constructor to prevent initialization
     */
     public UCharacterThreadTest()
     {
     }
-    
+
       // public methods --------------------------------------------------------
-      
+
     //
     //  Test multi-threaded parallel calls to UCharacter.getName(codePoint)
     //  Regression test for ticket 6264.
@@ -68,6 +73,7 @@ public class UCharacterThreadTest extends TestFmwk {
            this.correctName = correctName;
         }
 
+        @Override
         public void run() {
           for(int i=0; i<10000; i++) {
             actualName = UCharacter.getName(codePoint);

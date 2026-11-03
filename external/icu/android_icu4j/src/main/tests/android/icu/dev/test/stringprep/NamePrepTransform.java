@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2003-2010, International Business Machines Corporation and    *
@@ -19,6 +19,7 @@ import android.icu.lang.UCharacterDirection;
 import android.icu.text.StringPrepParseException;
 import android.icu.text.UCharacterIterator;
 import android.icu.text.UnicodeSet;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author ram
@@ -26,6 +27,7 @@ import android.icu.text.UnicodeSet;
  * To change the template for this generated type comment go to
  * Window>Preferences>Java>Code Generation>Code and Comments
  */
+@MainTestShard
 public class NamePrepTransform {
     
     private static final NamePrepTransform transform = new NamePrepTransform();

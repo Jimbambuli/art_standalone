@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2002-2014, International Business Machines Corporation and
@@ -24,6 +24,8 @@ import java.util.MissingResourceException;
 import java.util.Set;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.impl.Utility;
@@ -38,7 +40,10 @@ import android.icu.text.UCharacterIterator;
 import android.icu.text.UnicodeSet;
 import android.icu.util.ULocale;
 import android.icu.util.VersionInfo;
+import android.icu.testsharding.MainTestShard;
 
+@MainTestShard
+@RunWith(JUnit4.class)
 public class CollationAPITest extends TestFmwk {
     /**
      * This tests the collation key related APIs.
@@ -115,7 +120,7 @@ public class CollationAPITest extends TestFmwk {
 
         byte key2identical[] = key2.toByteArray();
 
-        logln("Use secondary comparision level testing ...");
+        logln("Use secondary comparison level testing ...");
         col.setStrength(Collator.SECONDARY);
 
         key1 = col.getCollationKey(test1);
@@ -232,17 +237,17 @@ public class CollationAPITest extends TestFmwk {
         // there is no reason to have canonical decomposition in en_US OR default locale */
         if (vi_VN.getDecomposition() != Collator.CANONICAL_DECOMPOSITION)
         {
-            errln("vi_VN collation did not have cannonical decomposition for normalization!");
+            errln("vi_VN collation did not have canonical decomposition for normalization!");
         }
 
         if (el_GR.getDecomposition() != Collator.CANONICAL_DECOMPOSITION)
         {
-            errln("el_GR collation did not have cannonical decomposition for normalization!");
+            errln("el_GR collation did not have canonical decomposition for normalization!");
         }
 
         if (en_US.getDecomposition() != Collator.NO_DECOMPOSITION)
         {
-            errln("en_US collation had cannonical decomposition for normalization!");
+            errln("en_US collation had canonical decomposition for normalization!");
         }
     }
 
@@ -255,7 +260,7 @@ public class CollationAPITest extends TestFmwk {
         Collator col1 = Collator.getInstance(Locale.ENGLISH);
 
         // Collator col2 = (Collator)col1.clone();
-        // doAssert(col1.equals(col2), "Cloned object is not equal to the orginal");
+        // doAssert(col1.equals(col2), "Cloned object is not equal to the original");
         String ruleset = "&9 < a, A < b, B < c, C < d, D, e, E";
         RuleBasedCollator col3 = null;
         try {
@@ -266,7 +271,7 @@ public class CollationAPITest extends TestFmwk {
         }
         doAssert(!col1.equals(col3), "Cloned object is equal to some dummy");
         col3 = (RuleBasedCollator)col1;
-        doAssert(col1.equals(col3), "Copied object is not equal to the orginal");
+        doAssert(col1.equals(col3), "Copied object is not equal to the original");
 
     }
 
@@ -275,7 +280,7 @@ public class CollationAPITest extends TestFmwk {
      * - creation of a CollationElementIterator object
      * - == and != operators
      * - iterating forward
-     * - reseting the iterator index
+     * - resetting the iterator index
      * - requesting the order properties(primary, secondary or tertiary)
      */
     @Test
@@ -1095,7 +1100,19 @@ public class CollationAPITest extends TestFmwk {
           // zh_Hant has default=stroke but the data is in zh.
           { "zh_TW", "zh_Hant_TW", "zh@collation=stroke" },
           { "zh_TW@collation=pinyin", "zh_Hant_TW@collation=pinyin", "zh" },
-          { "zh_CN@collation=stroke", "zh_Hans_CN@collation=stroke", "zh@collation=stroke" }
+          { "zh_CN@collation=stroke", "zh_Hans_CN@collation=stroke", "zh@collation=stroke" },
+          // yue/yue_Hant aliased to zh_Hant, yue_Hans aliased to zh_Hans.
+          { "yue", "zh_Hant", "zh@collation=stroke" },
+          { "yue_HK", "zh_Hant", "zh@collation=stroke" },
+          { "yue_Hant", "zh_Hant", "zh@collation=stroke" },
+          { "yue_Hant_HK", "zh_Hant", "zh@collation=stroke" },
+          { "yue@collation=pinyin", "zh_Hant@collation=pinyin", "zh" },
+          { "yue_HK@collation=pinyin", "zh_Hant@collation=pinyin", "zh" },
+          { "yue_CN", "zh_Hans", "zh" },
+          { "yue_Hans", "zh_Hans", "zh" },
+          { "yue_Hans_CN", "zh_Hans", "zh" },
+          { "yue_Hans@collation=stroke", "zh_Hans@collation=stroke", "zh@collation=stroke" },
+          { "yue_CN@collation=stroke", "zh_Hans@collation=stroke", "zh@collation=stroke" }
         };
 
         /* test opening collators for different locales */
@@ -1297,6 +1314,7 @@ public class CollationAPITest extends TestFmwk {
         }
     }
 
+    @Test
     public final void TestGetAll() {
         Locale[] list = Collator.getAvailableLocales();
         int errorCount = 0;
@@ -1656,6 +1674,50 @@ public class CollationAPITest extends TestFmwk {
         } catch(UnsupportedOperationException expected) {
         } catch(Exception other) {
             errln("Collator.getInstance(" + localeID + ") did not fail as expected - " + other);
+        }
+    }
+
+    @Test
+    public void TestGapTooSmall() {
+        // Try to tailor >20k characters into a too-small primary gap between symbols
+        // that have 3-byte primary weights.
+        // In FractionalUCA.txt:
+        // 263A; [0C BA D0, 05, 05]  # Zyyy So  [084A.0020.0002]  * WHITE SMILING FACE
+        // 263B; [0C BA D7, 05, 05]  # Zyyy So  [084B.0020.0002]  * BLACK SMILING FACE
+        try {
+            new RuleBasedCollator("&☺<*\u4E00-\u9FFF");
+            errln("no exception for primary-gap overflow");
+        } catch (UnsupportedOperationException e) {
+            assertTrue("exception message mentions 'gap'", e.getMessage().contains("gap"));
+        } catch (Exception e) {
+            errln("unexpected exception for primary-gap overflow: " + e);
+        }
+
+        // CLDR 32/ICU 60 FractionalUCA.txt makes room at the end of the symbols range
+        // for several 2-byte primaries, or a large number of 3-byters.
+        // The reset point is primary-before what should be
+        // the special currency-first-primary contraction,
+        // which is hopefully fairly stable, but not guaranteed stable.
+        // In FractionalUCA.txt:
+        // FDD1 20AC; [0D 70 02, 05, 05]  # CURRENCY first primary
+        try {
+            Collator coll = new RuleBasedCollator("&[before 1]\uFDD1€<*\u4E00-\u9FFF");
+            assertTrue("tailored Han before currency", coll.compare("\u4E00", "$") < 0);
+        } catch (Exception e) {
+            errln("unexpected exception for tailoring many characters at the end of symbols: " + e);
+        }
+    }
+
+    @Test
+    public void TestBogusLocaleID() {
+        try {
+            Collator c1 = Collator.getInstance(new ULocale("en-US-u-kn-true"));
+            Collator c2 = Collator.getInstance(new ULocale("en_US-u-kn-true"));
+
+            assertTrue("Comparison using \"normal\" collator failed", c1.compare("2", "10") < 0);
+            assertTrue("Comparison using \"bad\" collator failed", c2.compare("2", "10") < 0);
+        } catch (Exception e) {
+            errln("Exception creating collators: " + e);
         }
     }
 }

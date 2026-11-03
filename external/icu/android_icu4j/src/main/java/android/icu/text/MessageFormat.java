@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 **********************************************************************
 * Copyright (c) 2004-2016, International Business Machines
@@ -33,13 +33,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import android.icu.impl.PatternProps;
-import android.icu.impl.Utility;
+import android.icu.number.NumberFormatter;
 import android.icu.text.MessagePattern.ArgType;
 import android.icu.text.MessagePattern.Part;
-import android.icu.text.PluralRules.FixedDecimal;
+import android.icu.text.PluralRules.IFixedDecimal;
 import android.icu.text.PluralRules.PluralType;
 import android.icu.util.ICUUncheckedIOException;
 import android.icu.util.ULocale;
@@ -130,7 +131,7 @@ import android.icu.util.ULocale.Category;
  *   <li>messageText can contain quoted literal strings including syntax characters.
  *       A quoted literal string begins with an ASCII apostrophe and a syntax character
  *       (usually a {curly brace}) and continues until the next single apostrophe.
- *       A double ASCII apostrohpe inside or outside of a quoted string represents
+ *       A double ASCII apostrophe inside or outside of a quoted string represents
  *       one literal apostrophe.
  *   <li>Quotable syntax characters are the {curly braces} in all messageText parts,
  *       plus the '#' sign in a messageText immediately inside a pluralStyle,
@@ -140,8 +141,8 @@ import android.icu.util.ULocale.Category;
  *       and unquoted {curly braces} must occur in matched pairs.
  * </ul>
  *
- * <p>Recommendation: Use the real apostrophe (single quote) character \u2019 for
- * human-readable text, and use the ASCII apostrophe (\u0027 ' )
+ * <p>Recommendation: Use the real apostrophe (single quote) character \\u2019 for
+ * human-readable text, and use the ASCII apostrophe (\\u0027 ' )
  * only in program syntax, like quoting in MessageFormat.
  * See the annotations for U+0027 Apostrophe in The Unicode Standard.
  *
@@ -772,7 +773,7 @@ public class MessageFormat extends UFormat {
                     "This method is not available in MessageFormat objects " +
                     "that use alphanumeric argument names.");
         }
-        ArrayList<Format> list = new ArrayList<Format>();
+        ArrayList<Format> list = new ArrayList<>();
         for (int partIndex = 0; (partIndex = nextTopLevelArgStart(partIndex)) >= 0;) {
             int argNumber = msgPattern.getPart(partIndex + 1).getValue();
             while (argNumber >= list.size()) {
@@ -804,7 +805,7 @@ public class MessageFormat extends UFormat {
      * @throws IllegalArgumentException if this format uses named arguments
      */
     public Format[] getFormats() {
-        ArrayList<Format> list = new ArrayList<Format>();
+        ArrayList<Format> list = new ArrayList<>();
         for (int partIndex = 0; (partIndex = nextTopLevelArgStart(partIndex)) >= 0;) {
             list.add(cachedFormatters == null ? null : cachedFormatters.get(partIndex));
         }
@@ -817,7 +818,7 @@ public class MessageFormat extends UFormat {
      * @return a Set of argument names
      */
     public Set<String> getArgumentNames() {
-        Set<String> result = new HashSet<String>();
+        Set<String> result = new HashSet<>();
         for (int partIndex = 0; (partIndex = nextTopLevelArgStart(partIndex)) >= 0;) {
             result.add(getArgName(partIndex + 1));
         }
@@ -929,7 +930,7 @@ public class MessageFormat extends UFormat {
      * <p>
      * The text substituted for the individual format elements is derived from
      * the current subformat of the format element and the
-     * <code>arguments</code> value corresopnding to the format element's
+     * <code>arguments</code> value corresponding to the format element's
      * argument name.
      * <p>
      * A numbered pattern argument is matched with a map key that contains that number
@@ -1154,7 +1155,7 @@ public class MessageFormat extends UFormat {
      * @return a Map containing key/value pairs for each parsed argument.
      */
     public Map<String, Object> parseToMap(String source, ParsePosition pos)  {
-        Map<String, Object> result = new HashMap<String, Object>();
+        Map<String, Object> result = new HashMap<>();
         int backupStartPos = pos.getIndex();
         parse(0, source, pos, null, result);
         if (pos.getIndex() == backupStartPos) {
@@ -1339,7 +1340,7 @@ public class MessageFormat extends UFormat {
      */
     public Map<String, Object> parseToMap(String source) throws ParseException {
         ParsePosition pos = new ParsePosition(0);
-        Map<String, Object> result = new HashMap<String, Object>();
+        Map<String, Object> result = new HashMap<>();
         parse(0, source, pos, null, result);
         if (pos.getIndex() == 0) // unchanged, returned object is null
             throw new ParseException("MessageFormat parse error!",
@@ -1391,7 +1392,7 @@ public class MessageFormat extends UFormat {
         MessageFormat other = (MessageFormat) super.clone();
 
         if (customFormatArgStarts != null) {
-            other.customFormatArgStarts = new HashSet<Integer>();
+            other.customFormatArgStarts = new HashSet<>();
             for (Integer key : customFormatArgStarts) {
                 other.customFormatArgStarts.add(key);
             }
@@ -1400,7 +1401,7 @@ public class MessageFormat extends UFormat {
         }
 
         if (cachedFormatters != null) {
-            other.cachedFormatters = new HashMap<Integer, Format>();
+            other.cachedFormatters = new HashMap<>();
             Iterator<Map.Entry<Integer, Format>> it = cachedFormatters.entrySet().iterator();
             while (it.hasNext()){
                 Map.Entry<Integer, Format> entry = it.next();
@@ -1431,10 +1432,10 @@ public class MessageFormat extends UFormat {
         if (obj == null || getClass() != obj.getClass())
             return false;
         MessageFormat other = (MessageFormat) obj;
-        return Utility.objectEquals(ulocale, other.ulocale)
-                && Utility.objectEquals(msgPattern, other.msgPattern)
-                && Utility.objectEquals(cachedFormatters, other.cachedFormatters)
-                && Utility.objectEquals(customFormatArgStarts, other.customFormatArgStarts);
+        return Objects.equals(ulocale, other.ulocale)
+                && Objects.equals(msgPattern, other.msgPattern)
+                && Objects.equals(cachedFormatters, other.cachedFormatters)
+                && Objects.equals(customFormatArgStarts, other.customFormatArgStarts);
         // Note: It might suffice to only compare custom formatters
         // rather than all formatters.
     }
@@ -2064,7 +2065,7 @@ public class MessageFormat extends UFormat {
             assert context.number.doubleValue() == number;  // argument number minus the offset
             context.numberString = context.formatter.format(context.number);
             if(context.formatter instanceof DecimalFormat) {
-                FixedDecimal dec = ((DecimalFormat)context.formatter).getFixedDecimal(number);
+                IFixedDecimal dec = ((DecimalFormat)context.formatter).getFixedDecimal(number);
                 return rules.select(dec);
             } else {
                 return rules.select(number);
@@ -2140,6 +2141,16 @@ public class MessageFormat extends UFormat {
         DATE_MODIFIER_LONG = 3,
         DATE_MODIFIER_FULL = 4;
 
+    Format dateTimeFormatForPatternOrSkeleton(String style) {
+        // Ignore leading whitespace when looking for "::", the skeleton signal sequence
+        int i = PatternProps.skipWhiteSpace(style, 0);
+        if (style.regionMatches(i, "::", 0, 2)) { // Skeleton
+            return DateFormat.getInstanceForSkeleton(style.substring(i + 2), ulocale);
+        } else { // Pattern
+            return new SimpleDateFormat(style, ulocale);
+        }
+    }
+
     // Creates an appropriate Format object for the type and style passed.
     // Both arguments cannot be null.
     private Format createAppropriateFormat(String type, String style) {
@@ -2160,9 +2171,16 @@ public class MessageFormat extends UFormat {
             case MODIFIER_INTEGER:
                 newFormat = NumberFormat.getIntegerInstance(ulocale);
                 break;
-            default: // pattern
-                newFormat = new DecimalFormat(style,
-                        new DecimalFormatSymbols(ulocale));
+            default: // pattern or skeleton
+                // Ignore leading whitespace when looking for "::", the skeleton signal sequence
+                int i = PatternProps.skipWhiteSpace(style, 0);
+                if (style.regionMatches(i, "::", 0, 2)) {
+                    // Skeleton
+                    newFormat = NumberFormatter.forSkeleton(style.substring(i + 2)).locale(ulocale).toFormat();
+                } else {
+                    // Pattern
+                    newFormat = new DecimalFormat(style, new DecimalFormatSymbols(ulocale));
+                }
                 break;
             }
             break;
@@ -2183,8 +2201,8 @@ public class MessageFormat extends UFormat {
             case DATE_MODIFIER_FULL:
                 newFormat = DateFormat.getDateInstance(DateFormat.FULL, ulocale);
                 break;
-            default:
-                newFormat = new SimpleDateFormat(style, ulocale);
+            default: // pattern or skeleton
+                newFormat = dateTimeFormatForPatternOrSkeleton(style);
                 break;
             }
             break;
@@ -2205,8 +2223,8 @@ public class MessageFormat extends UFormat {
             case DATE_MODIFIER_FULL:
                 newFormat = DateFormat.getTimeInstance(DateFormat.FULL, ulocale);
                 break;
-            default:
-                newFormat = new SimpleDateFormat(style, ulocale);
+            default: // pattern or skeleton
+                newFormat = dateTimeFormatForPatternOrSkeleton(style);
                 break;
             }
             break;
@@ -2386,7 +2404,7 @@ public class MessageFormat extends UFormat {
      */
     private void setArgStartFormat(int argStart, Format formatter) {
         if (cachedFormatters == null) {
-            cachedFormatters = new HashMap<Integer, Format>();
+            cachedFormatters = new HashMap<>();
         }
         cachedFormatters.put(argStart, formatter);
     }
@@ -2398,7 +2416,7 @@ public class MessageFormat extends UFormat {
     private void setCustomArgStartFormat(int argStart, Format formatter) {
         setArgStartFormat(argStart, formatter);
         if (customFormatArgStarts == null) {
-            customFormatArgStarts = new HashSet<Integer>();
+            customFormatArgStarts = new HashSet<>();
         }
         customFormatArgStarts.add(argStart);
     }
@@ -2524,7 +2542,7 @@ public class MessageFormat extends UFormat {
         }
 
         public void useAttributes() {
-            attributes = new ArrayList<AttributeAndPosition>();
+            attributes = new ArrayList<>();
         }
 
         public void append(CharSequence s) {

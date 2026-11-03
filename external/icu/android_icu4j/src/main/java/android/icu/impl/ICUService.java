@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /**
  *******************************************************************************
  * Copyright (C) 2001-2016, International Business Machines Corporation and
@@ -150,6 +150,7 @@ public class ICUService extends ICUNotifier {
      *
      * <p> The default implementation of Key has no fallbacks and
      * has no custom descriptors.</p>
+     * @hide Only a subset of ICU is exposed in Android
      */
     public static class Key {
         private final String id;
@@ -201,7 +202,7 @@ public class ICUService extends ICUNotifier {
          * If the key has a fallback, modify the key and return true,
          * otherwise return false.  The current ID will change if there
          * is a fallback.  No currentIDs should be repeated, and fallback
-         * must eventually return false.  This implmentation has no fallbacks
+         * must eventually return false.  This implementation has no fallbacks
          * and always returns false.
          */
         public boolean fallback() {
@@ -222,6 +223,7 @@ public class ICUService extends ICUNotifier {
      * service.  A factory generates a service object from a key,
      * updates id->factory mappings, and returns the display name for
      * a supported id.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public static interface Factory {
 
@@ -267,6 +269,7 @@ public class ICUService extends ICUNotifier {
      * updateVisibleIDs to add a mapping from its ID to itself
      * if visible is true, or to remove any existing mapping
      * for its ID if visible is false.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public static class SimpleFactory implements Factory {
         protected Object instance;
@@ -915,10 +918,11 @@ public class ICUService extends ICUNotifier {
 
     /**
      * ServiceListener is the listener that ICUService provides by default.
-     * ICUService will notifiy this listener when factories are added to
+     * ICUService will notify this listener when factories are added to
      * or removed from the service.  Subclasses can provide
      * different listener interfaces that extend EventListener, and modify
      * acceptsListener and notifyListener as appropriate.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public static interface ServiceListener extends EventListener {
         public void serviceChanged(ICUService service);

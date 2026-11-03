@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 1996-2010, International Business Machines Corporation and    *
@@ -12,10 +12,15 @@ package android.icu.dev.test.format;
 import java.util.Locale;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.text.RuleBasedNumberFormat;
+import android.icu.testsharding.MainTestShard;
 
+@MainTestShard
+@RunWith(JUnit4.class)
 public class RbnfRoundTripTest extends TestFmwk {
     /**
      * Perform an exhaustive round-trip test on the English spellout rules
@@ -135,6 +140,19 @@ public class RbnfRoundTripTest extends TestFmwk {
                         RuleBasedNumberFormat.SPELLOUT);
 
         doTest(formatter, 0, 12345678);
+    }
+
+    /**
+     * Perform an exhaustive round-trip test on the jpanyear spellout rules
+     */
+    @Test
+    public void TestJapaneseYearSpelloutRT() {
+        RuleBasedNumberFormat formatter
+                        = new RuleBasedNumberFormat(Locale.JAPAN,
+                        RuleBasedNumberFormat.SPELLOUT);
+        formatter.setDefaultRuleSet("%spellout-numbering-year-latn");
+
+        doTest(formatter, 0, 50);
     }
 
     /**

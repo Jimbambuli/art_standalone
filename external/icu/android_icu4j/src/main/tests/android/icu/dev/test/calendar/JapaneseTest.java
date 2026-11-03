@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2002-2010, International Business Machines Corporation and    *
@@ -15,20 +15,26 @@ import java.util.Date;
 import java.util.Locale;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.impl.LocaleUtility;
 import android.icu.text.DateFormat;
+import android.icu.text.DateTimePatternGenerator;
 import android.icu.text.SimpleDateFormat;
 import android.icu.util.Calendar;
 import android.icu.util.JapaneseCalendar;
 import android.icu.util.TimeZone;
 import android.icu.util.ULocale;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * Tests for the <code>JapaneseCalendar</code> class.
  */
+@MainTestShard
+@RunWith(JUnit4.class)
 public class JapaneseTest extends CalendarTestFmwk {
-    
+
     @Test
     public void TestCoverage() {
         {
@@ -144,27 +150,31 @@ public class JapaneseTest extends CalendarTestFmwk {
             }
         }
     }
-    
+
     @Test
     public void Test3860()
     {
+        final String jCalShortPattern = "y/M/d"; // Note: just 'y' doesn't work here.
+        final String jCalGannenDate = "1/5/9"; // A date in the above format after the accession date for Heisei era (Heisei year 1 Jan 8)
+                                               // or the new era in Gregorian 2019 (new era year 1 May 1). If before the accession date,
+                                               // the year will be in the previous era.
         ULocale loc = new ULocale("ja_JP@calendar=japanese");
         Calendar cal = new JapaneseCalendar(loc);
-        DateFormat enjformat = cal.getDateTimeFormat(0,0,new ULocale("en_JP@calendar=japanese"));
-        DateFormat format = cal.getDateTimeFormat(0,0,loc);
-        ((SimpleDateFormat)format).applyPattern("y.M.d");  // Note: just 'y' doesn't work here.
+        DateFormat enjformat = cal.getDateTimeFormat(DateFormat.FULL,DateFormat.FULL,new ULocale("en_JP@calendar=japanese"));
+        DateFormat format = cal.getDateTimeFormat(DateFormat.SHORT,DateFormat.SHORT,loc); // SHORT => no jpanyear since we will apply a short pattern
+        ((SimpleDateFormat)format).applyPattern(jCalShortPattern);
         ParsePosition pos = new ParsePosition(0);
-        Date aDate = format.parse("1.1.9", pos); // after the start of heisei accession.  Jan 1, 1H wouldn't work  because it is actually showa 64
+        Date aDate = format.parse(jCalGannenDate, pos);
         String inEn = enjformat.format(aDate);
 
         cal.clear();
         cal.setTime(aDate);
         int gotYear = cal.get(Calendar.YEAR);
         int gotEra = cal.get(Calendar.ERA);
-        
+
         int expectYear = 1;
         int expectEra = JapaneseCalendar.CURRENT_ERA;
-        
+
         if((gotYear != expectYear) || (gotEra != expectEra)) {
             errln("Expected year " + expectYear + ", era " + expectEra +", but got year " + gotYear + " and era " + gotEra + ", == " + inEn);
         } else {
@@ -197,10 +207,76 @@ public class JapaneseTest extends CalendarTestFmwk {
         expectYear = 1;
         expectEra = JapaneseCalendar.CURRENT_ERA;
         if((gotYear != 1) || (gotEra != expectEra)) {
-            errln("parse "+ samplestr + " of 'y' as Japanese Calendar, expected year " + expectYear + 
+            errln("parse "+ samplestr + " of 'y' as Japanese Calendar, expected year " + expectYear +
                 " and era " + expectEra + ", but got year " + gotYear + " and era " + gotEra + " (Gregorian:" + str +")");
-        } else {            
+        } else {
             logln(" year: " + gotYear + ", era: " + gotEra);
+        }
+
+        // Tests for formats with gannen numbering Gy年
+        pos.setIndex(0);
+        aDate = format.parse(jCalGannenDate, pos); // reset
+        DateFormat fmtWithGannen = DateFormat.getDateInstance(cal, DateFormat.MEDIUM, loc);
+        String aString = fmtWithGannen.format(aDate);
+        if (aString.charAt(2) != '\u5143') { // 元
+            errln("Formatting year 1 as Gannen, got " + aString + " but expected 3rd char to be \u5143");
+        } else {
+            // Replace 元 with 1 and parse the result
+            String bString = aString.replace('\u5143', '1');
+            try {
+                Date bDate = fmtWithGannen.parse(bString);
+                bString = fmtWithGannen.format(bDate);
+                if (!bString.equals(aString)) {
+                    errln("Parsing 1 when expecting \u5143, formatting the result produced " + bString + " but expected " + aString);
+                }
+            } catch (ParseException pe) {
+                errln("Exception parsing 1 when expecting \u5143 in string " + bString);
+            }
+        }
+    }
+
+    @Test
+    public void TestForceGannenNumbering() {
+//        final String jCalShortPattern = "y/M/d"; // Note: just 'y' doesn't work here.
+//        final String jCalGannenDate = "1/5/9"; // A date in the above format after the accession date for Heisei [1989-] era (Heisei year 1 Jan 8)
+//                                               // or Reiwa [2019-] era (Reiwa year 1 May 1). If before the accession date,
+//                                               // the year will be in the previous era.
+        ULocale loc = new ULocale("ja_JP@calendar=japanese");
+        Date refDate = new Date(600336000000L); // 1989 Jan 9 Monday = Heisei 1
+        final String patText = "Gy年M月d日";
+        final String patNumr = "GGGGGy/MM/dd";
+        final String skelText = "yMMMM";
+
+        // Test Gannen year forcing
+        SimpleDateFormat testFmt1 = new SimpleDateFormat(patText, loc);
+        SimpleDateFormat testFmt2 = new SimpleDateFormat(patNumr, loc);
+        String testString1 = testFmt1.format(refDate);
+        if (testString1.length() < 3 || testString1.charAt(2) != '\u5143') { // 元
+            errln("Formatting year 1 in created text style, got " + testString1 + " but expected 3rd char to be \u5143");
+        }
+        String testString2 = testFmt2.format(refDate);
+        if (testString2.length() < 2 || testString2.charAt(1) != '1') {
+            errln("Formatting year 1 in created numeric style, got " + testString2 + " but expected 2nd char to be 1");
+        }
+        // Now switch the patterns and verify that Gannen use follows the pattern
+        testFmt1.applyPattern(patNumr);
+        testString1 = testFmt1.format(refDate);
+        if (testString1.length() < 2 || testString1.charAt(1) != '1') { //
+            errln("Formatting year 1 in applied numeric style, got " + testString1 + " but expected 2nd char to be 1");
+        }
+        testFmt2.applyPattern(patText);
+        testString2 = testFmt2.format(refDate);
+        if (testString2.length() < 3 || testString2.charAt(2) != '\u5143') { // 元
+            errln("Formatting year 1 in applied text style, got " + testString2 + " but expected 3rd char to be \u5143");
+        }
+
+        // Test disabling of Gannen year forcing
+        DateTimePatternGenerator dtpgen = DateTimePatternGenerator.getInstance(loc);
+        String pattern = dtpgen.getBestPattern(skelText);
+        SimpleDateFormat testFmt3 = new SimpleDateFormat(pattern, "", loc); // empty override string to disable Gannen year numbering
+        String testString3 = testFmt3.format(refDate);
+        if (testString3.length() < 3 || testString3.charAt(2) != '1') {
+            errln("Formatting year 1 with Gannen disabled, got " + testString3 + " but expected 3rd char to be 1");
         }
     }
 
@@ -232,14 +308,14 @@ public class JapaneseTest extends CalendarTestFmwk {
         Date otherDate;
         try {
             otherDate = fmt.parse(expected);
-            if(!otherDate.equals(aDate)) { 
+            if(!otherDate.equals(aDate)) {
                 String str3;
     //            ParsePosition pp;
                 Date dd = fmt.parse(expected);
                 str3 = fmt.format(otherDate);
                 long oLong = otherDate.getTime();
                 long aLong = otherDate.getTime();
-                
+
                 errln("FAIL: Parse incorrect of " + expected + ":  wanted " + aDate + " ("+aLong+"), but got " +  " " +
                     otherDate + " ("+oLong+") = " + str3 + " not " + dd.toString() );
 
@@ -268,7 +344,7 @@ public class JapaneseTest extends CalendarTestFmwk {
             int fieldNum = expected[i+0];
             int expectedVal = expected[i+1];
             int actualVal = c.get(fieldNum);
-            
+
             if(expectedVal == actualVal) {
                 logln(FIELD_NAME[fieldNum]+": "+ actualVal);
             } else {
@@ -276,7 +352,7 @@ public class JapaneseTest extends CalendarTestFmwk {
             }
         }
     }
-    
+
     @Test
     public void Test5345calendar() {
         logln("** testIncompleteCalendar()");
@@ -284,7 +360,7 @@ public class JapaneseTest extends CalendarTestFmwk {
         JapaneseCalendar c = new JapaneseCalendar(TimeZone.getDefault());
         logln("test clear");
         c.clear();
- 
+
         // Showa 45 = Gregorian 1970
         int expected0[] = {   Calendar.ERA, 234,
                               Calendar.YEAR, 45 };
@@ -293,8 +369,8 @@ public class JapaneseTest extends CalendarTestFmwk {
         logln("test setting era");
         c.clear();
         c.set(Calendar.ERA, JapaneseCalendar.MEIJI);
-        
-        
+
+
         int expectedA[] = {   Calendar.ERA, JapaneseCalendar.MEIJI };
         checkExpected(c, expectedA);
 
@@ -317,11 +393,11 @@ public class JapaneseTest extends CalendarTestFmwk {
         c.set(Calendar.MONTH, Calendar.JANUARY);
         c.set(Calendar.DATE, 1);
         c.set(Calendar.ERA, JapaneseCalendar.MEIJI);
-        
-        
+
+
         checkExpected(c, expectedC);
-        
-        
+
+
         logln("test setting era and year");
         c.clear();
         c.set(Calendar.YEAR, 1);
@@ -376,6 +452,34 @@ public class JapaneseTest extends CalendarTestFmwk {
         JapaneseCalendar jcal = new JapaneseCalendar();
         doLimitsTest(jcal, null, cal.getTime());
         doTheoreticalLimitsTest(jcal, true);
+    }
+
+    // The following currently assumes that Reiwa is the last known/valid era.
+    // Filed ICU-20551 to generalize this when we have more time...
+    @Test
+    public void TestJpnCalAddSetNextEra() {
+        final JapaneseCalendar jCal = new JapaneseCalendar();
+        jCal.clear();   // This sets to 1970 in Showa
+
+        final int sEra = jCal.get(Calendar.ERA);  // Don't assume era number for Showa
+        final int[] startYears = { 1926, 1989, 2019, 0 };    // start years for Show, Heisei, Reiwa; 0 marks invalid era beyond
+
+        for (int iEra = 1; iEra < 3; iEra++) {
+            jCal.clear();
+            jCal.set(Calendar.ERA, sEra + iEra);
+            int eYear = jCal.get(Calendar.EXTENDED_YEAR);
+            if (eYear != startYears[iEra]) {
+                errln("ERROR: set " + iEra + ", expected start year " + startYears[iEra] + " but get " + eYear);
+            } else {
+                jCal.add(Calendar.ERA, 1);
+                eYear = jCal.get(Calendar.EXTENDED_YEAR);
+                int nextEraStart = (startYears[iEra + 1] == 0) ? startYears[iEra] : startYears[iEra + 1];
+                if (eYear != nextEraStart) {
+                    errln("ERROR: set " + iEra + " then add ERA 1, expected start year " + nextEraStart
+                            + " but get " + eYear);
+                }
+            }
+        }
     }
 }
 

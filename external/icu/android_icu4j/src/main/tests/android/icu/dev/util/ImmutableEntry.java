@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2009-2012, International Business Machines Corporation and         *
@@ -10,11 +10,13 @@
 package android.icu.dev.util;
 
 import java.util.Map;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author markdavis
  *
  */
+@MainTestShard
 public class ImmutableEntry<K,V> implements Map.Entry<K,V> {
     final K k;
     final V v;

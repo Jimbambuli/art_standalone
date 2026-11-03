@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 *******************************************************************************
 *   Copyright (C) 2007-2010, International Business Machines
@@ -12,12 +12,12 @@ package android.icu.dev.test.bidi;
 
 import java.awt.font.NumericShaper;
 import java.awt.font.TextAttribute;
-import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 
 import org.junit.Test;
 
 import android.icu.text.Bidi;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * Regression test for java.text.Bidi compatibility
@@ -25,6 +25,7 @@ import android.icu.text.Bidi;
  * @author Matitiahu Allouche
  */
 
+@MainTestShard
 public class TestCompatibility extends BidiFmwk {
 
     void compareBidi(Bidi bidi, java.text.Bidi jbidi)
@@ -208,9 +209,8 @@ public class TestCompatibility extends BidiFmwk {
         as.addAttribute(TextAttribute.BIDI_EMBEDDING, new Integer(1), 0, 26);
         as.addAttribute(TextAttribute.BIDI_EMBEDDING, new Integer(-1), 0, 6);
         as.addAttribute(TextAttribute.BIDI_EMBEDDING, new Integer(-1), 19, 26);
-        AttributedCharacterIterator aci = as.getIterator();
-        bidi = new Bidi(aci);
-        jbidi = new java.text.Bidi(aci);
+        bidi = new Bidi(as.getIterator());
+        jbidi = new java.text.Bidi(as.getIterator());
         compareBidi(bidi, jbidi);
         String out = bidi.writeReordered(0);
         logln("Output #1 of Bidi(AttributedCharacterIterator): " + out);
@@ -218,17 +218,15 @@ public class TestCompatibility extends BidiFmwk {
         as = new AttributedString("HEBREW 123 english MOREHEB");
         as.addAttribute(TextAttribute.RUN_DIRECTION, TextAttribute.RUN_DIRECTION_RTL);
         as.addAttribute(TextAttribute.BIDI_EMBEDDING, new Integer(0), 0, 26);
-        aci = as.getIterator();
-        bidi = new Bidi(aci);
-        jbidi = new java.text.Bidi(aci);
+        bidi = new Bidi(as.getIterator());
+        jbidi = new java.text.Bidi(as.getIterator());
         compareBidi(bidi, jbidi);
         out = bidi.writeReordered(0);
         logln("Output #2 of Bidi(AttributedCharacterIterator): " + out);
 
         as = new AttributedString("HEBREW 123 english MOREHEB");
-        aci = as.getIterator();
-        bidi = new Bidi(aci);
-        jbidi = new java.text.Bidi(aci);
+        bidi = new Bidi(as.getIterator());
+        jbidi = new java.text.Bidi(as.getIterator());
         compareBidi(bidi, jbidi);
         out = bidi.writeReordered(0);
         logln("Output #3 of Bidi(AttributedCharacterIterator): " + out);

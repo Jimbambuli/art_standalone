@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  ********************************************************************************
  * Copyright (C) 2007-2016, Google, International Business Machines Corporation
@@ -27,6 +27,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.impl.TZDBTimeZoneNames;
@@ -50,8 +52,11 @@ import android.icu.util.TimeZone;
 import android.icu.util.TimeZone.SystemTimeZoneType;
 import android.icu.util.TimeZoneTransition;
 import android.icu.util.ULocale;
+import android.icu.testsharding.MainTestShard;
 
-public class TimeZoneFormatTest extends android.icu.dev.test.TestFmwk {
+@MainTestShard
+@RunWith(JUnit4.class)
+public class TimeZoneFormatTest extends TestFmwk {
 
     private static boolean JDKTZ = (TimeZone.getDefaultTimeZoneType() == TimeZone.TIMEZONE_JDK);
     private static final Pattern EXCL_TZ_PATTERN = Pattern.compile(".*/Riyadh8[7-9]");
@@ -126,7 +131,8 @@ public class TimeZoneFormatTest extends android.icu.dev.test.TestFmwk {
         if (TEST_ALL || TestFmwk.getExhaustiveness() > 5) {
             LOCALES = ULocale.getAvailableLocales();
         } else {
-            LOCALES = new ULocale[] {new ULocale("en"), new ULocale("en_CA"), new ULocale("fr"), new ULocale("zh_Hant")};
+            LOCALES = new ULocale[] {new ULocale("en"), new ULocale("en_CA"), new ULocale("fr"),
+                    new ULocale("zh_Hant"), new ULocale("fa"), new ULocale("ccp")};
         }
 
         String[] tzids;
@@ -243,10 +249,13 @@ public class TimeZoneFormatTest extends android.icu.dev.test.TestFmwk {
                             if (!isOffsetFormat) {
                                 // Check if localized GMT format is used as a fallback of name styles
                                 int numDigits = 0;
-                                for (int n = 0; n < tzstr.length(); n++) {
-                                    if (UCharacter.isDigit(tzstr.charAt(n))) {
+                                int idx = 0;
+                                while (idx < tzstr.length()) {
+                                    int cp = tzstr.codePointAt(idx);
+                                    if (UCharacter.isDigit(cp)) {
                                         numDigits++;
                                     }
+                                    idx += UCharacter.charCount(cp);
                                 }
                                 isOffsetFormat = (numDigits > 0);
                             }
@@ -354,7 +363,7 @@ public class TimeZoneFormatTest extends android.icu.dev.test.TestFmwk {
                 new ULocale("ko_KR"), new ULocale("nb_NO"), new ULocale("nl_NL"), new ULocale("nn_NO"), new ULocale("pl_PL"),
                 new ULocale("pt"), new ULocale("pt_BR"), new ULocale("pt_PT"), new ULocale("ru_RU"), new ULocale("sv_SE"),
                 new ULocale("th_TH"), new ULocale("tr_TR"), new ULocale("zh"), new ULocale("zh_Hans"), new ULocale("zh_Hans_CN"),
-                new ULocale("zh_Hant"), new ULocale("zh_Hant_HK"), new ULocale("zh_Hant_TW")
+                new ULocale("zh_Hant"), new ULocale("zh_Hant_HK"), new ULocale("zh_Hant_TW"), new ULocale("ccp"), new ULocale("fa")
             };
         } else {
             LOCALES = new ULocale[] {
@@ -379,7 +388,7 @@ public class TimeZoneFormatTest extends android.icu.dev.test.TestFmwk {
 
                 Set<String> ids = null;
                 if (JDKTZ) {
-                    ids = new TreeSet<String>();
+                    ids = new TreeSet<>();
                     String[] jdkIDs = java.util.TimeZone.getAvailableIDs();
                     for (String jdkID : jdkIDs) {
                         if (EXCL_TZ_PATTERN.matcher(jdkID).matches()) {
@@ -412,7 +421,8 @@ public class TimeZoneFormatTest extends android.icu.dev.test.TestFmwk {
                         }
                     }
 
-                    if (id.equals("Pacific/Apia") && PATTERNS[patidx].equals("vvvv")
+                    if ((id.equals("Pacific/Apia") || id.equals("Pacific/Midway") || id.equals("Pacific/Pago_Pago"))
+                            && PATTERNS[patidx].equals("vvvv")
                             && logKnownIssue("11052", "Ambiguous zone name - Samoa Time")) {
                         continue;
                     }
@@ -652,7 +662,7 @@ public class TimeZoneFormatTest extends android.icu.dev.test.TestFmwk {
             TimeType expType = (TimeType)test[7];
 
             TimeZoneFormat tzfmt = TimeZoneFormat.getInstance(loc);
-            Output<TimeType> timeType = new Output<TimeType>(TimeType.UNKNOWN);
+            Output<TimeType> timeType = new Output<>(TimeType.UNKNOWN);
             ParsePosition pos = new ParsePosition(inPos);
             TimeZone tz = tzfmt.parse(style, text, pos, options, timeType);
 
@@ -679,6 +689,7 @@ public class TimeZoneFormatTest extends android.icu.dev.test.TestFmwk {
 
     // Coverage tests for other versions of the parse() method. All of them end up
     // calling the full parse() method tested on the TestParse() test.
+    @Test
     public void TestParseCoverage() {
         TimeZone expectedTZ = TimeZone.getTimeZone("America/Los_Angeles");
         TimeZoneFormat fmt = TimeZoneFormat.getInstance(ULocale.ENGLISH);
@@ -942,7 +953,7 @@ public class TimeZoneFormatTest extends android.icu.dev.test.TestFmwk {
 
         for (Object[] testCase : TESTDATA) {
             TimeZone tz = TimeZone.getTimeZone((String)testCase[1]);
-            Output<TimeType> timeType = new Output<TimeType>();
+            Output<TimeType> timeType = new Output<>();
 
             ULocale uloc = new ULocale((String)testCase[0]);
             TimeZoneFormat tzfmt = TimeZoneFormat.getInstance(uloc);
@@ -1038,7 +1049,7 @@ public class TimeZoneFormatTest extends android.icu.dev.test.TestFmwk {
             tzfmt.setTimeZoneNames(tzdbNames);
 
             TimeZone tz = TimeZone.getTimeZone((String)testCase[1]);
-            Output<TimeType> timeType = new Output<TimeType>();
+            Output<TimeType> timeType = new Output<>();
             String out = tzfmt.format((Style)testCase[3], tz, ((Date)testCase[2]).getTime(), timeType);
 
             if (!out.equals(testCase[4]) || timeType.value != testCase[5]) {
@@ -1051,6 +1062,7 @@ public class TimeZoneFormatTest extends android.icu.dev.test.TestFmwk {
 
     // Tests format(Object, StringBuffer, FieldPosition):StringBuffer method
     // inherited from Format class
+    @Test
     public void TestInheritedFormat() {
         TimeZone tz = TimeZone.getTimeZone("America/Los_Angeles");
         Calendar cal = Calendar.getInstance(tz);
@@ -1093,7 +1105,7 @@ public class TimeZoneFormatTest extends android.icu.dev.test.TestFmwk {
     public void TestTZDBNamesThreading() {
         final TZDBTimeZoneNames names = new TZDBTimeZoneNames(ULocale.ENGLISH);
         final AtomicInteger found = new AtomicInteger();
-        List<Thread> threads = new ArrayList<Thread>();
+        List<Thread> threads = new ArrayList<>();
         final int numIteration = 1000;
 
         try {
@@ -1304,6 +1316,44 @@ public class TimeZoneFormatTest extends android.icu.dev.test.TestFmwk {
             assertTrue("MatchInfo doesn't throw IllegalArgumentException", false);
         } catch (IllegalArgumentException e) {
             assertEquals("MatchInfo constructor exception", "matchLength must be positive value", e.getMessage());
+        }
+    }
+
+    // Test for checking parse results are same for a same input string
+    // using SimpleDateFormat initialized with different regional locales - US and Belize.
+    // Belize did not observe DST from 1968 to 1973, 1975 to 1982, and 1985 and later.
+    @Test
+    public void TestCentralTime() throws ParseException {
+        final String pattern = "y-MM-dd HH:mm:ss zzzz";
+        final String[] testInputs = {
+            // 1970-01-01 - Chicago:STD/Belize:STD
+            "1970-01-01 12:00:00 Central Standard Time",
+            "1970-01-01 12:00:00 Central Daylight Time",
+
+            // 1970-07-01 - Chicago:STD/Belize:STD
+            "1970-07-01 12:00:00 Central Standard Time",
+            "1970-07-01 12:00:00 Central Daylight Time",
+
+            // 1974-01-01 - Chicago:STD/Belize:DST
+            "1974-01-01 12:00:00 Central Standard Time",
+            "1974-01-01 12:00:00 Central Daylight Time",
+
+            // 2020-01-01 - Chicago:STD/Belize:STD
+            "2020-01-01 12:00:00 Central Standard Time",
+            "2020-01-01 12:00:00 Central Daylight Time",
+
+            // 2020-01-01 - Chicago:DST/Belize:STD
+            "2020-07-01 12:00:00 Central Standard Time",
+            "2020-07-01 12:00:00 Central Daylight Time",
+        };
+
+        SimpleDateFormat sdfUS = new SimpleDateFormat(pattern, new ULocale("en_US"));
+        SimpleDateFormat sdfBZ = new SimpleDateFormat(pattern, new ULocale("en_BZ"));
+
+        for (String testInput : testInputs) {
+            Date dUS = sdfUS.parse(testInput);
+            Date dBZ = sdfBZ.parse(testInput);
+            assertEquals("Parse results should be same for input: " + testInput, dUS, dBZ);
         }
     }
 }

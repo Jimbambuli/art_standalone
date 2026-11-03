@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 ******************************************************************************
 * Copyright (C) 2007-2010, International Business Machines Corporation and   *
@@ -19,10 +19,12 @@ import android.icu.impl.duration.BasicPeriodFormatterFactory;
 import android.icu.impl.duration.Period;
 import android.icu.impl.duration.PeriodFormatter;
 import android.icu.impl.duration.TimeUnitConstants;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * Test cases for en
  */
+@MainTestShard
 public class Test_ja extends LanguageTestFmwk implements TimeUnitConstants {
   private BasicPeriodFormatterFactory pff;
 

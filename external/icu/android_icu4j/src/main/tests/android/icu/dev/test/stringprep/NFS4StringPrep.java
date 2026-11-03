@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2003-2010, International Business Machines Corporation and    *
@@ -17,6 +17,7 @@ import java.util.MissingResourceException;
 import android.icu.text.StringPrep;
 import android.icu.text.StringPrepParseException;
 import android.icu.text.UCharacterIterator;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author ram
@@ -25,6 +26,7 @@ import android.icu.text.UCharacterIterator;
  * C code, does not use Object Oriented principles. Quick and Dirty implementation
  * for testing.
  */
+@MainTestShard
 public final class NFS4StringPrep {
 
     private StringPrep nfscss = null;

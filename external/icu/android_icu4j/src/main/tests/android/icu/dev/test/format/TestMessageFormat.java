@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 **********************************************************************
 * Copyright (c) 2004-2016, International Business Machines
@@ -29,7 +29,10 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+import android.icu.dev.test.TestFmwk;
 import android.icu.text.DateFormat;
 import android.icu.text.DecimalFormat;
 import android.icu.text.DecimalFormatSymbols;
@@ -38,10 +41,15 @@ import android.icu.text.MessagePattern;
 import android.icu.text.NumberFormat;
 import android.icu.text.SimpleDateFormat;
 import android.icu.text.UFormat;
+import android.icu.util.Calendar;
+import android.icu.util.GregorianCalendar;
 import android.icu.util.TimeZone;
 import android.icu.util.ULocale;
+import android.icu.testsharding.MainTestShard;
 
-public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
+@MainTestShard
+@RunWith(JUnit4.class)
+public class TestMessageFormat extends TestFmwk {
     @Test
     public void TestBug3()
     {
@@ -108,7 +116,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
                 errln("Number format creation failed for " + locale[i].getDisplayName());
                 continue;
             }
-            FieldPosition pos = new FieldPosition(0);
+            FieldPosition pos = new FieldPosition(FieldPosition_DONT_CARE);
             buffer.setLength(0);
             form.format(myNumber, buffer, pos);
             parsePos.setIndex(0);
@@ -182,7 +190,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
             "Quotes ', {, 'a' 1 {0}",
             "Quotes ', {, 'a' 1 {0}",
             "{1,number,'#',##} #34,56",
-            "There are 3,456 files on Disk at 1/12/70, 5:46 AM.",
+            "There are 3,456 files on Disk at 1/12/70, 5:46\u202FAM.",
             "On Disk, there are 3,456 files, with $1.00.",
             "{1,number,percent}, 345,600%,",
             "{1,date,full}, Wednesday, December 31, 1969,",
@@ -212,7 +220,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
 
             //it_out << "Pat out: " << form.toPattern(buffer));
             StringBuffer result = new StringBuffer();
-            FieldPosition fieldpos = new FieldPosition(0);
+            FieldPosition fieldpos = new FieldPosition(FieldPosition_DONT_CARE);
             form.format(testArgs, result, fieldpos);
             assertEquals("format", testResultStrings[i], result.toString());
 
@@ -232,12 +240,12 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
     //        } else if (parseCount != count) {
     //            errln("MSG count not %d as expected. Got %d", count, parseCount);
     //        }
-    //        UBool failed = FALSE;
+    //        UBool failed = false;
     //        for (int j = 0; j < parseCount; ++j) {
     //             if (values == 0 || testArgs[j] != values[j]) {
     //                errln(((String)"MSG testargs[") + j + "]: " + toString(testArgs[j]));
     //                errln(((String)"MSG values[") + j + "]  : " + toString(values[j]));
-    //                failed = TRUE;
+    //                failed = true;
     //             }
     //        }
     //        if (failed)
@@ -257,7 +265,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
             return;
         }
         Object testArgs1[] = { "abc", "def" };
-        FieldPosition fieldpos = new FieldPosition(0);
+        FieldPosition fieldpos = new FieldPosition(FieldPosition_DONT_CARE);
         assertEquals("format",
                      "There are abc files on def",
                      form.format(testArgs1, buffer2, fieldpos).toString());
@@ -273,7 +281,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
         };
 
         assertEquals("format",
-            "At 12:20:00 PM on Aug 8, 1997, there was a disturbance in the Force on planet 7.",
+            "At 12:20:00\u202FPM on Aug 8, 1997, there was a disturbance in the Force on planet 7.",
             MessageFormat.format("At {1,time} on {1,date}, there was {2} on planet {0,number,integer}.",
                                  arguments));
     }
@@ -440,21 +448,22 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
         String formatStr = "At <time> on {1,date}, you made a {2} of {0,number,currency}.";
         // {sfb} to get $, would need Locale::US, not Locale::ENGLISH
         // Just use unlocalized currency symbol.
+        // ICU 62: use the unknown currency symbol XXX.
         //String compareStrEng = "At <time> on Aug 8, 1997, you made a deposit of $456.83.";
         String compareStrEng = "At <time> on Aug 8, 1997, you made a deposit of ";
-        compareStrEng += '\u00a4';
+        compareStrEng += "\u00a4";
         compareStrEng += "456.83.";
         // {sfb} to get DM, would need Locale::GERMANY, not Locale::GERMAN
         // Just use unlocalized currency symbol.
         //String compareStrGer = "At <time> on 08.08.1997, you made a deposit of 456,83 DM.";
         String compareStrGer = "At <time> on 08.08.1997, you made a deposit of ";
         compareStrGer += "456,83\u00a0";
-        compareStrGer += '\u00a4';
+        compareStrGer += "XXX";
         compareStrGer += ".";
 
         MessageFormat msg = new MessageFormat(formatStr, Locale.ENGLISH);
         result.setLength(0);
-        FieldPosition pos = new FieldPosition(0);
+        FieldPosition pos = new FieldPosition(FieldPosition_DONT_CARE);
         result = msg.format(
             arguments,
             result,
@@ -508,7 +517,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
         String compareStr = "On Aug 8, 1997, it began.";
 
         MessageFormat msg = new MessageFormat(formatStr);
-        FieldPosition fp = new FieldPosition(0);
+        FieldPosition fp = new FieldPosition(FieldPosition_DONT_CARE);
 
         try {
             msg.format(new Date(871068000000L),
@@ -796,7 +805,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
     }
 
     /**
-     * Verify that MessageFormat accomodates more than 10 arguments and
+     * Verify that MessageFormat accommodates more than 10 arguments and
      * more than 10 subformats.
      */
     @Test
@@ -828,7 +837,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
 
             String expected =
                 "On Nov 20, 2286 (aka 11/20/86, aka November 20, 2286) "+
-                "at 9:46:40 AM (aka 9:46 AM, aka 9:46:40 AM PST) "+
+                "at 9:46:40\u202FAM (aka 9:46\u202FAM, aka 9:46:40\u202FAM PST) "+
                 "there were 1,303 werjes "+
                 "(a 8% increase over 1,202) "+
                 "despite the Glimmung's efforts "+
@@ -884,8 +893,9 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
                             errln("parsed argument " + parsedArgs[0] + " != " + num);
                         }
                     }
-                    catch (Exception e) {
-                        errln("parse of '" + result + " returned exception: " + e.getMessage());
+                    catch (ParseException e) {
+                        errln("parse of '" + result + "' returned exception: "
+                                + e.getMessage() + " " + e.getErrorOffset());
                     }
                 }
             }
@@ -908,17 +918,17 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
         String compareStr = "At <time> on Aug 8, 1997, you made a deposit of $456.83.";
         // the date being German-style, but the currency being English-style
         String compareStr2 = "At <time> on 08.08.1997, you made a deposit of ";
-        compareStr2 += '\u00a4';
+        compareStr2 += "\u00A4";
         compareStr2 += "456.83.";
         // both date and currency formats are German-style
         String compareStr3 = "At <time> on 08.08.1997, you made a deposit of ";
         compareStr3 += "456,83\u00a0";
-        compareStr3 += '\u00a4';
+        compareStr3 += "XXX";
         compareStr3 += ".";
 
         MessageFormat msg = new MessageFormat(formatStr, ULocale.US);
         result.setLength(0);
-        FieldPosition pos = new FieldPosition(0);
+        FieldPosition pos = new FieldPosition(FieldPosition_DONT_CARE);
         result = msg.format(
             arguments,
             result,
@@ -935,7 +945,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
 
         msg.setFormatsByArgumentIndex(fmts);
         result.setLength(0);
-        pos = new FieldPosition(0);
+        pos = new FieldPosition(FieldPosition_DONT_CARE);
         result = msg.format(
             arguments,
             result,
@@ -947,7 +957,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
         Format newFmt = NumberFormat.getCurrencyInstance(ULocale.GERMAN);
         msg.setFormatByArgumentIndex(0, newFmt);
         result.setLength(0);
-        pos = new FieldPosition(0);
+        pos = new FieldPosition(FieldPosition_DONT_CARE);
         result = msg.format(
             arguments,
             result,
@@ -1003,7 +1013,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
         String compareStr = "On Aug 8, 1997, it began.";
 
         MessageFormat msg = new MessageFormat(formatStr);
-        FieldPosition fp = new FieldPosition(0);
+        FieldPosition fp = new FieldPosition(FieldPosition_DONT_CARE);
 
         try {
             msg.format(arguments.get("startDate"), result, fp);
@@ -1113,7 +1123,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
         gotException = false;
         try {
             Object args[] = {new Long(42)};
-            msg.format(args, new StringBuffer(), new FieldPosition(0));
+            msg.format(args, new StringBuffer(), new FieldPosition(FieldPosition_DONT_CARE));
         } catch (IllegalArgumentException e) {
             gotException = true;
         }
@@ -1126,7 +1136,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
         gotException = false;
         try {
             Object args[] = {new Long(42)};
-            msg.format((Object) args, new StringBuffer(), new FieldPosition(0));
+            msg.format((Object) args, new StringBuffer(), new FieldPosition(FieldPosition_DONT_CARE));
         } catch (IllegalArgumentException e) {
             gotException = true;
         }
@@ -1268,7 +1278,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
         Map argMap = new HashMap();
         argMap.put("1", date);
         argMap.put("2", date);
-        target = "X:5:17:00 AM Y:Dec 17, 1990";
+        target = "X:5:17:00\u202FAM Y:Dec 17, 1990";
         result = mf.format(argMap);
         if (!target.equals(result)) {
             errln("expected '" + target + "' but got '" + result + "'");
@@ -1623,8 +1633,8 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
         Object[] args = { args0, args1, args2 };
 
         String[] expectedStrings = {
-                "The 2nd folder 'tmp' contains 15 file(s), created at 9:58:08 AM on Jul 18, 2007.",
-                "The 2nd folder 'tmp' contains 15 file(s), created at 9:58:08 AM on Jul 18, 2007.",
+                "The 2nd folder 'tmp' contains 15 file(s), created at 9:58:08\u202FAM on Jul 18, 2007.",
+                "The 2nd folder 'tmp' contains 15 file(s), created at 9:58:08\u202FAM on Jul 18, 2007.",
                 "The folder contains 34 files." };
 
         AttributedString[] expectedAttributedStrings = { new AttributedString(expectedStrings[0]),
@@ -1873,7 +1883,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
         map.put("_oOo_", new Integer(3));
         StringBuffer result = new StringBuffer();
         assertEquals("trim-named-arg format() failed", "x 3 y",
-                     m.format(map, result, new FieldPosition(0)).toString());
+                     m.format(map, result, new FieldPosition(FieldPosition_DONT_CARE)).toString());
     }
 
     @Test
@@ -1998,6 +2008,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
         assertEquals("aa aaa", "AB ABC", mf3.format(args, new StringBuffer(), null).toString());
     }
 
+    @Test
     public void TestMessagePatternAutoQuoteApostropheDeep() {
         // Example input & output taken from API docs.
         MessagePattern pattern = new MessagePattern(
@@ -2007,6 +2018,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
                 pattern.autoQuoteApostropheDeep());
     }
 
+    @Test
     public void TestMessagePatternFreezable() {
         MessagePattern pattern = new MessagePattern();
         assertFalse("just constructed, not yet frozen", pattern.isFrozen());
@@ -2028,6 +2040,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
         assertEquals("thawed+parse", "fo", thawed.autoQuoteApostropheDeep());
     }
 
+    @Test
     public void TestMessagePatternNamedAndNumberedArguments() {
         MessagePattern pattern = new MessagePattern();
         pattern.parse("fee");
@@ -2044,6 +2057,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
         assertTrue("fum {0} {name} no numbered args", pattern.hasNumberedArguments());
     }
 
+    @Test
     public void TestMessagePatternPartCoverage() {
         MessagePattern pattern = new MessagePattern("ab{17}c");
         assertEquals("msg start { arg number } msg limit", 5, pattern.countParts());
@@ -2055,6 +2069,7 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
         assertEquals("arg number 17", 17, arg.getValue());
     }
 
+    @Test
     public void TestMessagePatternParseChoiceStyle() {
         // This would be tested by ChoiceFormat if ICU4J had its own version of that,
         // like ICU4C does.
@@ -2071,13 +2086,79 @@ public class TestMessageFormat extends android.icu.dev.test.TestFmwk {
         assertTrue("many parts", pattern.countParts() > 10);
     }
 
+    // This is mostly a code coverage test with verification minimized to what can be plausibly assumed: different
+    // hash values for distinctly different objects.
+    @Test
     public void TestDateFormatHashCode() {
-        DateFormat testDF = DateFormat.getDateInstance(DateFormat.DEFAULT, ULocale.GERMAN);
-        NumberFormat testNF = testDF.getNumberFormat();
+        DateFormat testDF1 = DateFormat.getDateInstance(DateFormat.DEFAULT, ULocale.GERMAN);
+        DateFormat testDF2 = DateFormat.getDateInstance(DateFormat.DEFAULT, ULocale.FRENCH);
 
-        int expectedResult =
-                testNF.getMaximumIntegerDigits() * 37 + testNF.getMaximumFractionDigits();
-        int actualHashResult = testDF.hashCode();
-        assertEquals("DateFormat hashCode", expectedResult, actualHashResult);
+        int actualHashResult1 = testDF1.hashCode();
+        int actualHashResult2 = testDF2.hashCode();
+        assertNotEquals("DateFormat hashCode() test: really the same hashcode?", actualHashResult1, actualHashResult2);
+    }
+
+    @Test
+    public void TestMessageFormatNumberSkeleton() {
+        Object[][] cases = new Object[][] {
+                { "{0,number,::percent}", ULocale.ENGLISH, 50, "50%" },
+                { "{0,number,::percent scale/100}", ULocale.ENGLISH, 0.5, "50%" },
+                { "{0,number,   ::   percent   scale/100   }", ULocale.ENGLISH, 0.5, "50%" },
+                { "{0,number,::currency/USD}", ULocale.ENGLISH, 23, "$23.00" },
+                { "{0,number,::precision-integer}", ULocale.ENGLISH, 514.23, "514" },
+                { "{0,number,::.000}", ULocale.ENGLISH, 514.23, "514.230" },
+                { "{0,number,::.}", ULocale.ENGLISH, 514.23, "514" },
+                { "{0,number,::}", ULocale.FRENCH, 514.23, "514,23" },
+                { "Cost: {0,number,::currency/EUR}.", ULocale.ENGLISH, 4.3, "Cost: €4.30." },
+                { "{0,number,'::'0.00}", ULocale.ENGLISH, 50, "::50.00" }, // pattern literal
+        };
+
+        for (Object[] cas : cases) {
+            String messagePattern = (String) cas[0];
+            ULocale locale = (ULocale) cas[1];
+            Number arg = (Number) cas[2];
+            String expected = (String) cas[3];
+
+            MessageFormat msgf = new MessageFormat(messagePattern, locale);
+            StringBuffer sb = new StringBuffer();
+            FieldPosition fpos = new FieldPosition(FieldPosition_DONT_CARE);
+            msgf.format(new Object[] { arg }, sb, fpos);
+
+            assertEquals(messagePattern, expected, sb.toString());
+        }
+    }
+
+    private static void doTheRealDateTimeSkeletonTesting(Date date, String messagePattern, ULocale locale, String expected) {
+
+        MessageFormat msgf = new MessageFormat(messagePattern, locale);
+        StringBuffer sb = new StringBuffer();
+        FieldPosition fpos = new FieldPosition(FieldPosition_DONT_CARE);
+        msgf.format(new Object[] { date }, sb, fpos);
+
+        assertEquals(messagePattern, expected, sb.toString());
+    }
+
+    @Test
+    public void TestMessageFormatDateSkeleton() {
+        Date date = new GregorianCalendar(2021, Calendar.NOVEMBER, 23, 16, 42, 55).getTime();
+
+        doTheRealDateTimeSkeletonTesting(date, "{0,date,::MMMMd}", ULocale.ENGLISH, "November 23");
+        doTheRealDateTimeSkeletonTesting(date, "{0,date,::yMMMMdjm}", ULocale.ENGLISH, "November 23, 2021 at 4:42\u202FPM");
+        doTheRealDateTimeSkeletonTesting(date, "{0,date,   ::   yMMMMd   }", ULocale.ENGLISH, "November 23, 2021");
+        doTheRealDateTimeSkeletonTesting(date, "{0,date,::yMMMMd}", ULocale.FRENCH, "23 novembre 2021");
+        doTheRealDateTimeSkeletonTesting(date, "Expiration: {0,date,::yMMM}!", ULocale.ENGLISH, "Expiration: Nov 2021!");
+        doTheRealDateTimeSkeletonTesting(date, "{0,date,'::'yMMMMd}", ULocale.ENGLISH, "::2021November23"); // pattern literal
+    }
+
+    @Test
+    public void TestMessageFormatTimeSkeleton() {
+        Date date = new GregorianCalendar(2021, Calendar.NOVEMBER, 23, 16, 42, 55).getTime();
+
+        doTheRealDateTimeSkeletonTesting(date, "{0,time,::MMMMd}", ULocale.ENGLISH, "November 23");
+        doTheRealDateTimeSkeletonTesting(date, "{0,time,::yMMMMdjm}", ULocale.ENGLISH, "November 23, 2021 at 4:42\u202FPM");
+        doTheRealDateTimeSkeletonTesting(date, "{0,time,   ::   yMMMMd   }", ULocale.ENGLISH, "November 23, 2021");
+        doTheRealDateTimeSkeletonTesting(date, "{0,time,::yMMMMd}", ULocale.FRENCH, "23 novembre 2021");
+        doTheRealDateTimeSkeletonTesting(date, "Expiration: {0,time,::yMMM}!", ULocale.ENGLISH, "Expiration: Nov 2021!");
+        doTheRealDateTimeSkeletonTesting(date, "{0,time,'::'yMMMMd}", ULocale.ENGLISH, "::2021November23"); // pattern literal
     }
 }

@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /**
  *******************************************************************************
  * Copyright (C) 2001-2016, International Business Machines Corporation and
@@ -25,6 +25,8 @@ import java.util.TreeSet;
 import java.util.jar.JarEntry;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.impl.ICUData;
@@ -38,7 +40,10 @@ import android.icu.util.ULocale;
 import android.icu.util.UResourceBundle;
 import android.icu.util.UResourceBundleIterator;
 import android.icu.util.UResourceTypeMismatchException;
+import android.icu.testsharding.MainTestShard;
 
+@MainTestShard
+@RunWith(JUnit4.class)
 public final class ICUResourceBundleTest extends TestFmwk {
     private static final ClassLoader testLoader = ICUResourceBundleTest.class.getClassLoader();
 
@@ -697,31 +702,28 @@ public final class ICUResourceBundleTest extends TestFmwk {
     public void TestLocaleDisplayNames() {
         ULocale[] locales = ULocale.getAvailableLocales();
 
-        Set<String> localCountryExceptions = new HashSet<String>();
+        Set<String> localCountryExceptions = new HashSet<>();
         if (logKnownIssue("cldrbug:8903",
-                "No localized region name for lrc_IQ, lrc_IR, nus_SS, nds_DE, ti_ER, ti_ET")) {
+                "No localized region name for bgc_IN, bho_IN, lrc_IQ, lrc_IR, nus_SS, nds_DE, raj_IN, su_Latn_ID")) {
+            localCountryExceptions.add("bgc_IN");
+            localCountryExceptions.add("bho_IN");
             localCountryExceptions.add("lrc_IQ");
             localCountryExceptions.add("lrc_IR");
             localCountryExceptions.add("nus_SS");
             localCountryExceptions.add("nds_DE");
             localCountryExceptions.add("nds_NL");
-            localCountryExceptions.add("ti_ER");
-            localCountryExceptions.add("ti_ET");
+            localCountryExceptions.add("raj_IN");
+            localCountryExceptions.add("su_Latn_ID");
         }
 
-        Set<String> localLangExceptions = new HashSet<String>();
+        Set<String> localLangExceptions = new HashSet<>();
         if (logKnownIssue("cldrbug:8903", "No localized language name for nmg, nds")) {
             localLangExceptions.add("nmg");
             localLangExceptions.add("nds");
         }
 
         for (int i = 0; i < locales.length; ++i) {
-            if (!hasLocalizedCountryFor(ULocale.ENGLISH, locales[i])
-                && (locales[i].getLanguage().compareTo("ti") != 0) // TODO: restore test for ti_* when cldrbug 3058 is fixed
-                // Android patch begin.
-                && (locales[i].getBaseName().compareTo("en_XA") != 0)
-                && (locales[i].getBaseName().compareTo("ar_XB") != 0)){
-                // Android patch end.
+            if (!hasLocalizedCountryFor(ULocale.ENGLISH, locales[i])){
                  errln("Could not get English localized country for " + locales[i]);
             }
             if(!hasLocalizedLanguageFor(ULocale.ENGLISH, locales[i])){
@@ -876,6 +878,7 @@ public final class ICUResourceBundleTest extends TestFmwk {
 
     }
 
+    @Test
     public void TestCoverage(){
         UResourceBundle bundle;
         bundle = UResourceBundle.getBundleInstance(ICUData.ICU_BASE_NAME);
@@ -991,7 +994,7 @@ public final class ICUResourceBundleTest extends TestFmwk {
         }
     }
     private Set<String> setFromEnumeration(Enumeration<String> e) {
-        TreeSet<String> set = new TreeSet<String>();
+        TreeSet<String> set = new TreeSet<>();
         while (e.hasMoreElements()) {
             set.add(e.nextElement());
         }
@@ -1038,7 +1041,7 @@ public final class ICUResourceBundleTest extends TestFmwk {
     }
 
     /*
-     * UResouceBundle should be able to load a resource bundle even if
+     * UResourceBundle should be able to load a resource bundle even if
      * a similarly named class (only case differences) exists in the
      * same package.  See Ticket#6844
      */
@@ -1122,7 +1125,10 @@ public final class ICUResourceBundleTest extends TestFmwk {
         if (rb7.getKey() != null) {
             errln("getKey() call should have returned null.");
         }
-        if (((ICUResourceBundle)rb1).findTopLevel(0) == null) {
+        // The following test may no longer be exercised if
+        // rb1 is for a locale like en_US with an empty resource bundle.
+        // (Before ICU-21028 such a bundle would have contained at least a Version string.)
+        if (rb1.getSize() != 0 && ((ICUResourceBundle)rb1).findTopLevel(0) == null) {
             errln("Error calling findTopLevel().");
         }
         if (ICUResourceBundle.getFullLocaleNameSet() == null) {
@@ -1142,5 +1148,56 @@ public final class ICUResourceBundleTest extends TestFmwk {
             errln("NoSuchElementException exception should have been thrown.");
         } catch (NoSuchElementException ex) {
         }
+    }
+
+    @Test
+    public void TestAlgorithmicParentFallback() {
+        // Test for ICU-21125 and ICU-21126 -- cases where resource fallback isn't determined by lopping fields off
+        // the end of the locale ID (or following a %%Parent directive in a resource bundle)
+        // first column is input locale, second column is expected output locale
+        String[][] testCases = {
+            { "de_Latn_LI", "de_LI", "de_LI"     },
+//            { "en_VA",      "en_150", "en"       },  // TODO: put this back in after https://unicode-org.atlassian.net/browse/CLDR-15893 is fixed
+            { "yi_Latn_DE", "",       "yi"       },  // "" is just "root"-- or, actually, the system default locale
+            { "yi_Hebr_DE", "yi",     "yi"       },
+            { "zh_Hant_SG", "zh_Hant", "zh_Hant" },
+            // would be nice to test that sr_Latn_ME falls back to sr_Latn, or sr_ME to sr_Latn_ME,
+            // or sr_Latn to root, but all of these resource bundle files actually exist in the project
+        };
+
+        for (String[] testCase : testCases) {
+            String localeID = testCase[0];
+            String localeDefaultRootExpected = testCase[1];
+            String localeRootExpected = testCase[2];
+
+            ULocale locale = new ULocale(localeID);
+            ICUResourceBundle localeDefaultRootRB = ICUResourceBundle.getBundleInstance(ICUData.ICU_BASE_NAME, locale, ICUResourceBundle.OpenType.LOCALE_DEFAULT_ROOT);
+            ICUResourceBundle localeRootRB = ICUResourceBundle.getBundleInstance(ICUData.ICU_BASE_NAME, locale, ICUResourceBundle.OpenType.LOCALE_ROOT);
+            String localeDefaultRootActual = localeDefaultRootRB.getULocale().toString();
+            String localeRootActual = localeRootRB.getULocale().toString();
+
+            if (localeDefaultRootExpected.isEmpty()) {
+                assertEquals("Got wrong locale with LOCALE_DEFAULT_ROOT", ULocale.getDefault().toString(), localeDefaultRootActual);
+            } else {
+                assertEquals("Got wrong locale with LOCALE_DEFAULT_ROOT", localeDefaultRootExpected, localeDefaultRootActual);
+            }
+            assertEquals("Got wrong locale with LOCALE_ROOT", localeRootExpected, localeRootActual);
+        }
+    }
+
+    @Test
+    public void TestResourceBundleCrash() {
+        final String[] TEST_LOCALE_IDS = new String[] { "nb", "nn", "ht", "hi-Latn" };
+
+        ULocale oldDefaultLocale = ULocale.getDefault();
+        for (String localeID : TEST_LOCALE_IDS) {
+            ULocale locale = ULocale.forLanguageTag(localeID);
+            ULocale.setDefault(locale);
+            UResourceBundle rb = UResourceBundle.getBundleInstance(ICUData.ICU_TRANSLIT_BASE_NAME, locale);
+            assertTrue("Failed to retrieve a resource bundle for " + localeID, rb != null);
+            // the test is to make sure we fell back to root (or otherwise returned SOMETHING)-- all we're really trying to
+            // enrure is that we don't crash with a StackOverflowError when trying to retrieve the bundle
+        }
+        ULocale.setDefault(oldDefaultLocale);
     }
 }

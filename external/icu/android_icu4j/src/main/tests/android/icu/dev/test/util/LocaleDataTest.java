@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2003-2016, International Business Machines Corporation and    *
@@ -14,6 +14,8 @@ import java.util.HashSet;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.impl.ICUResourceBundle;
@@ -23,6 +25,7 @@ import android.icu.text.UnicodeSetIterator;
 import android.icu.util.ICUException;
 import android.icu.util.LocaleData;
 import android.icu.util.ULocale;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author ram
@@ -30,17 +33,19 @@ import android.icu.util.ULocale;
  * To change the template for this generated type comment go to
  * Window>Preferences>Java>Code Generation>Code and Comments
  */
+@MainTestShard
+@RunWith(JUnit4.class)
 public class LocaleDataTest extends TestFmwk{
     private ULocale[] availableLocales = null;
 
     public LocaleDataTest(){
     }
-    
+
     @Before
     public void init() {
         availableLocales = ICUResourceBundle.getAvailableULocales();
     }
-    
+
     @Test
     public void TestPaperSize(){
         for(int i = 0; i < availableLocales.length; i++){
@@ -71,7 +76,7 @@ public class LocaleDataTest extends TestFmwk{
                 if(paperSize.getHeight()!= 297 || paperSize.getWidth() != 210 ){
                     errln("PaperSize did not return the expected value for locale "+ locale +
                             " Expected height: 297 width: 210."+
-                            " Got height: "+paperSize.getHeight() +" width: "+paperSize.getWidth() 
+                            " Got height: "+paperSize.getHeight() +" width: "+paperSize.getWidth()
                             );
                 }else{
                     logln("PaperSize returned the expected values for locale " + locale);
@@ -88,15 +93,15 @@ public class LocaleDataTest extends TestFmwk{
             String lang = locale.getLanguage();
             if(lang.equals("in")){
                 continue;
-            }           
+            }
             ULocale fullLoc = ULocale.addLikelySubtags(locale);
-            if(fullLoc.toString().indexOf("_US") >= 0 || fullLoc.toString().indexOf("_MM") >= 0 || fullLoc.toString().indexOf("_LR") >= 0){
+            if(fullLoc.toString().indexOf("_US") >= 0 || fullLoc.toString().indexOf("_LR") >= 0){
                 if(ms == LocaleData.MeasurementSystem.US){
                     logln("Got the expected measurement system for locale: " + locale);
                 }else{
                     errln("Did not get the expected measurement system for locale: "+ locale);
                 }
-            } else if(fullLoc.toString().indexOf("_GB") >= 0){
+            } else if(fullLoc.toString().indexOf("_GB") >= 0 || fullLoc.toString().indexOf("_MM") >= 0){
                 if(ms == LocaleData.MeasurementSystem.UK){
                     logln("Got the expected measurement system for locale: " + locale);
                 }else{
@@ -107,7 +112,7 @@ public class LocaleDataTest extends TestFmwk{
                     logln("Got the expected measurement system for locale: " + locale);
                 }else{
                     errln("Did not get the expected measurement system for locale: "+ locale);
-                } 
+                }
             }
         }
     }
@@ -178,13 +183,15 @@ public class LocaleDataTest extends TestFmwk{
             set = s;
             scs = scriptCodes;
         }
+        @Override
         public int hashCode() {
             int hash = 0;
             for (int i=0; i<scs.length && i<4; i++) {
                 hash = (hash<<8)+scs[i];
             }
             return hash;
-        }        
+        }
+        @Override
         public boolean equals(Object other) {
             ExemplarGroup o = (ExemplarGroup)other;
             boolean r = Arrays.equals(scs, o.scs) &&
@@ -206,7 +213,7 @@ public class LocaleDataTest extends TestFmwk{
                 // such a broken hack !!!!!
                 // so in effect I can never test the script code for Indonesian :(
                 if(locale.toString().indexOf(("in"))<0){
-                    errln("UScript.getCode returned null for locale: " + locale); 
+                    errln("UScript.getCode returned null for locale: " + locale);
                 }
                 continue;
             }
@@ -225,7 +232,7 @@ public class LocaleDataTest extends TestFmwk{
                     }
                     boolean existsInScript = false;
                     UnicodeSetIterator iter = new UnicodeSetIterator(exemplarSet);
-                    // iterate over the 
+                    // iterate over the
                     while (!existsInScript && iter.nextRange()) {
                         if (iter.codepoint != UnicodeSetIterator.IS_STRING) {
                             for(int j=0; j<sets.length; j++){
@@ -274,7 +281,7 @@ public class LocaleDataTest extends TestFmwk{
             int[] scriptCodes = UScript.getCode(locale);
             if (scriptCodes==null) {
                 if(locale.toString().indexOf(("in"))<0){
-                    errln("UScript.getCode returned null for locale: "+ locale); 
+                    errln("UScript.getCode returned null for locale: "+ locale);
                 }
                 continue;
             }
@@ -282,7 +289,7 @@ public class LocaleDataTest extends TestFmwk{
 
             for (int k=0; k<2; ++k) {  // for casing option in (normal, uncased)
                 int option = (k==0) ? 0 : UnicodeSet.CASE;
-                for(int h=0; h<2; ++h){  
+                for(int h=0; h<2; ++h){
                     int type = (h==0) ? LocaleData.ES_STANDARD : LocaleData.ES_AUXILIARY;
 
                     UnicodeSet exemplarSet = ld.getExemplarSet(option, type);
@@ -298,7 +305,7 @@ public class LocaleDataTest extends TestFmwk{
                         }
                         boolean existsInScript = false;
                         UnicodeSetIterator iter = new UnicodeSetIterator(exemplarSet);
-                        // iterate over the 
+                        // iterate over the
                         while (!existsInScript && iter.nextRange()) {
                             if (iter.codepoint != UnicodeSetIterator.IS_STRING) {
                                 for(int j=0; j<sets.length; j++){
@@ -418,6 +425,19 @@ public class LocaleDataTest extends TestFmwk{
         assertEquals("End quotes are not equals", fr_FR.getDelimiter(LocaleData.QUOTATION_END), fr_CH.getDelimiter(LocaleData.QUOTATION_END));
         assertNotEquals("Alt start quotes are equal", fr_FR.getDelimiter(LocaleData.ALT_QUOTATION_START), fr_CH.getDelimiter(LocaleData.ALT_QUOTATION_START));
         assertNotEquals("Alt end quotes are equals", fr_FR.getDelimiter(LocaleData.ALT_QUOTATION_END), fr_CH.getDelimiter(LocaleData.ALT_QUOTATION_END));
+ 
+        // ICU-21332 Add items from TestDelimiters() in cldrtest.c
+        final String[][] localesAndDelimiters = {
+                { "fr_CA", "«", "»" },
+                { "de_CH", "„", "“" },
+                { "es_MX", "“", "”" },
+                { "ja",    "「", "」" },
+        };
+        for (String[] localeAndDelimiters: localesAndDelimiters) {
+            LocaleData locData = LocaleData.getInstance(new ULocale(localeAndDelimiters[0]));
+            assertEquals("Locale " + localeAndDelimiters[0] + ", do not get expected start quote", locData.getDelimiter(LocaleData.QUOTATION_START), localeAndDelimiters[1]);
+            assertEquals("Locale " + localeAndDelimiters[0] + ", do not get expected end quote", locData.getDelimiter(LocaleData.QUOTATION_END), localeAndDelimiters[2]);
+       }
     }
 
     @Test

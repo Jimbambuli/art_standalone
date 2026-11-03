@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 1996-2016, International Business Machines Corporation and
@@ -24,7 +24,10 @@ import android.icu.lang.UScript;
 import android.icu.text.Normalizer2;
 import android.icu.text.UTF16;
 import android.icu.text.UnicodeSet;
+import android.icu.util.CodePointMap;
+import android.icu.util.CodePointTrie;
 import android.icu.util.ICUException;
+import android.icu.util.ICUUncheckedIOException;
 import android.icu.util.VersionInfo;
 
 /**
@@ -102,8 +105,140 @@ public final class UCharacterProperty
     public static final int SRC_NFKC_CF=10;
     /** From normalizer2impl.cpp/nfc.nrm canonical iterator data */
     public static final int SRC_NFC_CANON_ITER=11;
+    // Text layout properties.
+    public static final int SRC_INPC=12;
+    public static final int SRC_INSC=13;
+    public static final int SRC_VO=14;
+    public static final int SRC_EMOJI=15;
     /** One more than the highest UPropertySource (SRC_) constant. */
-    public static final int SRC_COUNT=12;
+    public static final int SRC_COUNT=16;
+
+    private static final class LayoutProps {
+        private static final class IsAcceptable implements ICUBinary.Authenticate {
+            @Override
+            public boolean isDataVersionAcceptable(byte version[]) {
+                return version[0] == 1;
+            }
+        }
+        private static final IsAcceptable IS_ACCEPTABLE = new IsAcceptable();
+        private static final int DATA_FORMAT = 0x4c61796f;  // "Layo"
+
+        // indexes into indexes[]
+        // Element 0 stores the length of the indexes[] array.
+        //ivate static final int IX_INDEXES_LENGTH = 0;
+        // Elements 1..7 store the tops of consecutive code point tries.
+        // No trie is stored if the difference between two of these is less than 16.
+        private static final int IX_INPC_TRIE_TOP = 1;
+        private static final int IX_INSC_TRIE_TOP = 2;
+        private static final int IX_VO_TRIE_TOP = 3;
+        //ivate static final int IX_RESERVED_TOP = 4;
+
+        //ivate static final int IX_TRIES_TOP = 7;
+
+        private static final int IX_MAX_VALUES = 9;
+
+        // Length of indexes[]. Multiple of 4 to 16-align the tries.
+        //ivate static final int IX_COUNT = 12;
+
+        private static final int MAX_INPC_SHIFT = 24;
+        private static final int MAX_INSC_SHIFT = 16;
+        private static final int MAX_VO_SHIFT = 8;
+
+        static final LayoutProps INSTANCE = new LayoutProps();
+
+        CodePointTrie inpcTrie = null;  // Indic_Positional_Category
+        CodePointTrie inscTrie = null;  // Indic_Syllabic_Category
+        CodePointTrie voTrie = null;  // Vertical_Orientation
+
+        int maxInpcValue = 0;
+        int maxInscValue = 0;
+        int maxVoValue = 0;
+
+        LayoutProps() {
+            ByteBuffer bytes = ICUBinary.getRequiredData("ulayout.icu");
+            try {
+                ICUBinary.readHeaderAndDataVersion(bytes, DATA_FORMAT, IS_ACCEPTABLE);
+                int startPos = bytes.position();
+                int indexesLength = bytes.getInt();  // inIndexes[IX_INDEXES_LENGTH]
+                if (indexesLength < 12) {
+                    throw new ICUUncheckedIOException(
+                            "Text layout properties data: not enough indexes");
+                }
+                int[] inIndexes = new int[indexesLength];
+                inIndexes[0] = indexesLength;
+                for (int i = 1; i < indexesLength; ++i) {
+                    inIndexes[i] = bytes.getInt();
+                }
+
+                int offset = indexesLength * 4;
+                int top = inIndexes[IX_INPC_TRIE_TOP];
+                int trieSize = top - offset;
+                if (trieSize >= 16) {
+                    inpcTrie = CodePointTrie.fromBinary(null, null, bytes);
+                }
+                int pos = bytes.position() - startPos;
+                assert top >= pos;
+                ICUBinary.skipBytes(bytes, top - pos);  // skip padding after trie bytes
+                offset = top;
+                top = inIndexes[IX_INSC_TRIE_TOP];
+                trieSize = top - offset;
+                if (trieSize >= 16) {
+                    inscTrie = CodePointTrie.fromBinary(null, null, bytes);
+                }
+                pos = bytes.position() - startPos;
+                assert top >= pos;
+                ICUBinary.skipBytes(bytes, top - pos);  // skip padding after trie bytes
+                offset = top;
+                top = inIndexes[IX_VO_TRIE_TOP];
+                trieSize = top - offset;
+                if (trieSize >= 16) {
+                    voTrie = CodePointTrie.fromBinary(null, null, bytes);
+                }
+                pos = bytes.position() - startPos;
+                assert top >= pos;
+                ICUBinary.skipBytes(bytes, top - pos);  // skip padding after trie bytes
+
+                int maxValues = inIndexes[IX_MAX_VALUES];
+                maxInpcValue = maxValues >>> MAX_INPC_SHIFT;
+                maxInscValue = (maxValues >> MAX_INSC_SHIFT) & 0xff;
+                maxVoValue = (maxValues >> MAX_VO_SHIFT) & 0xff;
+            } catch(IOException e) {
+                throw new ICUUncheckedIOException(e);
+            }
+        }
+
+        public UnicodeSet addPropertyStarts(int src, UnicodeSet set) {
+            CodePointTrie trie;
+            switch (src) {
+            case SRC_INPC:
+                trie = inpcTrie;
+                break;
+            case SRC_INSC:
+                trie = inscTrie;
+                break;
+            case SRC_VO:
+                trie = voTrie;
+                break;
+            default:
+                throw new IllegalStateException();
+            }
+
+            if (trie == null) {
+                throw new MissingResourceException(
+                        "no data for one of the text layout properties; src=" + src,
+                        "LayoutProps", "");
+            }
+
+            // Add the start code point of each same-value range of the trie.
+            CodePointMap.Range range = new CodePointMap.Range();
+            int start = 0;
+            while (trie.getRange(start, null, range)) {
+                set.add(start);
+                start = range.getEnd() + 1;
+            }
+            return set;
+        }
+    }
 
     // public methods ----------------------------------------------------
 
@@ -179,7 +314,7 @@ public final class UCharacterProperty
      */
     private static final boolean isgraphPOSIX(int c) {
         /* \p{space}\p{gc=Control} == \p{gc=Z}\p{Control} */
-        /* comparing ==0 returns FALSE for the categories mentioned */
+        /* comparing ==0 returns false for the categories mentioned */
         return (getMask(UCharacter.getType(c))&
                 (GC_CC_MASK|GC_CS_MASK|GC_CN_MASK|GC_Z_MASK))
                ==0;
@@ -216,6 +351,18 @@ public final class UCharacterProperty
         @Override
         boolean contains(int c) {
             return UCaseProps.INSTANCE.hasBinaryProperty(c, which);
+        }
+    }
+
+    private class EmojiBinaryProperty extends BinaryProperty {
+        int which;
+        EmojiBinaryProperty(int which) {
+            super(SRC_EMOJI);
+            this.which=which;
+        }
+        @Override
+        boolean contains(int c) {
+            return EmojiProps.INSTANCE.hasBinaryProperty(c, which);
         }
     }
 
@@ -401,10 +548,27 @@ public final class UCharacterProperty
                 return !Normalizer2Impl.UTF16Plus.equal(dest, src);
             }
         },
-        new BinaryProperty(2, 1<<PROPS_2_EMOJI),
-        new BinaryProperty(2, 1<<PROPS_2_EMOJI_PRESENTATION),
-        new BinaryProperty(2, 1<<PROPS_2_EMOJI_MODIFIER),
-        new BinaryProperty(2, 1<<PROPS_2_EMOJI_MODIFIER_BASE),
+        new EmojiBinaryProperty(UProperty.EMOJI),
+        new EmojiBinaryProperty(UProperty.EMOJI_PRESENTATION),
+        new EmojiBinaryProperty(UProperty.EMOJI_MODIFIER),
+        new EmojiBinaryProperty(UProperty.EMOJI_MODIFIER_BASE),
+        new EmojiBinaryProperty(UProperty.EMOJI_COMPONENT),
+        new BinaryProperty(SRC_PROPSVEC) {  // REGIONAL_INDICATOR
+            // Property starts are a subset of lb=RI etc.
+            @Override
+            boolean contains(int c) {
+                return 0x1F1E6<=c && c<=0x1F1FF;
+            }
+        },
+        new BinaryProperty(1, 1<<PREPENDED_CONCATENATION_MARK),
+        new EmojiBinaryProperty(UProperty.EXTENDED_PICTOGRAPHIC),
+        new EmojiBinaryProperty(UProperty.BASIC_EMOJI),
+        new EmojiBinaryProperty(UProperty.EMOJI_KEYCAP_SEQUENCE),
+        new EmojiBinaryProperty(UProperty.RGI_EMOJI_MODIFIER_SEQUENCE),
+        new EmojiBinaryProperty(UProperty.RGI_EMOJI_FLAG_SEQUENCE),
+        new EmojiBinaryProperty(UProperty.RGI_EMOJI_TAG_SEQUENCE),
+        new EmojiBinaryProperty(UProperty.RGI_EMOJI_ZWJ_SEQUENCE),
+        new EmojiBinaryProperty(UProperty.RGI_EMOJI),
     };
 
     public boolean hasBinaryProperty(int c, int which) {
@@ -555,10 +719,15 @@ public final class UCharacterProperty
                 return NumericType.COUNT-1;
             }
         },
-        new IntProperty(0, SCRIPT_MASK_, 0) {
+        new IntProperty(SRC_PROPSVEC) {
             @Override
             int getValue(int c) {
                 return UScript.getScript(c);
+            }
+            @Override
+            int getMaxValue(int which) {
+                int scriptX=getMaxValues(0)&SCRIPT_X_MASK;
+                return mergeScriptCodeOrIndex(scriptX);
             }
         },
         new IntProperty(SRC_PROPSVEC) {  // HANGUL_SYLLABLE_TYPE
@@ -604,6 +773,39 @@ public final class UCharacterProperty
                 return UBiDiProps.INSTANCE.getPairedBracketType(c);
             }
         },
+        new IntProperty(SRC_INPC) {
+            @Override
+            int getValue(int c) {
+                CodePointTrie trie = LayoutProps.INSTANCE.inpcTrie;
+                return trie != null ? trie.get(c) : 0;
+            }
+            @Override
+            int getMaxValue(int which) {
+                return LayoutProps.INSTANCE.maxInpcValue;
+            }
+        },
+        new IntProperty(SRC_INSC) {
+            @Override
+            int getValue(int c) {
+                CodePointTrie trie = LayoutProps.INSTANCE.inscTrie;
+                return trie != null ? trie.get(c) : 0;
+            }
+            @Override
+            int getMaxValue(int which) {
+                return LayoutProps.INSTANCE.maxInscValue;
+            }
+        },
+        new IntProperty(SRC_VO) {
+            @Override
+            int getValue(int c) {
+                CodePointTrie trie = LayoutProps.INSTANCE.voTrie;
+                return trie != null ? trie.get(c) : 0;
+            }
+            @Override
+            int getMaxValue(int which) {
+                return LayoutProps.INSTANCE.maxVoValue;
+            }
+        },
     };
 
     public int getIntPropertyValue(int c, int which) {
@@ -622,7 +824,7 @@ public final class UCharacterProperty
     public int getIntPropertyMaxValue(int which) {
         if(which<UProperty.INT_START) {
             if(UProperty.BINARY_START<=which && which<UProperty.BINARY_LIMIT) {
-                return 1;  // maximum TRUE for all binary properties
+                return 1;  // maximum true for all binary properties
             }
         } else if(which<UProperty.INT_LIMIT) {
             return intProps[which-UProperty.INT_START].getMaxValue(which);
@@ -630,7 +832,7 @@ public final class UCharacterProperty
         return -1; // undefined
     }
 
-    public final int getSource(int which) {
+    final int getSource(int which) {
         if(which<UProperty.BINARY_START) {
             return SRC_NONE; /* undefined */
         } else if(which<UProperty.BINARY_LIMIT) {
@@ -957,11 +1159,17 @@ public final class UCharacterProperty
             }
 
             return numValue;
-        } else if(ntv<NTV_RESERVED_START_) {
+        } else if(ntv<NTV_FRACTION32_START_) {
             // fraction-20 e.g. 3/80
             int frac20=ntv-NTV_FRACTION20_START_;  // 0..0x17
             int numerator=2*(frac20&3)+1;
             int denominator=20<<(frac20>>2);
+            return (double)numerator/denominator;
+        } else if(ntv<NTV_RESERVED_START_) {
+            // fraction-32 e.g. 3/64
+            int frac32=ntv-NTV_FRACTION32_START_;  // 0..15
+            int numerator=2*(frac32&3)+1;
+            int denominator=32<<(frac32>>2);
             return (double)numerator/denominator;
         } else {
             /* reserved */
@@ -1045,8 +1253,15 @@ public final class UCharacterProperty
      * denominator: den = 20<<(frac20>>2)
      */
     private static final int NTV_FRACTION20_START_ = NTV_BASE60_START_ + 36;  // 0x300+9*4=0x324
+    /**
+     * Fraction-32 values:
+     * frac32 = ntv-0x34c = 0..15 -> 1|3|5|7 / 32|64|128|256
+     * numerator: num = 2*(frac32&3)+1
+     * denominator: den = 32<<(frac32>>2)
+     */
+    private static final int NTV_FRACTION32_START_ = NTV_FRACTION20_START_ + 24;  // 0x324+6*4=0x34c
     /** No numeric value (yet). */
-    private static final int NTV_RESERVED_START_ = NTV_FRACTION20_START_ + 24;  // 0x324+6*4=0x34c
+    private static final int NTV_RESERVED_START_ = NTV_FRACTION32_START_ + 16;  // 0x34c+4*4=0x35c
 
     private static final int ntvGetType(int ntv) {
         return
@@ -1060,22 +1275,30 @@ public final class UCharacterProperty
      * Properties in vector word 0
      * Bits
      * 31..24   DerivedAge version major/minor one nibble each
-     * 23..22   3..1: Bits 7..0 = Script_Extensions index
+     * 23..22   3..1: Bits 21..20 & 7..0 = Script_Extensions index
      *             3: Script value from Script_Extensions
      *             2: Script=Inherited
      *             1: Script=Common
-     *             0: Script=bits 7..0
-     * 21..20   reserved
+     *             0: Script=bits 21..20 & 7..0
+     * 21..20   Bits 9..8 of the UScriptCode, or index to Script_Extensions
      * 19..17   East Asian Width
      * 16.. 8   UBlockCode
-     *  7.. 0   UScriptCode
+     *  7.. 0   UScriptCode, or index to Script_Extensions
      */
 
     /**
      * Script_Extensions: mask includes Script
      */
-    public static final int SCRIPT_X_MASK = 0x00c000ff;
+    public static final int SCRIPT_X_MASK = 0x00f000ff;
     //private static final int SCRIPT_X_SHIFT = 22;
+
+    // The UScriptCode or Script_Extensions index is split across two bit fields.
+    // (Starting with Unicode 13/ICU 66/2019 due to more varied Script_Extensions.)
+    // Shift the high bits right by 12 to assemble the full value.
+    public static final int SCRIPT_HIGH_MASK = 0x00300000;
+    public static final int SCRIPT_HIGH_SHIFT = 12;
+    public static final int MAX_SCRIPT = 0x3ff;
+
     /**
      * Integer properties mask and shift values for East Asian cell width.
      * Equivalent to icu4c UPROPS_EA_MASK
@@ -1098,14 +1321,20 @@ public final class UCharacterProperty
     private static final int BLOCK_SHIFT_ = 8;
     /**
      * Integer properties mask and shift values for scripts.
-     * Equivalent to icu4c UPROPS_SHIFT_MASK
+     * Equivalent to icu4c UPROPS_SHIFT_LOW_MASK.
      */
-    public static final int SCRIPT_MASK_ = 0x000000ff;
+    public static final int SCRIPT_LOW_MASK = 0x000000ff;
 
     /* SCRIPT_X_WITH_COMMON must be the lowest value that involves Script_Extensions. */
     public static final int SCRIPT_X_WITH_COMMON = 0x400000;
     public static final int SCRIPT_X_WITH_INHERITED = 0x800000;
     public static final int SCRIPT_X_WITH_OTHER = 0xc00000;
+
+    public static final int mergeScriptCodeOrIndex(int scriptX) {
+        return
+            ((scriptX & SCRIPT_HIGH_MASK) >> SCRIPT_HIGH_SHIFT) |
+            (scriptX & SCRIPT_LOW_MASK);
+    }
 
     /**
      * Additional properties used in internal trie data
@@ -1152,22 +1381,25 @@ public final class UCharacterProperty
     private static final int VARIATION_SELECTOR_PROPERTY_ = 28;
     private static final int PATTERN_SYNTAX = 29;                   /* new in ICU 3.4 and Unicode 4.1 */
     private static final int PATTERN_WHITE_SPACE = 30;
+    private static final int PREPENDED_CONCATENATION_MARK = 31;     // new in ICU 60 and Unicode 10
 
     /*
      * Properties in vector word 2
      * Bits
-     * 31..28   http://www.unicode.org/reports/tr51/#Emoji_Properties
-     * 27..26   reserved
+     * 31..26   unused since ICU 70 added uemoji.icu;
+     *          in ICU 57..69 stored emoji properties
      * 25..20   Line Break
      * 19..15   Sentence Break
      * 14..10   Word Break
      *  9.. 5   Grapheme Cluster Break
      *  4.. 0   Decomposition Type
      */
-    private static final int PROPS_2_EMOJI = 28;
-    private static final int PROPS_2_EMOJI_PRESENTATION = 29;
-    private static final int PROPS_2_EMOJI_MODIFIER = 30;
-    private static final int PROPS_2_EMOJI_MODIFIER_BASE = 31;
+    //ivate static final int PROPS_2_EXTENDED_PICTOGRAPHIC=26;  // ICU 62..69
+    //ivate static final int PROPS_2_EMOJI_COMPONENT = 27;  // ICU 60..69
+    //ivate static final int PROPS_2_EMOJI = 28;  // ICU 57..69
+    //ivate static final int PROPS_2_EMOJI_PRESENTATION = 29;  // ICU 57..69
+    //ivate static final int PROPS_2_EMOJI_MODIFIER = 30;  // ICU 57..69
+    //ivate static final int PROPS_2_EMOJI_MODIFIER_BASE = 31;  // ICU 57..69
 
     private static final int LB_MASK          = 0x03f00000;
     private static final int LB_SHIFT         = 20;
@@ -1272,7 +1504,6 @@ public final class UCharacterProperty
     }
 
     private static final class IsAcceptable implements ICUBinary.Authenticate {
-        // @Override when we switch to Java 6
         @Override
         public boolean isDataVersionAcceptable(byte version[]) {
             return version[0] == 7;
@@ -1428,6 +1659,10 @@ public final class UCharacterProperty
                 set.add(range.startCodePoint);
             }
         }
+    }
+
+    static UnicodeSet ulayout_addPropertyStarts(int src, UnicodeSet set) {
+        return LayoutProps.INSTANCE.addPropertyStarts(src, set);
     }
 
     // This static initializer block must be placed after

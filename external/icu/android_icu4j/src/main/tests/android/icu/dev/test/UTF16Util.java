@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /**
 *******************************************************************************
 * Copyright (C) 2002-2004, International Business Machines Corporation and    *
@@ -8,6 +8,8 @@
 *******************************************************************************
 */
 package android.icu.dev.test;
+
+import android.icu.testsharding.MainTestShard;
 
 /**
  * Utility class for supplementary code point 
@@ -17,6 +19,7 @@ package android.icu.dev.test;
  * from ICU4J
  * @author Vladimir Weinstein, Markus Scherer
  */
+@MainTestShard
 public class UTF16Util {
     static final int suppOffset = (0xd800 << 10) + 0xdc00 - 0x10000;
 

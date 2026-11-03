@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2003-2007, International Business Machines Corporation and    *
@@ -32,11 +32,13 @@ package android.icu.dev.test.stringprep;
 import android.icu.text.StringPrepParseException;
 import android.icu.text.UCharacterIterator;
 import android.icu.text.UTF16;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * The implementation is direct port of C code in the RFC
  */
 
+@MainTestShard
 public final class PunycodeReference {
     /*** punycode status codes */
     public static final int punycode_success=0;

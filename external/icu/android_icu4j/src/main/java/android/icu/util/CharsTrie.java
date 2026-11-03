@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 *******************************************************************************
 *   Copyright (C) 2011-2014, International Business Machines
@@ -52,13 +52,26 @@ public final class CharsTrie implements Cloneable, Iterable<CharsTrie.Entry> {
     }
 
     /**
+     * Copy constructor.
+     * Makes a shallow copy of the other trie reader object and its state.
+     * Does not copy the char array which will be shared.
+     * Same as clone() but without the throws clause.
+     */
+    public CharsTrie(CharsTrie other) {
+        chars_ = other.chars_;
+        root_ = other.root_;
+        pos_ = other.pos_;
+        remainingMatchLength_ = other.remainingMatchLength_;
+    }
+
+    /**
      * Clones this trie reader object and its state,
      * but not the char array which will be shared.
      * @return A shallow clone of this trie.
      */
     @Override
-    public Object clone() throws CloneNotSupportedException {
-        return super.clone();  // A shallow copy is just what we need.
+    public CharsTrie clone() throws CloneNotSupportedException {
+        return (CharsTrie) super.clone();  // A shallow copy is just what we need.
     }
 
     /**
@@ -72,8 +85,39 @@ public final class CharsTrie implements Cloneable, Iterable<CharsTrie.Entry> {
     }
 
     /**
+     * Returns the state of this trie as a 64-bit integer.
+     * The state value is never 0.
+     *
+     * @return opaque state value
+     * @see #resetToState64
+     */
+    public long getState64() {
+        return ((long)remainingMatchLength_ << 32) | pos_;
+    }
+
+    /**
+     * Resets this trie to the saved state.
+     * Unlike {@link #resetToState(State)}, the 64-bit state value
+     * must be from {@link #getState64()} from the same trie object or
+     * from one initialized the exact same way.
+     * Because of no validation, this method is faster.
+     *
+     * @param state The opaque trie state value from getState64().
+     * @return this
+     * @see #getState64
+     * @see #resetToState
+     * @see #reset
+     */
+    public CharsTrie resetToState64(long state) {
+        remainingMatchLength_ = (int)(state >> 32);
+        pos_ = (int)state;
+        return this;
+    }
+
+    /**
      * CharsTrie state object, for saving a trie's current state
      * and resetting the trie back to this state later.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public static final class State {
         /**
@@ -102,6 +146,8 @@ public final class CharsTrie implements Cloneable, Iterable<CharsTrie.Entry> {
 
     /**
      * Resets this trie to the saved state.
+     * Slower than {@link #resetToState64(long)} which does not validate the state value.
+     *
      * @param state The State object which holds a saved trie state.
      * @return this
      * @throws IllegalArgumentException if the state object contains no state,
@@ -398,6 +444,7 @@ public final class CharsTrie implements Cloneable, Iterable<CharsTrie.Entry> {
 
     /**
      * Return value type for the Iterator.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public static final class Entry {
         /**
@@ -415,6 +462,7 @@ public final class CharsTrie implements Cloneable, Iterable<CharsTrie.Entry> {
 
     /**
      * Iterator for all of the (string, value) pairs in a CharsTrie.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public static final class Iterator implements java.util.Iterator<Entry> {
         private Iterator(CharSequence trieChars, int offset, int remainingMatchLength, int maxStringLength) {
@@ -615,7 +663,7 @@ public final class CharsTrie implements Cloneable, Iterable<CharsTrie.Entry> {
         // and the remaining branch length in bits 31..16.
         // (We could store the remaining branch length minus 1 in bits 30..16 and not use bit 31,
         // but the code looks more confusing that way.)
-        private ArrayList<Long> stack_=new ArrayList<Long>();
+        private ArrayList<Long> stack_=new ArrayList<>();
     }
 
     private void stop() {

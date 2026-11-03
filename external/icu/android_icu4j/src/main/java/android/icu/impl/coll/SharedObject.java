@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 *******************************************************************************
 * Copyright (C) 2013-2014, International Business Machines
@@ -97,6 +97,7 @@ import android.icu.util.ICUCloneNotSupportedException;
 public class SharedObject implements Cloneable {
     /**
      * Similar to a smart pointer, basically a port of the static methods of C++ SharedObject.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public static final class Reference<T extends SharedObject> implements Cloneable {
         private T ref;

@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2016, International Business Machines Corporation and
@@ -37,6 +37,7 @@ public abstract class CacheValue<V> {
     /**
      * "Strength" of holding a value in CacheValue instances.
      * The default strength is {@code SOFT}.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public enum Strength {
         /**
@@ -131,7 +132,7 @@ public abstract class CacheValue<V> {
     }
 
     private static final class SoftValue<V> extends CacheValue<V> {
-        private Reference<V> ref;
+        private volatile Reference<V> ref;  // volatile for unsynchronized get()
 
         SoftValue(V value) { ref = new SoftReference<V>(value); }
         @Override

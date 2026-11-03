@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2016, International Business Machines Corporation and         *
@@ -15,10 +15,12 @@ import org.junit.Test;
 
 import android.icu.dev.test.TestBoilerplate;
 import android.icu.dev.util.UnicodeMap;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * Moved from UnicodeMapTest
  */
+@MainTestShard
 public class UnicodeMapBoilerplateTest extends TestBoilerplate<UnicodeMap> {
 
     private static String[] TEST_VALUES = {"A", "B", "C", "D", "E", "F"};

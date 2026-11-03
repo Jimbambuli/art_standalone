@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
  /*
   *******************************************************************************
   * Copyright (C) 2005-2009, International Business Machines Corporation and    *
@@ -11,7 +11,9 @@
 package android.icu.dev.data.resources;
 
 import java.util.ListResourceBundle;
+import android.icu.testsharding.MainTestShard;
 
+@MainTestShard
 public class TestDataElements_fr_Latn_FR extends ListResourceBundle {
 
     private static Object[][] data = new Object[][] { 

@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2001-2010, International Business Machines Corporation and    *
@@ -16,11 +16,13 @@ import java.io.ObjectOutputStream;
 import java.util.Locale;
 
 import android.icu.text.NumberFormat;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @version     1.0
  * @author Ram Viswanadha
  */
+@MainTestShard
 public class WriteNumberFormatSerialTestData {
     static final String header="/*\n" +
                                " *******************************************************************************\n"+

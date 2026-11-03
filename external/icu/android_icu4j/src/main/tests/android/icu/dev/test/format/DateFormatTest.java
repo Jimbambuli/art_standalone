@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2001-2016, International Business Machines Corporation and
@@ -38,7 +38,10 @@ import java.util.ResourceBundle;
 import java.util.Set;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+import android.icu.dev.test.TestFmwk;
 import android.icu.impl.ICUData;
 import android.icu.impl.ICUResourceBundle;
 import android.icu.text.ChineseDateFormat;
@@ -47,6 +50,7 @@ import android.icu.text.ChineseDateFormatSymbols;
 import android.icu.text.DateFormat;
 import android.icu.text.DateFormat.BooleanAttribute;
 import android.icu.text.DateFormatSymbols;
+import android.icu.text.DateTimePatternGenerator;
 import android.icu.text.DisplayContext;
 import android.icu.text.NumberFormat;
 import android.icu.text.SimpleDateFormat;
@@ -63,8 +67,11 @@ import android.icu.util.TimeZone;
 import android.icu.util.ULocale;
 import android.icu.util.UResourceBundle;
 import android.icu.util.VersionInfo;
+import android.icu.testsharding.MainTestShard;
 
-public class DateFormatTest extends android.icu.dev.test.TestFmwk {
+@MainTestShard
+@RunWith(JUnit4.class)
+public class DateFormatTest extends TestFmwk {
     /**
      * Verify that patterns have the correct values and could produce the
      * the DateFormat instances that contain the correct localized patterns.
@@ -106,15 +113,15 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
                 {DateFormat.ABBR_MONTH_WEEKDAY_DAY, "MMMEd","en","EEE, MMM d"},
                 {DateFormat.NUM_MONTH_WEEKDAY_DAY, "MEd","en","EEE, M/d"},
 
-                {DateFormat.HOUR, "j", "en", "h a"}, // (fixed expected result per ticket 6872<-6626)
+                {DateFormat.HOUR, "j", "en", "h\u202Fa"}, // (fixed expected result per ticket 6872<-6626)
                 {DateFormat.HOUR24, "H", "en", "HH"}, // (fixed expected result per ticket 6872<-6626
 
                 {DateFormat.MINUTE, "m", "en", "m"},
-                {DateFormat.HOUR_MINUTE, "jm","en","h:mm a"}, // (fixed expected result per ticket 6872<-7180)
+                {DateFormat.HOUR_MINUTE, "jm","en","h:mm\u202Fa"}, // (fixed expected result per ticket 6872<-7180)
                 {DateFormat.HOUR24_MINUTE, "Hm", "en", "HH:mm"}, // (fixed expected result per ticket 6872<-6626)
 
                 {DateFormat.SECOND, "s", "en", "s"},
-                {DateFormat.HOUR_MINUTE_SECOND, "jms","en","h:mm:ss a"}, // (fixed expected result per ticket 6872<-7180)
+                {DateFormat.HOUR_MINUTE_SECOND, "jms","en","h:mm:ss\u202Fa"}, // (fixed expected result per ticket 6872<-7180)
                 {DateFormat.HOUR24_MINUTE_SECOND, "Hms","en","HH:mm:ss"}, // (fixed expected result per ticket 6872<-6626)
                 {DateFormat.MINUTE_SECOND, "ms", "en", "mm:ss"}, // (fixed expected result per ticket 6872<-6626)
 
@@ -128,7 +135,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
                 {}, // marker for starting combinations
 
                 {DateFormat.YEAR_NUM_MONTH_DAY + DateFormat.ABBR_UTC_TZ, "yMdZZZZ", "en", "M/d/y, ZZZZ"},
-                {DateFormat.MONTH_DAY + DateFormat.LOCATION_TZ, "MMMMdVVVV", "en", "MMMM d, VVVV"},
+                {DateFormat.MONTH_DAY + DateFormat.LOCATION_TZ, "MMMMdVVVV", "en", "MMMM d 'at' VVVV"},
         };
         Date testDate = new Date(2012-1900, 6, 1, 14, 58, 59); // just for verbose log
 
@@ -382,7 +389,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
              "", "", "", "", "", "", "", "",
 
              "", "1997", "ao\u00FBt", "13", "", "14", "34", "12", "", "mercredi",
-             "", "", "", "", "", "", "", "heure d\u2019\u00E9t\u00E9 du Pacifique", "", "",
+             "", "", "", "", "", "", "", "heure d\u2019\u00E9t\u00E9 du Pacifique nord-am\u00E9ricain", "", "",
              "", "", "", "", "", "", "", "", "", "",
              "", "", "", "", "", "", "", "",
 
@@ -440,7 +447,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
             {"", "13", "mercredi", "", "",
              "", "", "", "14", "",
              "", "", "", "", "",
-             "34", "ao\u00FBt", "", "12", "heure d\u2019\u00E9t\u00E9 du Pacifique",
+             "34", "ao\u00FBt", "", "12", "heure d\u2019\u00E9t\u00E9 du Pacifique nord-am\u00E9ricain",
              "", "", "1997", ""},
 
             {"PM", "13", "Wed", "2", "225",
@@ -482,7 +489,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
                              EXPECTED[exp], field);
             }
 
-            // FieldPostion initialized by DateFormat.Field trac#6089
+            // FieldPosition initialized by DateFormat.Field trac#6089
             for(i = 0; i < DTFMT_FIELDS.length; i++) {
                 // The format method only set position for the first occurrence of
                 // the specified field.
@@ -775,6 +782,93 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         }
     }
 
+    @Test
+    public void TestTimeZoneInLocale() {
+        String TESTS[][] = {
+            { "en-u-tz-usden",                     "America/Denver",             "gregorian" },
+            { "es-u-tz-usden",                     "America/Denver",             "gregorian" },
+            { "ms-u-tz-mykul",                     "Asia/Kuala_Lumpur",          "gregorian" },
+            { "zh-u-tz-mykul",                     "Asia/Kuala_Lumpur",          "gregorian" },
+            { "fr-u-ca-buddhist-tz-phmnl",         "Asia/Manila",                "buddhist" },
+            { "th-u-ca-chinese-tz-gblon",          "Europe/London",              "chinese" },
+            { "de-u-ca-coptic-tz-ciabj",           "Africa/Abidjan",             "coptic" },
+            { "ja-u-ca-dangi-tz-hkhkg",            "Asia/Hong_Kong",             "dangi" },
+            { "da-u-ca-ethioaa-tz-ruunera",        "Asia/Ust-Nera",              "ethiopic-amete-alem" },
+            { "ko-u-ca-ethiopic-tz-cvrai",         "Atlantic/Cape_Verde",        "ethiopic" },
+            { "fil-u-ca-gregory-tz-aubne",         "Australia/Brisbane",         "gregorian" },
+            { "fa-u-ca-hebrew-tz-brrbr",           "America/Rio_Branco",         "hebrew" },
+            { "gr-u-ca-indian-tz-lccas",           "America/St_Lucia",           "indian" },
+            { "or-u-ca-islamic-tz-cayyn",          "America/Swift_Current",      "islamic" },
+            { "my-u-ca-islamic-umalqura-tz-kzala", "Asia/Almaty",                "islamic-umalqura" },
+            { "lo-u-ca-islamic-tbla-tz-bmbda",     "Atlantic/Bermuda",           "islamic-tbla" },
+            { "km-u-ca-islamic-civil-tz-aqplm",    "Antarctica/Palmer",          "islamic-civil" },
+            { "kk-u-ca-islamic-rgsa-tz-usanc",     "America/Anchorage",          "islamic" },
+            { "ar-u-ca-iso8601-tz-bjptn",          "Africa/Porto-Novo",          "gregorian" },
+            { "he-u-ca-japanese-tz-tzdar",         "Africa/Dar_es_Salaam",       "japanese" },
+            { "bs-u-ca-persian-tz-etadd",          "Africa/Addis_Ababa",         "persian" },
+            { "it-u-ca-roc-tz-aruaq",              "America/Argentina/San_Juan", "roc" },
+        };
+        for (int i = 0; i < TESTS.length; ++i) {
+            ULocale ulocale = new ULocale(TESTS[i][0]);
+            Locale locale = new Locale(TESTS[i][0]);
+            SimpleDateFormat smptfmt = new SimpleDateFormat("Z", locale);
+            assertEquals(
+                "TimeZone from SimpleDateFormat(\"Z\", Locale loc=\"" + TESTS[i][0] + "\")",
+                         TESTS[i][1], smptfmt.getTimeZone().getID());
+            assertEquals(
+                "Calendar from SimpleDateFormat(\"Z\", Locale loc=\"" + TESTS[i][0] + "\")",
+                         TESTS[i][2], smptfmt.getCalendar().getType());
+
+            smptfmt = new SimpleDateFormat("Z", "", ulocale);
+            assertEquals(
+                "TimeZone from SimpleDateFormat(\"Z\", \"\", ULocale loc=\"" + TESTS[i][0] + "\")",
+                         TESTS[i][1], smptfmt.getTimeZone().getID());
+            assertEquals(
+                "Calendar from SimpleDateFormat(\"Z\", \"\", ULocale loc=\"" + TESTS[i][0] + "\")",
+                         TESTS[i][2], smptfmt.getCalendar().getType());
+
+            smptfmt = new SimpleDateFormat("Z", ulocale);
+            assertEquals(
+                "TimeZone from SimpleDateFormat(\"Z\", ULocale loc=\"" + TESTS[i][0] + "\")",
+                         TESTS[i][1], smptfmt.getTimeZone().getID());
+            assertEquals(
+                "Calendar from SimpleDateFormat(\"Z\", ULocale loc=\"" + TESTS[i][0] + "\")",
+                         TESTS[i][2], smptfmt.getCalendar().getType());
+
+            DateFormat dfmt = DateFormat.getInstanceForSkeleton("Z", locale);
+            assertEquals(
+                "TimeZone from DateFormat.getInstanceForSkeleton(\"Z\", Locale loc=\"" + TESTS[i][0] + "\")",
+                         TESTS[i][1], dfmt.getTimeZone().getID());
+            assertEquals(
+                "Calendar from DateFormat.getInstanceForSkeleton(\"Z\", Locale loc=\"" + TESTS[i][0] + "\")",
+                         TESTS[i][2], dfmt.getCalendar().getType());
+
+            dfmt = DateFormat.getInstanceForSkeleton("Z", ulocale);
+            assertEquals(
+                "TimeZone from DateFormat.getInstanceForSkeleton(\"Z\", ULocale loc=\"" + TESTS[i][0] + "\")",
+                         TESTS[i][1], dfmt.getTimeZone().getID());
+            assertEquals(
+                "Calendar from DateFormat.getInstanceForSkeleton(\"Z\", ULocale loc=\"" + TESTS[i][0] + "\")",
+                         TESTS[i][2], dfmt.getCalendar().getType());
+
+            dfmt = DateFormat.getPatternInstance("Z", locale);
+            assertEquals(
+                "TimeZone from DateFormat.getPatternInstance(\"Z\", Locale loc=\"" + TESTS[i][0] + "\")",
+                         TESTS[i][1], dfmt.getTimeZone().getID());
+            assertEquals(
+                "Calendar from DateFormat.getPatternInstance(\"Z\", Locale loc=\"" + TESTS[i][0] + "\")",
+                         TESTS[i][2], dfmt.getCalendar().getType());
+
+            dfmt = DateFormat.getPatternInstance("Z", ulocale);
+            assertEquals(
+                "TimeZone from DateFormat.getPatternInstance(\"Z\", ULocale loc=\"" + TESTS[i][0] + "\")",
+                         TESTS[i][1], dfmt.getTimeZone().getID());
+            assertEquals(
+                "Calendar from DateFormat.getPatternInstance(\"Z\", ULocale loc=\"" + TESTS[i][0] + "\")",
+                         TESTS[i][2], dfmt.getCalendar().getType());
+        }
+    }
+
     private static final String GMT_BG = "\u0413\u0440\u0438\u043D\u0443\u0438\u0447";
     private static final String GMT_ZH = "GMT";
     //private static final String GMT_ZH = "\u683C\u6797\u5C3C\u6CBB\u6807\u51C6\u65F6\u95F4";
@@ -916,7 +1010,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         { "de", "America/Los_Angeles", "2004-07-15T00:00:00Z", "ZZZZ", "GMT-07:00", "-7:00" },
         { "de", "America/Los_Angeles", "2004-07-15T00:00:00Z", "z", "GMT-7", "-7:00" },
         { "de", "America/Los_Angeles", "2004-07-15T00:00:00Z", "zzzz", "Nordamerikanische Westk\u00fcsten-Sommerzeit", "-7:00" },
-        { "de", "America/Los_Angeles", "2004-07-15T00:00:00Z", "v", "Los Angeles Zeit", "America/Los_Angeles" },
+        { "de", "America/Los_Angeles", "2004-07-15T00:00:00Z", "v", "Los Angeles (Ortszeit)", "America/Los_Angeles" },
         { "de", "America/Los_Angeles", "2004-07-15T00:00:00Z", "vvvv", "Nordamerikanische Westk\u00fcstenzeit", "America/Los_Angeles" },
 
         { "de", "America/Argentina/Buenos_Aires", "2004-01-15T00:00:00Z", "Z", "-0300", "-3:00" },
@@ -927,7 +1021,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         { "de", "America/Argentina/Buenos_Aires", "2004-07-15T00:00:00Z", "ZZZZ", "GMT-03:00", "-3:00" },
         { "de", "America/Argentina/Buenos_Aires", "2004-07-15T00:00:00Z", "z", "GMT-3", "-3:00" },
         { "de", "America/Argentina/Buenos_Aires", "2004-07-15T00:00:00Z", "zzzz", "Argentinische Normalzeit", "-3:00" },
-        { "de", "America/Argentina/Buenos_Aires", "2004-07-15T00:00:00Z", "v", "Buenos Aires Zeit", "America/Buenos_Aires" },
+        { "de", "America/Argentina/Buenos_Aires", "2004-07-15T00:00:00Z", "v", "Buenos Aires (Ortszeit)", "America/Buenos_Aires" },
         { "de", "America/Argentina/Buenos_Aires", "2004-07-15T00:00:00Z", "vvvv", "Argentinische Normalzeit", "America/Buenos_Aires" },
 
         { "de", "America/Buenos_Aires", "2004-01-15T00:00:00Z", "Z", "-0300", "-3:00" },
@@ -938,7 +1032,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         { "de", "America/Buenos_Aires", "2004-07-15T00:00:00Z", "ZZZZ", "GMT-03:00", "-3:00" },
         { "de", "America/Buenos_Aires", "2004-07-15T00:00:00Z", "z", "GMT-3", "-3:00" },
         { "de", "America/Buenos_Aires", "2004-07-15T00:00:00Z", "zzzz", "Argentinische Normalzeit", "-3:00" },
-        { "de", "America/Buenos_Aires", "2004-07-15T00:00:00Z", "v", "Buenos Aires Zeit", "America/Buenos_Aires" },
+        { "de", "America/Buenos_Aires", "2004-07-15T00:00:00Z", "v", "Buenos Aires (Ortszeit)", "America/Buenos_Aires" },
         { "de", "America/Buenos_Aires", "2004-07-15T00:00:00Z", "vvvv", "Argentinische Normalzeit", "America/Buenos_Aires" },
 
         { "de", "America/Havana", "2004-01-15T00:00:00Z", "Z", "-0500", "-5:00" },
@@ -949,10 +1043,10 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         { "de", "America/Havana", "2004-07-15T00:00:00Z", "ZZZZ", "GMT-04:00", "-4:00" },
         { "de", "America/Havana", "2004-07-15T00:00:00Z", "z", "GMT-4", "-4:00" },
         { "de", "America/Havana", "2004-07-15T00:00:00Z", "zzzz", "Kubanische Sommerzeit", "-4:00" },
-        { "de", "America/Havana", "2004-07-15T00:00:00Z", "v", "Kuba Zeit", "America/Havana" },
+        { "de", "America/Havana", "2004-07-15T00:00:00Z", "v", "Kuba (Ortszeit)", "America/Havana" },
         { "de", "America/Havana", "2004-07-15T00:00:00Z", "vvvv", "Kubanische Zeit", "America/Havana" },
         // added to test proper fallback of country name
-        { "de_CH", "America/Havana", "2004-07-15T00:00:00Z", "v", "Kuba Zeit", "America/Havana" },
+        { "de_CH", "America/Havana", "2004-07-15T00:00:00Z", "v", "Kuba (Ortszeit)", "America/Havana" },
         { "de_CH", "America/Havana", "2004-07-15T00:00:00Z", "vvvv", "Kubanische Zeit", "America/Havana" },
 
         { "de", "Australia/ACT", "2004-01-15T00:00:00Z", "Z", "+1100", "+11:00" },
@@ -963,7 +1057,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         { "de", "Australia/ACT", "2004-07-15T00:00:00Z", "ZZZZ", "GMT+10:00", "+10:00" },
         { "de", "Australia/ACT", "2004-07-15T00:00:00Z", "z", "GMT+10", "+10:00" },
         { "de", "Australia/ACT", "2004-07-15T00:00:00Z", "zzzz", "Ostaustralische Normalzeit", "+10:00" },
-        { "de", "Australia/ACT", "2004-07-15T00:00:00Z", "v", "Sydney Zeit", "Australia/Sydney" },
+        { "de", "Australia/ACT", "2004-07-15T00:00:00Z", "v", "Sydney (Ortszeit)", "Australia/Sydney" },
         { "de", "Australia/ACT", "2004-07-15T00:00:00Z", "vvvv", "Ostaustralische Zeit", "Australia/Sydney" },
 
         { "de", "Australia/Sydney", "2004-01-15T00:00:00Z", "Z", "+1100", "+11:00" },
@@ -974,7 +1068,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         { "de", "Australia/Sydney", "2004-07-15T00:00:00Z", "ZZZZ", "GMT+10:00", "+10:00" },
         { "de", "Australia/Sydney", "2004-07-15T00:00:00Z", "z", "GMT+10", "+10:00" },
         { "de", "Australia/Sydney", "2004-07-15T00:00:00Z", "zzzz", "Ostaustralische Normalzeit", "+10:00" },
-        { "de", "Australia/Sydney", "2004-07-15T00:00:00Z", "v", "Sydney Zeit", "Australia/Sydney" },
+        { "de", "Australia/Sydney", "2004-07-15T00:00:00Z", "v", "Sydney (Ortszeit)", "Australia/Sydney" },
         { "de", "Australia/Sydney", "2004-07-15T00:00:00Z", "vvvv", "Ostaustralische Zeit", "Australia/Sydney" },
 
         { "de", "Europe/London", "2004-01-15T00:00:00Z", "Z", "+0000", "+0:00" },
@@ -985,8 +1079,8 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         { "de", "Europe/London", "2004-07-15T00:00:00Z", "ZZZZ", "GMT+01:00", "+1:00" },
         { "de", "Europe/London", "2004-07-15T00:00:00Z", "z", "GMT+1", "+1:00" },
         { "de", "Europe/London", "2004-07-15T00:00:00Z", "zzzz", "Britische Sommerzeit", "+1:00" },
-        { "de", "Europe/London", "2004-07-15T00:00:00Z", "v", "Vereinigtes K\u00f6nigreich Zeit", "Europe/London" },
-        { "de", "Europe/London", "2004-07-15T00:00:00Z", "vvvv", "Vereinigtes K\u00f6nigreich Zeit", "Europe/London" },
+        { "de", "Europe/London", "2004-07-15T00:00:00Z", "v", "Vereinigtes K\u00f6nigreich (Ortszeit)", "Europe/London" },
+        { "de", "Europe/London", "2004-07-15T00:00:00Z", "vvvv", "Vereinigtes K\u00f6nigreich (Ortszeit)", "Europe/London" },
 
         { "de", "Etc/GMT+3", "2004-01-15T00:00:00Z", "Z", "-0300", "-3:00" },
         { "de", "Etc/GMT+3", "2004-01-15T00:00:00Z", "ZZZZ", "GMT-03:00", "-3:00" },
@@ -1003,13 +1097,13 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         { "de", "Asia/Calcutta", "2004-01-15T00:00:00Z", "Z", "+0530", "+5:30" },
         { "de", "Asia/Calcutta", "2004-01-15T00:00:00Z", "ZZZZ", "GMT+05:30", "+5:30" },
         { "de", "Asia/Calcutta", "2004-01-15T00:00:00Z", "z", "GMT+5:30", "+5:30" },
-        { "de", "Asia/Calcutta", "2004-01-15T00:00:00Z", "zzzz", "Indische Zeit", "+5:30" },
+        { "de", "Asia/Calcutta", "2004-01-15T00:00:00Z", "zzzz", "Indische Normalzeit", "+5:30" },
         { "de", "Asia/Calcutta", "2004-07-15T00:00:00Z", "Z", "+0530", "+5:30" },
         { "de", "Asia/Calcutta", "2004-07-15T00:00:00Z", "ZZZZ", "GMT+05:30", "+5:30" },
         { "de", "Asia/Calcutta", "2004-07-15T00:00:00Z", "z", "GMT+5:30", "+05:30" },
-        { "de", "Asia/Calcutta", "2004-07-15T00:00:00Z", "zzzz", "Indische Zeit", "+5:30" },
-        { "de", "Asia/Calcutta", "2004-07-15T00:00:00Z", "v", "Indien Zeit", "Asia/Calcutta" },
-        { "de", "Asia/Calcutta", "2004-07-15T00:00:00Z", "vvvv", "Indische Zeit", "Asia/Calcutta" },
+        { "de", "Asia/Calcutta", "2004-07-15T00:00:00Z", "zzzz", "Indische Normalzeit", "+5:30" },
+        { "de", "Asia/Calcutta", "2004-07-15T00:00:00Z", "v", "Indien (Ortszeit)", "Asia/Calcutta" },
+        { "de", "Asia/Calcutta", "2004-07-15T00:00:00Z", "vvvv", "Indische Normalzeit", "Asia/Calcutta" },
 
         // ==========
 
@@ -1269,24 +1363,24 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         { "bg", "Australia/ACT", "2004-01-15T00:00:00Z", "Z", "+1100", "+11:00" },
         { "bg", "Australia/ACT", "2004-01-15T00:00:00Z", "ZZZZ", GMT_BG+"+11:00", "+11:00" },
         { "bg", "Australia/ACT", "2004-01-15T00:00:00Z", "z", GMT_BG+"+11", "+11:00" },
-        { "bg", "Australia/ACT", "2004-01-15T00:00:00Z", "zzzz", "\u0410\u0432\u0441\u0442\u0440\u0430\u043B\u0438\u044F \u2013 \u0438\u0437\u0442\u043E\u0447\u043D\u043E \u043B\u044F\u0442\u043D\u043E \u0447\u0430\u0441\u043E\u0432\u043E \u0432\u0440\u0435\u043C\u0435", "+11:00" },
+        { "bg", "Australia/ACT", "2004-01-15T00:00:00Z", "zzzz", "\u0418\u0437\u0442\u043E\u0447\u043D\u043E\u0430\u0432\u0441\u0442\u0440\u0430\u043B\u0438\u0439\u0441\u043A\u043E \u043B\u044F\u0442\u043D\u043E \u0447\u0430\u0441\u043E\u0432\u043E \u0432\u0440\u0435\u043C\u0435", "+11:00" },
         { "bg", "Australia/ACT", "2004-07-15T00:00:00Z", "Z", "+1000", "+10:00" },
         { "bg", "Australia/ACT", "2004-07-15T00:00:00Z", "ZZZZ", GMT_BG+"+10:00", "+10:00" },
         { "bg", "Australia/ACT", "2004-07-15T00:00:00Z", "z", GMT_BG+"+10", "+10:00" },
-        { "bg", "Australia/ACT", "2004-07-15T00:00:00Z", "zzzz", "\u0410\u0432\u0441\u0442\u0440\u0430\u043B\u0438\u044F \u2013 \u0438\u0437\u0442\u043E\u0447\u043D\u043E \u0441\u0442\u0430\u043D\u0434\u0430\u0440\u0442\u043D\u043E \u0432\u0440\u0435\u043C\u0435", "+10:00" },
+        { "bg", "Australia/ACT", "2004-07-15T00:00:00Z", "zzzz", "\u0418\u0437\u0442\u043E\u0447\u043D\u043E\u0430\u0432\u0441\u0442\u0440\u0430\u043B\u0438\u0439\u0441\u043A\u043E \u0441\u0442\u0430\u043D\u0434\u0430\u0440\u0442\u043D\u043E \u0432\u0440\u0435\u043C\u0435", "+10:00" },
         { "bg", "Australia/ACT", "2004-07-15T00:00:00Z", "v", "\u0421\u0438\u0434\u043D\u0438", "Australia/Sydney" },
-        { "bg", "Australia/ACT", "2004-07-15T00:00:00Z", "vvvv", "\u0410\u0432\u0441\u0442\u0440\u0430\u043B\u0438\u044F \u2013 \u0438\u0437\u0442\u043E\u0447\u043D\u043E \u0432\u0440\u0435\u043C\u0435", "Australia/Sydney" },
+        { "bg", "Australia/ACT", "2004-07-15T00:00:00Z", "vvvv", "\u0418\u0437\u0442\u043E\u0447\u043D\u043E\u0430\u0432\u0441\u0442\u0440\u0430\u043B\u0438\u0439\u0441\u043A\u043E \u0432\u0440\u0435\u043C\u0435", "Australia/Sydney" },
 
         { "bg", "Australia/Sydney", "2004-01-15T00:00:00Z", "Z", "+1100", "+11:00" },
         { "bg", "Australia/Sydney", "2004-01-15T00:00:00Z", "ZZZZ", GMT_BG+"+11:00", "+11:00" },
         { "bg", "Australia/Sydney", "2004-01-15T00:00:00Z", "z", GMT_BG+"+11", "+11:00" },
-        { "bg", "Australia/Sydney", "2004-01-15T00:00:00Z", "zzzz", "\u0410\u0432\u0441\u0442\u0440\u0430\u043B\u0438\u044F \u2013 \u0438\u0437\u0442\u043E\u0447\u043D\u043E \u043B\u044F\u0442\u043D\u043E \u0447\u0430\u0441\u043E\u0432\u043E \u0432\u0440\u0435\u043C\u0435", "+11:00" },
+        { "bg", "Australia/Sydney", "2004-01-15T00:00:00Z", "zzzz", "\u0418\u0437\u0442\u043E\u0447\u043D\u043E\u0430\u0432\u0441\u0442\u0440\u0430\u043B\u0438\u0439\u0441\u043A\u043E \u043B\u044F\u0442\u043D\u043E \u0447\u0430\u0441\u043E\u0432\u043E \u0432\u0440\u0435\u043C\u0435", "+11:00" },
         { "bg", "Australia/Sydney", "2004-07-15T00:00:00Z", "Z", "+1000", "+10:00" },
         { "bg", "Australia/Sydney", "2004-07-15T00:00:00Z", "ZZZZ", GMT_BG+"+10:00", "+10:00" },
         { "bg", "Australia/Sydney", "2004-07-15T00:00:00Z", "z", GMT_BG+"+10", "+10:00" },
-        { "bg", "Australia/Sydney", "2004-07-15T00:00:00Z", "zzzz", "\u0410\u0432\u0441\u0442\u0440\u0430\u043B\u0438\u044F \u2013 \u0438\u0437\u0442\u043E\u0447\u043D\u043E \u0441\u0442\u0430\u043D\u0434\u0430\u0440\u0442\u043D\u043E \u0432\u0440\u0435\u043C\u0435", "+10:00" },
+        { "bg", "Australia/Sydney", "2004-07-15T00:00:00Z", "zzzz", "\u0418\u0437\u0442\u043E\u0447\u043D\u043E\u0430\u0432\u0441\u0442\u0440\u0430\u043B\u0438\u0439\u0441\u043A\u043E \u0441\u0442\u0430\u043D\u0434\u0430\u0440\u0442\u043D\u043E \u0432\u0440\u0435\u043C\u0435", "+10:00" },
         { "bg", "Australia/Sydney", "2004-07-15T00:00:00Z", "v", "\u0421\u0438\u0434\u043D\u0438", "Australia/Sydney" },
-        { "bg", "Australia/Sydney", "2004-07-15T00:00:00Z", "vvvv", "\u0410\u0432\u0441\u0442\u0440\u0430\u043B\u0438\u044F \u2013 \u0438\u0437\u0442\u043E\u0447\u043D\u043E \u0432\u0440\u0435\u043C\u0435", "Australia/Sydney" },
+        { "bg", "Australia/Sydney", "2004-07-15T00:00:00Z", "vvvv", "\u0418\u0437\u0442\u043E\u0447\u043D\u043E\u0430\u0432\u0441\u0442\u0440\u0430\u043B\u0438\u0439\u0441\u043A\u043E \u0432\u0440\u0435\u043C\u0435", "Australia/Sydney" },
 
         { "bg", "Europe/London", "2004-01-15T00:00:00Z", "Z", "+0000", "+0:00" },
         { "bg", "Europe/London", "2004-01-15T00:00:00Z", "ZZZZ", GMT_BG, "+0:00" },
@@ -1314,13 +1408,13 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         { "bg", "Asia/Calcutta", "2004-01-15T00:00:00Z", "Z", "+0530", "+5:30" },
         { "bg", "Asia/Calcutta", "2004-01-15T00:00:00Z", "ZZZZ", GMT_BG+"+05:30", "+5:30" },
         { "bg", "Asia/Calcutta", "2004-01-15T00:00:00Z", "z", GMT_BG+"+5:30", "+5:30" },
-        { "bg", "Asia/Calcutta", "2004-01-15T00:00:00Z", "zzzz", "\u0418\u043D\u0434\u0438\u0439\u0441\u043A\u043E \u0441\u0442\u0430\u043D\u0434\u0430\u0440\u0442\u043D\u043E \u0432\u0440\u0435\u043C\u0435", "+5:30" },
+        { "bg", "Asia/Calcutta", "2004-01-15T00:00:00Z", "zzzz", "\u0418\u043D\u0434\u0438\u0439\u0441\u043A\u043E \u0432\u0440\u0435\u043c\u0435", "+5:30" },
         { "bg", "Asia/Calcutta", "2004-07-15T00:00:00Z", "Z", "+0530", "+5:30" },
         { "bg", "Asia/Calcutta", "2004-07-15T00:00:00Z", "ZZZZ", GMT_BG+"+05:30", "+5:30" },
         { "bg", "Asia/Calcutta", "2004-07-15T00:00:00Z", "z", GMT_BG+"+5:30", "+05:30" },
-        { "bg", "Asia/Calcutta", "2004-07-15T00:00:00Z", "zzzz", "\u0418\u043D\u0434\u0438\u0439\u0441\u043A\u043E \u0441\u0442\u0430\u043D\u0434\u0430\u0440\u0442\u043D\u043E \u0432\u0440\u0435\u043C\u0435", "+5:30" },
+        { "bg", "Asia/Calcutta", "2004-07-15T00:00:00Z", "zzzz", "\u0418\u043D\u0434\u0438\u0439\u0441\u043A\u043E \u0432\u0440\u0435\u043c\u0435", "+5:30" },
         { "bg", "Asia/Calcutta", "2004-07-15T00:00:00Z", "v", "\u0418\u043D\u0434\u0438\u044F", "Asia/Calcutta" },
-        { "bg", "Asia/Calcutta", "2004-07-15T00:00:00Z", "vvvv", "\u0418\u043D\u0434\u0438\u0439\u0441\u043A\u043E \u0441\u0442\u0430\u043D\u0434\u0430\u0440\u0442\u043D\u043E \u0432\u0440\u0435\u043C\u0435", "Asia/Calcutta" },
+        { "bg", "Asia/Calcutta", "2004-07-15T00:00:00Z", "vvvv", "\u0418\u043D\u0434\u0438\u0439\u0441\u043A\u043E \u0432\u0440\u0435\u043c\u0435", "Asia/Calcutta" },
 
     // ==========
 
@@ -1443,30 +1537,30 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         { "ti", "America/Los_Angeles", "2004-07-15T00:00:00Z", "ZZZZ", "GMT-07:00", "-7:00" },
         { "ti", "America/Los_Angeles", "2004-07-15T00:00:00Z", "z", "GMT-7", "-7:00" },
         { "ti", "America/Los_Angeles", "2004-07-15T00:00:00Z", "zzzz", "GMT-07:00", "-7:00" },
-        { "ti", "America/Los_Angeles", "2004-07-15T00:00:00Z", "v", "Los Angeles", "America/Los_Angeles" },
-        { "ti", "America/Los_Angeles", "2004-07-15T00:00:00Z", "vvvv", "Los Angeles", "America/Los_Angeles" },
+        { "ti", "America/Los_Angeles", "2004-07-15T00:00:00Z", "v", "\u130D\u12DC \u120E\u1235 \u12A3\u1295\u1300\u1208\u1235", "America/Los_Angeles" },
+        { "ti", "America/Los_Angeles", "2004-07-15T00:00:00Z", "vvvv", "\u130D\u12DC \u120E\u1235 \u12A3\u1295\u1300\u1208\u1235", "America/Los_Angeles" },
 
         { "ti", "America/Argentina/Buenos_Aires", "2004-01-15T00:00:00Z", "Z", "-0300", "-3:00" },
         { "ti", "America/Argentina/Buenos_Aires", "2004-01-15T00:00:00Z", "ZZZZ", "GMT-03:00", "-3:00" },
         { "ti", "America/Argentina/Buenos_Aires", "2004-01-15T00:00:00Z", "z", "GMT-3", "-3:00" },
-        { "ti", "America/Argentina/Buenos_Aires", "2004-01-15T00:00:00Z", "zzzz", "GMT-03:00", "-3:00" },
+        { "ti", "America/Argentina/Buenos_Aires", "2004-01-15T00:00:00Z", "zzzz", "\u121D\u12F1\u1265 \u130D\u12DC \u12A3\u122D\u1300\u1295\u1272\u1293", "-3:00" },
         { "ti", "America/Argentina/Buenos_Aires", "2004-07-15T00:00:00Z", "Z", "-0300", "-3:00" },
         { "ti", "America/Argentina/Buenos_Aires", "2004-07-15T00:00:00Z", "ZZZZ", "GMT-03:00", "-3:00" },
         { "ti", "America/Argentina/Buenos_Aires", "2004-07-15T00:00:00Z", "z", "GMT-3", "-3:00" },
-        { "ti", "America/Argentina/Buenos_Aires", "2004-07-15T00:00:00Z", "zzzz", "GMT-03:00", "-3:00" },
-        { "ti", "America/Argentina/Buenos_Aires", "2004-07-15T00:00:00Z", "v", "Buenos Aires", "America/Buenos_Aires" },
-        { "ti", "America/Argentina/Buenos_Aires", "2004-07-15T00:00:00Z", "vvvv", "Buenos Aires", "America/Buenos_Aires" },
+        { "ti", "America/Argentina/Buenos_Aires", "2004-07-15T00:00:00Z", "zzzz", "\u121D\u12F1\u1265 \u130D\u12DC \u12A3\u122D\u1300\u1295\u1272\u1293", "-3:00" },
+        { "ti", "America/Argentina/Buenos_Aires", "2004-07-15T00:00:00Z", "v", "\u130D\u12DC \u1265\u12C8\u1296\u1235 \u12A3\u12ED\u1228\u1235", "America/Buenos_Aires" },
+        { "ti", "America/Argentina/Buenos_Aires", "2004-07-15T00:00:00Z", "vvvv", "\u121D\u12F1\u1265 \u130D\u12DC \u12A3\u122D\u1300\u1295\u1272\u1293", "America/Buenos_Aires" },
 
         { "ti", "America/Buenos_Aires", "2004-01-15T00:00:00Z", "Z", "-0300", "-3:00" },
         { "ti", "America/Buenos_Aires", "2004-01-15T00:00:00Z", "ZZZZ", "GMT-03:00", "-3:00" },
         { "ti", "America/Buenos_Aires", "2004-01-15T00:00:00Z", "z", "GMT-3", "-3:00" },
-        { "ti", "America/Buenos_Aires", "2004-01-15T00:00:00Z", "zzzz", "GMT-03:00", "-3:00" },
+        { "ti", "America/Buenos_Aires", "2004-01-15T00:00:00Z", "zzzz", "\u121D\u12F1\u1265 \u130D\u12DC \u12A3\u122D\u1300\u1295\u1272\u1293", "-3:00" },
         { "ti", "America/Buenos_Aires", "2004-07-15T00:00:00Z", "Z", "-0300", "-3:00" },
         { "ti", "America/Buenos_Aires", "2004-07-15T00:00:00Z", "ZZZZ", "GMT-03:00", "-3:00" },
         { "ti", "America/Buenos_Aires", "2004-07-15T00:00:00Z", "z", "GMT-3", "-3:00" },
-        { "ti", "America/Buenos_Aires", "2004-07-15T00:00:00Z", "zzzz", "GMT-03:00", "-3:00" },
-        { "ti", "America/Buenos_Aires", "2004-07-15T00:00:00Z", "v", "Buenos Aires", "America/Buenos_Aires" },
-        { "ti", "America/Buenos_Aires", "2004-07-15T00:00:00Z", "vvvv", "Buenos Aires", "America/Buenos_Aires" },
+        { "ti", "America/Buenos_Aires", "2004-07-15T00:00:00Z", "zzzz", "\u121D\u12F1\u1265 \u130D\u12DC \u12A3\u122D\u1300\u1295\u1272\u1293", "-3:00" },
+        { "ti", "America/Buenos_Aires", "2004-07-15T00:00:00Z", "v", "\u130D\u12DC \u1265\u12C8\u1296\u1235 \u12A3\u12ED\u1228\u1235", "America/Buenos_Aires" },
+        { "ti", "America/Buenos_Aires", "2004-07-15T00:00:00Z", "vvvv", "\u121D\u12F1\u1265 \u130D\u12DC \u12A3\u122D\u1300\u1295\u1272\u1293", "America/Buenos_Aires" },
 
         { "ti", "America/Havana", "2004-01-15T00:00:00Z", "Z", "-0500", "-5:00" },
         { "ti", "America/Havana", "2004-01-15T00:00:00Z", "ZZZZ", "GMT-05:00", "-5:00" },
@@ -1476,8 +1570,8 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         { "ti", "America/Havana", "2004-07-15T00:00:00Z", "ZZZZ", "GMT-04:00", "-4:00" },
         { "ti", "America/Havana", "2004-07-15T00:00:00Z", "z", "GMT-4", "-4:00" },
         { "ti", "America/Havana", "2004-07-15T00:00:00Z", "zzzz", "GMT-04:00", "-4:00" },
-        { "ti", "America/Havana", "2004-07-15T00:00:00Z", "v", "CU", "America/Havana" },
-        { "ti", "America/Havana", "2004-07-15T00:00:00Z", "vvvv", "CU", "America/Havana" },
+        { "ti", "America/Havana", "2004-07-15T00:00:00Z", "v", "\u130D\u12DC \u12A9\u1263", "America/Havana" },
+        { "ti", "America/Havana", "2004-07-15T00:00:00Z", "vvvv", "\u130D\u12DC \u12A9\u1263", "America/Havana" },
 
         { "ti", "Australia/ACT", "2004-01-15T00:00:00Z", "Z", "+1100", "+11:00" },
         { "ti", "Australia/ACT", "2004-01-15T00:00:00Z", "ZZZZ", "GMT+11:00", "+11:00" },
@@ -1487,8 +1581,8 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         { "ti", "Australia/ACT", "2004-07-15T00:00:00Z", "ZZZZ", "GMT+10:00", "+10:00" },
         { "ti", "Australia/ACT", "2004-07-15T00:00:00Z", "z", "GMT+10", "+10:00" },
         { "ti", "Australia/ACT", "2004-07-15T00:00:00Z", "zzzz", "GMT+10:00", "+10:00" },
-        { "ti", "Australia/ACT", "2004-07-15T00:00:00Z", "v", "Sydney", "Australia/Sydney" },
-        { "ti", "Australia/ACT", "2004-07-15T00:00:00Z", "vvvv", "Sydney", "Australia/Sydney" },
+        { "ti", "Australia/ACT", "2004-07-15T00:00:00Z", "v", "\u130D\u12DC \u1232\u12F5\u1292", "Australia/Sydney" },
+        { "ti", "Australia/ACT", "2004-07-15T00:00:00Z", "vvvv", "\u130D\u12DC \u1232\u12F5\u1292", "Australia/Sydney" },
 
         { "ti", "Australia/Sydney", "2004-01-15T00:00:00Z", "Z", "+1100", "+11:00" },
         { "ti", "Australia/Sydney", "2004-01-15T00:00:00Z", "ZZZZ", "GMT+11:00", "+11:00" },
@@ -1498,8 +1592,8 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         { "ti", "Australia/Sydney", "2004-07-15T00:00:00Z", "ZZZZ", "GMT+10:00", "+10:00" },
         { "ti", "Australia/Sydney", "2004-07-15T00:00:00Z", "z", "GMT+10", "+10:00" },
         { "ti", "Australia/Sydney", "2004-07-15T00:00:00Z", "zzzz", "GMT+10:00", "+10:00" },
-        { "ti", "Australia/Sydney", "2004-07-15T00:00:00Z", "v", "Sydney", "Australia/Sydney" },
-        { "ti", "Australia/Sydney", "2004-07-15T00:00:00Z", "vvvv", "Sydney", "Australia/Sydney" },
+        { "ti", "Australia/Sydney", "2004-07-15T00:00:00Z", "v", "\u130D\u12DC \u1232\u12F5\u1292", "Australia/Sydney" },
+        { "ti", "Australia/Sydney", "2004-07-15T00:00:00Z", "vvvv", "\u130D\u12DC \u1232\u12F5\u1292", "Australia/Sydney" },
 
         { "ti", "Europe/London", "2004-01-15T00:00:00Z", "Z", "+0000", "+0:00" },
         { "ti", "Europe/London", "2004-01-15T00:00:00Z", "ZZZZ", "GMT", "+0:00" },
@@ -1508,9 +1602,9 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         { "ti", "Europe/London", "2004-07-15T00:00:00Z", "Z", "+0100", "+1:00" },
         { "ti", "Europe/London", "2004-07-15T00:00:00Z", "ZZZZ", "GMT+01:00", "+1:00" },
         { "ti", "Europe/London", "2004-07-15T00:00:00Z", "z", "GMT+1", "+1:00" },
-        { "ti", "Europe/London", "2004-07-15T00:00:00Z", "zzzz", "GMT+01:00", "+1:00" },
-        { "ti", "Europe/London", "2004-07-15T00:00:00Z", "v", "GB", "Europe/London" },
-        { "ti", "Europe/London", "2004-07-15T00:00:00Z", "vvvv", "GB", "Europe/London" },
+        { "ti", "Europe/London", "2004-07-15T00:00:00Z", "zzzz", "\u130D\u12DC \u12AD\u1228\u121D\u1272 \u1265\u122A\u1323\u1295\u12EB", "+1:00" },
+        { "ti", "Europe/London", "2004-07-15T00:00:00Z", "v", "\u130D\u12DC \u1265\u122A\u1323\u1295\u12EB", "Europe/London" },
+        { "ti", "Europe/London", "2004-07-15T00:00:00Z", "vvvv", "\u130D\u12DC \u1265\u122A\u1323\u1295\u12EB", "Europe/London" },
 
         { "ti", "Etc/GMT+3", "2004-01-15T00:00:00Z", "Z", "-0300", "-3:00" },
         { "ti", "Etc/GMT+3", "2004-01-15T00:00:00Z", "ZZZZ", "GMT-03:00", "-3:00" },
@@ -1532,8 +1626,8 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         { "ti", "Asia/Calcutta", "2004-07-15T00:00:00Z", "ZZZZ", "GMT+05:30", "+5:30" },
         { "ti", "Asia/Calcutta", "2004-07-15T00:00:00Z", "z", "GMT+5:30", "+05:30" },
         { "ti", "Asia/Calcutta", "2004-07-15T00:00:00Z", "zzzz", "GMT+05:30", "+5:30" },
-        { "ti", "Asia/Calcutta", "2004-07-15T00:00:00Z", "v", "IN", "Asia/Calcutta" },
-        { "ti", "Asia/Calcutta", "2004-07-15T00:00:00Z", "vvvv", "IN", "Asia/Calcutta" },
+        { "ti", "Asia/Calcutta", "2004-07-15T00:00:00Z", "v", "\u130D\u12DC \u1205\u1295\u12F2", "Asia/Calcutta" },
+        { "ti", "Asia/Calcutta", "2004-07-15T00:00:00Z", "vvvv", "\u130D\u12DC \u1205\u1295\u12F2", "Asia/Calcutta" },
 
         // Ticket#8589 Partial location name to use country name if the zone is the golden
         // zone for the time zone's country.
@@ -1802,7 +1896,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         final String[] strings = {"Mar 15", "Mar 15 1997", "asdf", "3/1/97 1:23:", "3/1/00 1:23:45 AM"};
         int strings_length = strings.length;
         DateFormat full = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, Locale.US);
-        String expected = "March 1, 2000 at 1:23:45 AM ";
+        String expected = "March 1, 2000 at 1:23:45\u202FAM ";
         for (int i = 0; i < strings_length; ++i) {
             final String text = strings[i];
             for (int j = 0; j < looks_length; ++j) {
@@ -2034,12 +2128,12 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         TimeZone tz = TimeZone.getTimeZone("PST");
         dfFrench.setTimeZone(tz);
         dfUS.setTimeZone(tz);
-        String expectedFRENCH_JDK12 = "lundi 15 septembre 1997 \u00E0 00:00:00 heure d\u2019\u00E9t\u00E9 du Pacifique";
+        String expectedFRENCH_JDK12 = "lundi 15 septembre 1997 \u00E0 00:00:00 heure d\u2019\u00E9t\u00E9 du Pacifique nord-am\u00E9ricain";
         //String expectedFRENCH = "lundi 15 septembre 1997 00 h 00 PDT";
-        String expectedUS = "Monday, September 15, 1997 at 12:00:00 AM Pacific Daylight Time";
+        String expectedUS = "Monday, September 15, 1997 at 12:00:00\u202FAM Pacific Daylight Time";
         logln("Date set to : " + testDate);
         String out = dfFrench.format(testDate);
-        logln("Date Formated with French Locale " + out);
+        logln("Date Formatted with French Locale " + out);
         //fix the jdk resources differences between jdk 1.2 and jdk 1.3
         /* our own data only has GMT-xxxx information here
         String javaVersion = System.getProperty("java.version");
@@ -2054,7 +2148,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         if (!out.equals(expectedFRENCH_JDK12))
             errln("FAIL: Expected " + expectedFRENCH_JDK12+" Got "+out);
         out = dfUS.format(testDate);
-        logln("Date Formated with US Locale " + out);
+        logln("Date Formatted with US Locale " + out);
         if (!out.equals(expectedUS))
             errln("FAIL: Expected " + expectedUS+" Got "+out);
     }
@@ -2064,8 +2158,8 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         Date date = new Date(874266720000L);  // Sun Sep 14 21:52:00 CET 1997
         TimeZone tz = TimeZone.getTimeZone("CET");
 
-        DateFormat dfArab = DateFormat.getTimeInstance(DateFormat.SHORT, new ULocale("ar"));
-        DateFormat dfLatn = DateFormat.getTimeInstance(DateFormat.SHORT, new ULocale("ar-u-nu-latn"));
+        DateFormat dfArab = DateFormat.getTimeInstance(DateFormat.SHORT, new ULocale("ar-EG"));
+        DateFormat dfLatn = DateFormat.getTimeInstance(DateFormat.SHORT, new ULocale("ar-EG-u-nu-latn"));
 
         dfArab.setTimeZone(tz);
         dfLatn.setTimeZone(tz);
@@ -2098,7 +2192,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         //String expectedFRENCH = "lundi 15 septembre 1997 00 h 00 PDT";
         logln("Date set to : " + testDate);
         String out = dfFrench.format(testDate);
-        logln("Date Formated with French Locale " + out);
+        logln("Date Formatted with French Locale " + out);
         if (!out.equals(expectedFRENCH_JDK12))
             errln("FAIL: Expected " + expectedFRENCH_JDK12+" Got "+out);
     }
@@ -2395,9 +2489,9 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
 
         f.format((Object)cal, buf, pos);
         f.format((Object)now, buf, pos);
-        f.format((Object)new Long(now.getTime()), buf, pos);
+        f.format(new Long(now.getTime()), buf, pos);
         try {
-            f.format((Object)"Howdy", buf, pos);
+            f.format("Howdy", buf, pos);
         }
         catch (Exception e) {
         }
@@ -3026,10 +3120,10 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
             String CA_DATA[] = {
                 "yyyy MM dd HH:mm:ss",
 
-                "h:mm a",     "2015 01 01 10:00:00", "10:00 a. m.",
-                "h:mm a",     "2015 01 01 22:00:00", "10:00 p. m.",
-                "h:mm aaaaa", "2015 01 01 10:00:00", "10:00 a. m.",
-                "h:mm aaaaa", "2015 01 01 22:00:00", "10:00 p. m.",
+                "h:mm a",     "2015 01 01 10:00:00", "10:00 a.\u00A0m.",
+                "h:mm a",     "2015 01 01 22:00:00", "10:00 p.\u00A0m.",
+                "h:mm aaaaa", "2015 01 01 10:00:00", "10:00 a.\u202Fm.",
+                "h:mm aaaaa", "2015 01 01 22:00:00", "10:00 p.\u202Fm.",
             };
 
             expectFormat(EN_DATA, new Locale("en", "", ""));
@@ -3063,21 +3157,34 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         String EN_DATA[] = {
             "yyyy MM dd",
 
-            "Q",    "fp", "1970 01 01", "1",           "1970 01 01",
-            "QQ",   "fp", "1970 04 01", "02",          "1970 04 01",
-            "QQQ",  "fp", "1970 07 01", "Q3",          "1970 07 01",
-            "QQQQ", "fp", "1970 10 01", "4th quarter", "1970 10 01",
+            "Q",     "fp", "1970 01 01", "1",           "1970 01 01",
+            "QQ",    "fp", "1970 04 01", "02",          "1970 04 01",
+            "QQQ",   "fp", "1970 07 01", "Q3",          "1970 07 01",
+            "QQQQ",  "fp", "1970 10 01", "4th quarter", "1970 10 01",
+            "QQQQQ", "fp", "1970 10 01", "4",           "1970 10 01",
 
-            "q",    "fp", "1970 01 01", "1",           "1970 01 01",
-            "qq",   "fp", "1970 04 01", "02",          "1970 04 01",
-            "qqq",  "fp", "1970 07 01", "Q3",          "1970 07 01",
-            "qqqq", "fp", "1970 10 01", "4th quarter", "1970 10 01",
+            "q",     "fp", "1970 01 01", "1",           "1970 01 01",
+            "qq",    "fp", "1970 04 01", "02",          "1970 04 01",
+            "qqq",   "fp", "1970 07 01", "Q3",          "1970 07 01",
+            "qqqq",  "fp", "1970 10 01", "4th quarter", "1970 10 01",
+            "qqqqq", "fp", "1970 10 01", "4",           "1970 10 01",
 
             "Qyy",  "fp", "2015 04 01", "215",         "2015 04 01",
             "QQyy", "fp", "2015 07 01", "0315",        "2015 07 01",
         };
+        String ES_MX_DATA[] = {
+            "yyyy MM dd",
+
+            "QQQQ y",  "fp", "1970 01 01", "1.er trimestre 1970", "1970 01 01",
+            "QQQ y",   "fp", "1970 01 01", "T1 1970",             "1970 01 01",
+            "QQQQQ y", "fp", "1970 01 01", "1 1970",              "1970 01 01",
+            "qqqq",    "fp", "1970 01 01", "1.er trimestre",      "1970 01 01",
+            "qqq",     "fp", "1970 01 01", "T1",                  "1970 01 01",
+            "qqqqq",   "fp", "1970 01 01", "1T",                  "1970 01 01",
+        };
 
         expect(EN_DATA, new Locale("en", "", ""));
+        expect(ES_MX_DATA, new Locale("es", "MX", ""));
     }
 
     /**
@@ -3909,7 +4016,8 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
             df = DateFormat.getPatternInstance("", new Locale("en_US"));
             df = DateFormat.getPatternInstance(null, "", new Locale("en_US"));
         } catch(Exception e) {
-            errln("DateFormat.getPatternInstance is not suppose to return an exception.");
+            errln("DateFormat.getPatternInstance is not suppose to return an exception, got: " + e.toString());
+            //e.printStackTrace();
         }
     }
 
@@ -4001,7 +4109,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
             String expected = data[i + 1];
             if (!out.equals(expected))
             {
-                errln((String)"FAIL: " + in + " -> " + out + " expected -> " + expected);
+                errln("FAIL: " + in + " -> " + out + " expected -> " + expected);
             }
         }
     }
@@ -4024,7 +4132,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         String res1 = result.toString();
         String expected = "\u4e8c\u3007\u3007\u4e5d\u5e74\u4e03\u6708\u4e8c\u5341\u516b\u65e5";
         if (! res1.equals(expected)) {
-            errln((String)"FAIL: -> " + result.toString() + " expected -> " + expected);
+            errln("FAIL: -> " + result.toString() + " expected -> " + expected);
         }
         ParsePosition pp = new ParsePosition(0);
         Date parsedate = sdf.parse(expected, pp);
@@ -4091,7 +4199,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
             String expected  = DATA[i][1];
 
             if (!result.equals(expected))
-                errln((String) "FAIL: -> " + result.toString() + " expected -> " + expected);
+                errln("FAIL: -> " + result.toString() + " expected -> " + expected);
         }
     }
 
@@ -4686,7 +4794,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
 
     @Test
     public void TestDateFormatLeniency() {
-        // For details see http://bugs.icu-project.org/trac/ticket/10261
+        // For details see https://unicode-org.atlassian.net/browse/ICU-10261
 
         class TestDateFormatLeniencyItem {
             public ULocale locale;
@@ -4793,7 +4901,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
 
     @Test
     public void TestParseMultiPatternMatch() {
-        // For details see http://bugs.icu-project.org/trac/ticket/10336
+        // For details see https://unicode-org.atlassian.net/browse/ICU-10336
 
         class TestMultiPatternMatchItem {
             public boolean leniency;
@@ -4891,37 +4999,37 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         // Set calendar to strict
         fmt.setCalendarLenient(false);
 
-        assertFalse("isLeninent after setCalendarLenient(FALSE)", fmt.isLenient());
-        assertFalse("isCalendarLenient after setCalendarLenient(FALSE)", fmt.isCalendarLenient());
-        assertTrue("ALLOW_WHITESPACE after setCalendarLenient(FALSE)", fmt.getBooleanAttribute(BooleanAttribute.PARSE_ALLOW_WHITESPACE));
-        assertTrue("ALLOW_NUMERIC  after setCalendarLenient(FALSE)", fmt.getBooleanAttribute(BooleanAttribute.PARSE_ALLOW_NUMERIC));
+        assertFalse("isLenient after setCalendarLenient(false)", fmt.isLenient());
+        assertFalse("isCalendarLenient after setCalendarLenient(false)", fmt.isCalendarLenient());
+        assertTrue("ALLOW_WHITESPACE after setCalendarLenient(false)", fmt.getBooleanAttribute(BooleanAttribute.PARSE_ALLOW_WHITESPACE));
+        assertTrue("ALLOW_NUMERIC  after setCalendarLenient(false)", fmt.getBooleanAttribute(BooleanAttribute.PARSE_ALLOW_NUMERIC));
 
         // Set to strict
         fmt.setLenient(false);
 
-        assertFalse("isLeninent after setLenient(FALSE)", fmt.isLenient());
-        assertFalse("isCalendarLenient after setLenient(FALSE)", fmt.isCalendarLenient());
-        assertFalse("ALLOW_WHITESPACE after setLenient(FALSE)", fmt.getBooleanAttribute(BooleanAttribute.PARSE_ALLOW_WHITESPACE));
-        assertFalse("ALLOW_NUMERIC  after setLenient(FALSE)", fmt.getBooleanAttribute(BooleanAttribute.PARSE_ALLOW_NUMERIC));
+        assertFalse("isLenient after setLenient(false)", fmt.isLenient());
+        assertFalse("isCalendarLenient after setLenient(false)", fmt.isCalendarLenient());
+        assertFalse("ALLOW_WHITESPACE after setLenient(false)", fmt.getBooleanAttribute(BooleanAttribute.PARSE_ALLOW_WHITESPACE));
+        assertFalse("ALLOW_NUMERIC  after setLenient(false)", fmt.getBooleanAttribute(BooleanAttribute.PARSE_ALLOW_NUMERIC));
         // These two boolean attributes are NOT affected according to the API specification
-        assertTrue("PARTIAL_MATCH after setLenient(FALSE)", fmt.getBooleanAttribute(BooleanAttribute.PARSE_PARTIAL_LITERAL_MATCH));
-        assertTrue("MULTIPLE_PATTERNS after setLenient(FALSE)", fmt.getBooleanAttribute(BooleanAttribute.PARSE_MULTIPLE_PATTERNS_FOR_MATCH));
+        assertTrue("PARTIAL_MATCH after setLenient(false)", fmt.getBooleanAttribute(BooleanAttribute.PARSE_PARTIAL_LITERAL_MATCH));
+        assertTrue("MULTIPLE_PATTERNS after setLenient(false)", fmt.getBooleanAttribute(BooleanAttribute.PARSE_MULTIPLE_PATTERNS_FOR_MATCH));
 
         // Allow white space leniency
         fmt.setBooleanAttribute(BooleanAttribute.PARSE_ALLOW_WHITESPACE, true);
 
-        assertFalse("isLeninent after ALLOW_WHITESPACE/TRUE", fmt.isLenient());
-        assertFalse("isCalendarLenient after ALLOW_WHITESPACE/TRUE", fmt.isCalendarLenient());
-        assertTrue("ALLOW_WHITESPACE after ALLOW_WHITESPACE/TRUE", fmt.getBooleanAttribute(BooleanAttribute.PARSE_ALLOW_WHITESPACE));
-        assertFalse("ALLOW_NUMERIC  after ALLOW_WHITESPACE/TRUE", fmt.getBooleanAttribute(BooleanAttribute.PARSE_ALLOW_NUMERIC));
+        assertFalse("isLenient after ALLOW_WHITESPACE/true", fmt.isLenient());
+        assertFalse("isCalendarLenient after ALLOW_WHITESPACE/true", fmt.isCalendarLenient());
+        assertTrue("ALLOW_WHITESPACE after ALLOW_WHITESPACE/true", fmt.getBooleanAttribute(BooleanAttribute.PARSE_ALLOW_WHITESPACE));
+        assertFalse("ALLOW_NUMERIC  after ALLOW_WHITESPACE/true", fmt.getBooleanAttribute(BooleanAttribute.PARSE_ALLOW_NUMERIC));
 
         // Set to lenient
         fmt.setLenient(true);
 
-        assertTrue("isLenient after setLenient(TRUE)", fmt.isLenient());
-        assertTrue("isCalendarLenient after setLenient(TRUE)", fmt.isCalendarLenient());
-        assertTrue("ALLOW_WHITESPACE after setLenient(TRUE)", fmt.getBooleanAttribute(BooleanAttribute.PARSE_ALLOW_WHITESPACE));
-        assertTrue("ALLOW_NUMERIC after setLenient(TRUE)", fmt.getBooleanAttribute(BooleanAttribute.PARSE_ALLOW_NUMERIC));
+        assertTrue("isLenient after setLenient(true)", fmt.isLenient());
+        assertTrue("isCalendarLenient after setLenient(true)", fmt.isCalendarLenient());
+        assertTrue("ALLOW_WHITESPACE after setLenient(true)", fmt.getBooleanAttribute(BooleanAttribute.PARSE_ALLOW_WHITESPACE));
+        assertTrue("ALLOW_NUMERIC after setLenient(true)", fmt.getBooleanAttribute(BooleanAttribute.PARSE_ALLOW_NUMERIC));
 
     }
 
@@ -4936,19 +5044,19 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         long k180000 = 1447437600000L;
 
         // Short.
-        SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss bbb");
+        SimpleDateFormat sdf = new SimpleDateFormat("hh:mm:ss bbb", Locale.ENGLISH);
         sdf.setTimeZone(TimeZone.GMT_ZONE);
 
         // Note: "midnight" can be ambiguous as to whether it refers to beginning of day or end of day.
         // For ICU 57 output of "midnight" is temporarily suppressed.
 
-//        assertEquals("hh:mm:ss bbbb | 00:00:00", "12:00:00 midnight", sdf.format(k000000));
-        assertEquals("hh:mm:ss bbbb | 00:00:00", "12:00:00 AM", sdf.format(k000000));
-        assertEquals("hh:mm:ss bbbb | 00:00:30", "12:00:30 AM", sdf.format(k000030));
-        assertEquals("hh:mm:ss bbbb | 00:30:00", "12:30:00 AM", sdf.format(k003000));
-        assertEquals("hh:mm:ss bbbb | 06:00:00", "06:00:00 AM", sdf.format(k060000));
-        assertEquals("hh:mm:ss bbbb | 12:00:00", "12:00:00 noon", sdf.format(k120000));
-        assertEquals("hh:mm:ss bbbb | 18:00:00", "06:00:00 PM", sdf.format(k180000));
+//        assertEquals("hh:mm:ss bbb | 00:00:00", "12:00:00 midnight", sdf.format(k000000));
+        assertEquals("hh:mm:ss bbb | 00:00:00", "12:00:00 AM", sdf.format(k000000));
+        assertEquals("hh:mm:ss bbb | 00:00:30", "12:00:30 AM", sdf.format(k000030));
+        assertEquals("hh:mm:ss bbb | 00:30:00", "12:30:00 AM", sdf.format(k003000));
+        assertEquals("hh:mm:ss bbb | 06:00:00", "06:00:00 AM", sdf.format(k060000));
+        assertEquals("hh:mm:ss bbb | 12:00:00", "12:00:00 noon", sdf.format(k120000));
+        assertEquals("hh:mm:ss bbb | 18:00:00", "06:00:00 PM", sdf.format(k180000));
 
         sdf.applyPattern("hh:mm bbb");
 
@@ -4957,6 +5065,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
 //        assertEquals("hh:mm bbb | 00:00:30", "12:00 midnight", sdf.format(k000030));
         assertEquals("hh:mm bbb | 00:00:30", "12:00 AM", sdf.format(k000030));
         assertEquals("hh:mm bbb | 00:30:00", "12:30 AM", sdf.format(k003000));
+        assertEquals("hh:mm bbb | 12:00:00", "12:00 noon", sdf.format(k120000));
 
         sdf.applyPattern("hh bbb");
 
@@ -4966,6 +5075,26 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         assertEquals("hh bbb | 00:00:30", "12 AM", sdf.format(k000030));
 //        assertEquals("hh bbb | 00:30:00", "12 midnight", sdf.format(k003000));
         assertEquals("hh bbb | 00:30:00", "12 AM", sdf.format(k003000));
+        assertEquals("hh bbb | 12:00:00", "12 noon", sdf.format(k120000));
+
+        sdf.applyPattern("hh:mm b");
+
+//        assertEquals("hh:mm b | 00:00:00", "12:00 midnight", sdf.format(k000000));
+        assertEquals("hh:mm b | 00:00:00", "12:00 AM", sdf.format(k000000));
+//        assertEquals("hh:mm b | 00:00:30", "12:00 midnight", sdf.format(k000030));
+        assertEquals("hh:mm b | 00:00:30", "12:00 AM", sdf.format(k000030));
+        assertEquals("hh:mm b | 00:30:00", "12:30 AM", sdf.format(k003000));
+        assertEquals("hh:mm b | 12:00:00", "12:00 noon", sdf.format(k120000));
+
+        sdf.applyPattern("hh b");
+
+//        assertEquals("hh b | 00:00:00", "12 midnight", sdf.format(k000000));
+        assertEquals("hh b | 00:00:00", "12 AM", sdf.format(k000000));
+//        assertEquals("hh b | 00:00:30", "12 midnight", sdf.format(k000030));
+        assertEquals("hh b | 00:00:30", "12 AM", sdf.format(k000030));
+//        assertEquals("hh b | 00:30:00", "12 midnight", sdf.format(k003000));
+        assertEquals("hh b | 00:30:00", "12 AM", sdf.format(k003000));
+        assertEquals("hh b | 12:00:00", "12 noon", sdf.format(k120000));
 
         // Wide.
         sdf.applyPattern("hh:mm:ss bbbb");
@@ -5023,6 +5152,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         assertEquals("hh bbbbb | 00:30:00", "12 a", sdf.format(k003000));
     }
 
+    @Test
     public void TestFlexibleDayPeriod() {
         // Some times on 2015-11-13.
         long k000000 = 1447372800000L;
@@ -5121,6 +5251,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         assertEquals("hh BBBBB | 00:30:00", "12 at night", sdf.format(k003000));
     }
 
+    @Test
     public void TestDayPeriodWithLocales() {
         // Some times on 2015-11-13 (UTC+0).
         long k000000 = 1447372800000L;
@@ -5138,8 +5269,8 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         sdf.applyPattern("hh:mm:ss bbbb");
 
 //        assertEquals("hh:mm:ss bbbb | 00:00:00 | de", "12:00:00 Mitternacht", sdf.format(k000000));
-        assertEquals("hh:mm:ss bbbb | 00:00:00 | de", "12:00:00 vorm.", sdf.format(k000000));
-        assertEquals("hh:mm:ss bbbb | 12:00:00 | de", "12:00:00 nachm.", sdf.format(k120000));
+        assertEquals("hh:mm:ss bbbb | 00:00:00 | de", "12:00:00 AM", sdf.format(k000000));
+        assertEquals("hh:mm:ss bbbb | 12:00:00 | de", "12:00:00 PM", sdf.format(k120000));
 
         // Locale ee has a rule that wraps around midnight (21h - 4h).
         sdf = new SimpleDateFormat("", new ULocale("ee"));
@@ -5194,8 +5325,17 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
 
         sdf.applyPattern("hh:mm:ss BBBB");
         assertEquals("hh:mm:ss BBBB | 01:00:00 | es", "01:00:00 de la madrugada", sdf.format(k010000));
+
+        // #13215: for locales with keywords, check hang in DayPeriodRules.getInstance(ULocale),
+        // which is called in SimpleDateFormat.format for patterns that include 'B'.
+        sdf = new SimpleDateFormat("", new ULocale("en@calendar=buddhist"));
+        sdf.setTimeZone(TimeZone.GMT_ZONE);
+
+        sdf.applyPattern("hh:mm:ss BBBB");
+        assertEquals("hh:mm:ss BBBB | 01:00:00 | en@calendar=buddhist", "01:00:00 at night", sdf.format(k010000));
     }
 
+    @Test
     public void TestMinuteSecondFieldsInOddPlaces() {
         // Some times on 2015-11-13 (UTC+0).
         long k000000 = 1447372800000L;
@@ -5263,6 +5403,7 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         assertEquals("BBBB hh:mm:ss | 00:00:30", "at night 12:00:30", sdf.format(k000030));
     }
 
+    @Test
     public void TestDayPeriodParsing() throws ParseException {
         // Some times on 2015-11-13 (UTC+0).
         Date k000000 = new Date(1447372800000L);
@@ -5384,5 +5525,108 @@ public class DateFormatTest extends android.icu.dev.test.TestFmwk {
         sdf.applyPattern("yyyy-MM-dd hh:mm b");
         assertEquals("yyyy-MM-dd hh:mm b | 2015-11-13 03:00 midnight", k030000, sdf.parse("2015-11-13 03:00 midnight"));
         assertEquals("yyyy-MM-dd hh:mm b | 2015-11-13 03:00 noon", k150000, sdf.parse("2015-11-13 03:00 noon"));
+    }
+
+    @Test
+    public void TestParseRegression13744() {
+        DateFormat dfmt = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.US);
+        ParsePosition pos = new ParsePosition(0);
+        final String inDate = "4/27/18";    // date only, no time
+        dfmt.parse(inDate, pos);
+        assertEquals("Error index", inDate.length(), pos.getErrorIndex());
+    }
+
+    @Test
+    public void test20739_MillisecondsWithoutSeconds() {
+        String[][] cases = new String[][]{
+            // Ticket #20739
+            // minutes+milliseconds, seconds missing, should be repaired
+            {"SSSSm", "mm:ss.SSSS"},
+            {"mSSSS", "mm:ss.SSSS"},
+            {"SSSm", "mm:ss.SSS"},
+            {"mSSS", "mm:ss.SSS"},
+            {"SSm", "mm:ss.SS"},
+            {"mSS", "mm:ss.SS"},
+            {"Sm", "mm:ss.S"},
+            {"mS", "mm:ss.S"},
+            // only milliseconds, untouched, no repairs
+            {"S", "S"},
+            {"SS", "SS"},
+            {"SSS", "SSS"},
+            {"SSSS", "SSSS"},
+            // hour:minute+seconds+milliseconds, correct, no repairs, proper pattern
+            {"jmsSSS", "h:mm:ss.SSS\u202Fa"},
+            {"jmSSS", "h:mm:ss.SSS\u202Fa"},
+            // Ticket #20738
+            // seconds+milliseconds, correct, no repairs, proper pattern
+            {"sS", "s.S"},
+            {"sSS", "s.SS"},
+            {"sSSS", "s.SSS"},
+            {"sSSSS", "s.SSSS"},
+            // minutes+seconds+milliseconds, correct, no repairs, proper pattern
+            {"msS", "mm:ss.S"},
+            {"msSS", "mm:ss.SS"},
+            {"msSSS", "mm:ss.SSS"},
+            {"msSSSS", "mm:ss.SSSS"}
+        };
+
+        ULocale locale = ULocale.ENGLISH;
+        for (String[] cas : cases) {
+            DateFormat fmt = DateFormat.getInstanceForSkeleton( cas[0], locale);
+            String pattern = ((SimpleDateFormat) fmt).toPattern();
+            assertEquals("Format pattern", cas[1], pattern);
+        }
+    }
+
+    @Test
+    public void test20741_ABFields() {
+        String [] skeletons = {"EEEEEBBBBB", "EEEEEbbbbb"};
+        ULocale[] locales = ULocale.getAvailableLocales();
+        for (String skeleton : skeletons) {
+            for (int i = 0; i < locales.length; i++) {
+                ULocale locale = locales[i];
+                if (isQuick() && (i % 17 != 0)) continue;
+
+                DateTimePatternGenerator gen = DateTimePatternGenerator.getInstance(locale);
+                String pattern = gen.getBestPattern(skeleton);
+                SimpleDateFormat dateFormat = new SimpleDateFormat(pattern, locale);
+                Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("PST8PDT"));
+                calendar.setTime(new Date(0));
+
+                FieldPosition pos_c = new FieldPosition(DateFormat.Field.DAY_OF_WEEK);
+                dateFormat.format(calendar, new StringBuffer(""), pos_c);
+                assertFalse("'Day of week' field was not found", pos_c.getBeginIndex() == 0 && pos_c.getEndIndex() == 0);
+
+                if (skeleton.equals("EEEEEBBBBB")) {
+                    FieldPosition pos_B = new FieldPosition(DateFormat.Field.FLEXIBLE_DAY_PERIOD);
+                    dateFormat.format(calendar, new StringBuffer(""), pos_B);
+                    assertFalse("'Flexible day period' field was not found", pos_B.getBeginIndex() == 0 && pos_B.getEndIndex() == 0);
+                } else {
+                    FieldPosition pos_b = new FieldPosition(DateFormat.Field.AM_PM_MIDNIGHT_NOON);
+                    dateFormat.format(calendar, new StringBuffer(""), pos_b);
+                    assertFalse("'AM/PM/Midnight/Noon' field was not found", pos_b.getBeginIndex() == 0 && pos_b.getEndIndex() == 0);
+                }
+
+                FieldPosition pos_a = new FieldPosition(DateFormat.Field.AM_PM);
+                dateFormat.format(calendar, new StringBuffer(""), pos_a);
+                assertTrue("'AM/PM' field was found", pos_a.getBeginIndex() == 0 && pos_a.getEndIndex() == 0);
+            }
+        }
+    }
+
+    @Test
+    public void testExtraneousCharacters() {
+        // regression test for ICU-21802
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat df = new SimpleDateFormat("yyyyMMdd", ULocale.US);
+        df.setLenient(false);
+
+        ParsePosition pos = new ParsePosition(0);
+        df.parse("2021", cal, pos);
+        assertTrue("Success parsing '2021'", pos.getIndex() == 0);
+
+        pos.setIndex(0);
+        df.parse("2021-", cal, pos);
+        assertTrue("Success parsing '2021-'", pos.getIndex() == 0);
     }
 }

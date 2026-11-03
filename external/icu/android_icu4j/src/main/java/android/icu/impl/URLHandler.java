@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  ******************************************************************************
  * Copyright (C) 2005-2015, International Business Machines Corporation and
@@ -264,6 +264,9 @@ public abstract class URLHandler {
 
     public abstract void guide(URLVisitor visitor, boolean recurse, boolean strip);
 
+    /**
+     * @hide Only a subset of ICU is exposed in Android
+     */
     public interface URLVisitor {
         void visit(String str);
     }

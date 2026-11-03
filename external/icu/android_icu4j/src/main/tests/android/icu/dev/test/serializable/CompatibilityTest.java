@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 1996-2016, International Business Machines Corporation and
@@ -32,11 +32,13 @@ import android.icu.dev.test.serializable.SerializableTestUtility.Handler;
 
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author sgill
  * @author emader
  */
+@MainTestShard
 @RunWith(JUnitParamsRunner.class)
 public class CompatibilityTest extends TestFmwk
 {
@@ -92,7 +94,7 @@ public class CompatibilityTest extends TestFmwk
         Object[] testObjects = classHandler.getTestObjects();
         for (int i = 0; i < testObjects.length; i++) {
             if (!classHandler.hasSameBehavior(oldObjects[i], testObjects[i])) {
-                errln("Input object " + i + " failed behavior test.");
+                errln("Input object " + i + ", className " + holder.className + ": failed behavior test.");
             }
         }
     }

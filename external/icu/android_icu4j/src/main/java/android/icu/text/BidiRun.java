@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 *******************************************************************************
 *   Copyright (C) 2001-2016, International Business Machines
@@ -28,7 +28,6 @@ package android.icu.text;
  * modified by users.
  *
  * @see android.icu.text.Bidi
- * @hide Only a subset of ICU is exposed in Android
  */
 public class BidiRun {
 

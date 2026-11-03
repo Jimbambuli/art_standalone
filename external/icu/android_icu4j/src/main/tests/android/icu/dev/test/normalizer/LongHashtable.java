@@ -1,10 +1,11 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 package android.icu.dev.test.normalizer;
 
 import java.util.HashMap;
 import java.util.Map;
+import android.icu.testsharding.MainTestShard;
 
 /**
  *******************************************************************************
@@ -16,6 +17,7 @@ import java.util.Map;
  * for storing of composition data.
  * @author Vladimir Weinstein
  */
+@MainTestShard
 public class LongHashtable {
 
     public LongHashtable (int defaultValue) {

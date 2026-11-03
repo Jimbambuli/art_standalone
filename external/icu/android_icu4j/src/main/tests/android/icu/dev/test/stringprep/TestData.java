@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2003-2011, International Business Machines Corporation and    *
@@ -11,6 +11,7 @@ package android.icu.dev.test.stringprep;
 
 import android.icu.text.IDNA;
 import android.icu.text.StringPrepParseException;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author ram
@@ -18,6 +19,7 @@ import android.icu.text.StringPrepParseException;
  * To change the template for this generated type comment go to
  * Window>Preferences>Java>Code Generation>Code and Comments
  */
+@MainTestShard
 public class TestData {
     public static final char[][] unicodeIn ={
         { 
@@ -211,7 +213,7 @@ public class TestData {
         //"www.\\u0021.com",
         //"www.\\u0024.com",
         //"\\u003f",
-        // These yeild U_IDNA_PROHIBITED_ERROR
+        // These yield U_IDNA_PROHIBITED_ERROR
         //"\\u00CF\\u0082.com",
         //"\\u00CE\\u00B2\\u00C3\\u009Fss.com",
         //"\\u00E2\\u0098\\u00BA.com",

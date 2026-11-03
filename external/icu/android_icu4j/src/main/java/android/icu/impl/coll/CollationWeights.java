@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 *******************************************************************************
 *
@@ -112,7 +112,7 @@ public final class CollationWeights {
 
             /* no good match, lengthen all minLength ranges and iterate */
             // printf("lengthen the short ranges from %ld bytes to %ld and iterate\n", minLength, minLength+1);
-            for(int i=0; ranges[i].length==minLength; ++i) {
+            for (int i = 0; i < rangeCount && ranges[i].length == minLength; ++i) {
                 lengthenRange(ranges[i]);
             }
         }

@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /**
  *******************************************************************************
  * Copyright (C) 1996-2016, International Business Machines Corporation and
@@ -17,6 +17,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import android.icu.impl.CaseMapImpl;
+import android.icu.impl.EmojiProps;
 import android.icu.impl.IllegalIcuArgumentException;
 import android.icu.impl.Trie2;
 import android.icu.impl.UBiDiProps;
@@ -29,7 +30,6 @@ import android.icu.impl.UPropertyAliases;
 import android.icu.lang.UCharacterEnums.ECharacterCategory;
 import android.icu.lang.UCharacterEnums.ECharacterDirection;
 import android.icu.text.BreakIterator;
-import android.icu.text.Edits;
 import android.icu.text.Normalizer2;
 import android.icu.util.RangeValueIterator;
 import android.icu.util.ULocale;
@@ -86,9 +86,9 @@ import android.icu.util.VersionInfo;
  * For more information see
  * <a href="http://www.unicode/org/ucd/">"About the Unicode Character Database"</a>
  * (http://www.unicode.org/ucd/)
- * and the <a href="http://www.icu-project.org/userguide/properties.html">ICU
+ * and the <a href="https://unicode-org.github.io/icu/userguide/strings/properties">ICU
  * User Guide chapter on Properties</a>
- * (http://www.icu-project.org/userguide/properties.html).
+ * (https://unicode-org.github.io/icu/userguide/strings/properties).
  * <p>
  * There are also functions that provide easy migration from C/POSIX functions
  * like isblank(). Their use is generally discouraged because the C/POSIX
@@ -133,7 +133,7 @@ import android.icu.util.VersionInfo;
  * Comparison:<ul>
  * <li> isUWhiteSpace=UCHAR_WHITE_SPACE: Unicode White_Space property;
  *       most of general categories "Z" (separators) + most whitespace ISO controls
- *       (including no-break spaces, but excluding IS1..IS4 and ZWSP)
+ *       (including no-break spaces, but excluding IS1..IS4)
  * <li> isWhitespace: Java isWhitespace; Z + whitespace ISO controls but excluding no-break spaces
  * <li> isSpaceChar: just Z (including no-break spaces)</ul>
  *
@@ -146,6 +146,28 @@ import android.icu.util.VersionInfo;
 
 public final class UCharacter implements ECharacterCategory, ECharacterDirection
 {
+    /**
+     * Lead surrogate bitmask
+     */
+    private static final int LEAD_SURROGATE_BITMASK = 0xFFFFFC00;
+
+    /**
+     * Trail surrogate bitmask
+     */
+    private static final int TRAIL_SURROGATE_BITMASK = 0xFFFFFC00;
+
+    /**
+     * Lead surrogate bits
+     */
+    private static final int LEAD_SURROGATE_BITS = 0xD800;
+
+    /**
+     * Trail surrogate bits
+     */
+    private static final int TRAIL_SURROGATE_BITS = 0xDC00;
+
+    private static final int U16_SURROGATE_OFFSET = ((0xd800 << 10) + 0xdc00 - 0x10000);
+
     // public inner classes ----------------------------------------------
 
     /**
@@ -970,6 +992,132 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
         /***/
         public static final int TANGUT_COMPONENTS_ID = 273; /*[18800]*/
 
+        // New blocks in Unicode 10.0
+
+        /***/
+        public static final int CJK_UNIFIED_IDEOGRAPHS_EXTENSION_F_ID = 274; /*[2CEB0]*/
+        /***/
+        public static final int KANA_EXTENDED_A_ID = 275; /*[1B100]*/
+        /***/
+        public static final int MASARAM_GONDI_ID = 276; /*[11D00]*/
+        /***/
+        public static final int NUSHU_ID = 277; /*[1B170]*/
+        /***/
+        public static final int SOYOMBO_ID = 278; /*[11A50]*/
+        /***/
+        public static final int SYRIAC_SUPPLEMENT_ID = 279; /*[0860]*/
+        /***/
+        public static final int ZANABAZAR_SQUARE_ID = 280; /*[11A00]*/
+
+        // New blocks in Unicode 11.0
+
+        /***/
+        public static final int CHESS_SYMBOLS_ID = 281; /*[1FA00]*/
+        /***/
+        public static final int DOGRA_ID = 282; /*[11800]*/
+        /***/
+        public static final int GEORGIAN_EXTENDED_ID = 283; /*[1C90]*/
+        /***/
+        public static final int GUNJALA_GONDI_ID = 284; /*[11D60]*/
+        /***/
+        public static final int HANIFI_ROHINGYA_ID = 285; /*[10D00]*/
+        /***/
+        public static final int INDIC_SIYAQ_NUMBERS_ID = 286; /*[1EC70]*/
+        /***/
+        public static final int MAKASAR_ID = 287; /*[11EE0]*/
+        /***/
+        public static final int MAYAN_NUMERALS_ID = 288; /*[1D2E0]*/
+        /***/
+        public static final int MEDEFAIDRIN_ID = 289; /*[16E40]*/
+        /***/
+        public static final int OLD_SOGDIAN_ID = 290; /*[10F00]*/
+        /***/
+        public static final int SOGDIAN_ID = 291; /*[10F30]*/
+
+        // New blocks in Unicode 12.0
+
+        /***/
+        public static final int EGYPTIAN_HIEROGLYPH_FORMAT_CONTROLS_ID = 292; /*[13430]*/
+        /***/
+        public static final int ELYMAIC_ID = 293; /*[10FE0]*/
+        /***/
+        public static final int NANDINAGARI_ID = 294; /*[119A0]*/
+        /***/
+        public static final int NYIAKENG_PUACHUE_HMONG_ID = 295; /*[1E100]*/
+        /***/
+        public static final int OTTOMAN_SIYAQ_NUMBERS_ID = 296; /*[1ED00]*/
+        /***/
+        public static final int SMALL_KANA_EXTENSION_ID = 297; /*[1B130]*/
+        /***/
+        public static final int SYMBOLS_AND_PICTOGRAPHS_EXTENDED_A_ID = 298; /*[1FA70]*/
+        /***/
+        public static final int TAMIL_SUPPLEMENT_ID = 299; /*[11FC0]*/
+        /***/
+        public static final int WANCHO_ID = 300; /*[1E2C0]*/
+
+        // New blocks in Unicode 13.0
+
+        /***/
+        public static final int CHORASMIAN_ID = 301; /*[10FB0]*/
+        /***/
+        public static final int CJK_UNIFIED_IDEOGRAPHS_EXTENSION_G_ID = 302; /*[30000]*/
+        /***/
+        public static final int DIVES_AKURU_ID = 303; /*[11900]*/
+        /***/
+        public static final int KHITAN_SMALL_SCRIPT_ID = 304; /*[18B00]*/
+        /***/
+        public static final int LISU_SUPPLEMENT_ID = 305; /*[11FB0]*/
+        /***/
+        public static final int SYMBOLS_FOR_LEGACY_COMPUTING_ID = 306; /*[1FB00]*/
+        /***/
+        public static final int TANGUT_SUPPLEMENT_ID = 307; /*[18D00]*/
+        /***/
+        public static final int YEZIDI_ID = 308; /*[10E80]*/
+
+        // New blocks in Unicode 14.0
+
+        /***/
+        public static final int ARABIC_EXTENDED_B_ID = 309; /*[0870]*/
+        /***/
+        public static final int CYPRO_MINOAN_ID = 310; /*[12F90]*/
+        /***/
+        public static final int ETHIOPIC_EXTENDED_B_ID = 311; /*[1E7E0]*/
+        /***/
+        public static final int KANA_EXTENDED_B_ID = 312; /*[1AFF0]*/
+        /***/
+        public static final int LATIN_EXTENDED_F_ID = 313; /*[10780]*/
+        /***/
+        public static final int LATIN_EXTENDED_G_ID = 314; /*[1DF00]*/
+        /***/
+        public static final int OLD_UYGHUR_ID = 315; /*[10F70]*/
+        /***/
+        public static final int TANGSA_ID = 316; /*[16A70]*/
+        /***/
+        public static final int TOTO_ID = 317; /*[1E290]*/
+        /***/
+        public static final int UNIFIED_CANADIAN_ABORIGINAL_SYLLABICS_EXTENDED_A_ID = 318; /*[11AB0]*/
+        /***/
+        public static final int VITHKUQI_ID = 319; /*[10570]*/
+        /***/
+        public static final int ZNAMENNY_MUSICAL_NOTATION_ID = 320; /*[1CF00]*/
+
+        // New blocks in Unicode 15.0
+
+        /***/
+        public static final int ARABIC_EXTENDED_C_ID = 321; /*[10EC0]*/
+        /***/
+        public static final int CJK_UNIFIED_IDEOGRAPHS_EXTENSION_H_ID = 322; /*[31350]*/
+        /***/
+        public static final int CYRILLIC_EXTENDED_D_ID = 323; /*[1E030]*/
+        /***/
+        public static final int DEVANAGARI_EXTENDED_A_ID = 324; /*[11B00]*/
+        /***/
+        public static final int KAKTOVIK_NUMERALS_ID = 325; /*[1D2C0]*/
+        /***/
+        public static final int KAWI_ID = 326; /*[11F00]*/
+        /***/
+        public static final int NAG_MUNDARI_ID = 327; /*[1E4D0]*/
+
         /**
          * One more than the highest normal UnicodeBlock value.
          * The highest value is available via UCharacter.getIntPropertyMaxValue(UProperty.BLOCK).
@@ -978,7 +1126,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
          * @hide unsupported on Android
          */
         @Deprecated
-        public static final int COUNT = 274;
+        public static final int COUNT = 328;
 
         // blocks objects ---------------------------------------------------
 
@@ -2062,6 +2210,179 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
         public static final UnicodeBlock TANGUT_COMPONENTS =
                 new UnicodeBlock("TANGUT_COMPONENTS", TANGUT_COMPONENTS_ID); /*[18800]*/
 
+        // New blocks in Unicode 10.0
+
+        /***/
+        public static final UnicodeBlock CJK_UNIFIED_IDEOGRAPHS_EXTENSION_F =
+                new UnicodeBlock("CJK_UNIFIED_IDEOGRAPHS_EXTENSION_F", CJK_UNIFIED_IDEOGRAPHS_EXTENSION_F_ID); /*[2CEB0]*/
+        /***/
+        public static final UnicodeBlock KANA_EXTENDED_A =
+                new UnicodeBlock("KANA_EXTENDED_A", KANA_EXTENDED_A_ID); /*[1B100]*/
+        /***/
+        public static final UnicodeBlock MASARAM_GONDI =
+                new UnicodeBlock("MASARAM_GONDI", MASARAM_GONDI_ID); /*[11D00]*/
+        /***/
+        public static final UnicodeBlock NUSHU = new UnicodeBlock("NUSHU", NUSHU_ID); /*[1B170]*/
+        /***/
+        public static final UnicodeBlock SOYOMBO = new UnicodeBlock("SOYOMBO", SOYOMBO_ID); /*[11A50]*/
+        /***/
+        public static final UnicodeBlock SYRIAC_SUPPLEMENT =
+                new UnicodeBlock("SYRIAC_SUPPLEMENT", SYRIAC_SUPPLEMENT_ID); /*[0860]*/
+        /***/
+        public static final UnicodeBlock ZANABAZAR_SQUARE =
+                new UnicodeBlock("ZANABAZAR_SQUARE", ZANABAZAR_SQUARE_ID); /*[11A00]*/
+
+        // New blocks in Unicode 11.0
+
+        /***/
+        public static final UnicodeBlock CHESS_SYMBOLS =
+                new UnicodeBlock("CHESS_SYMBOLS", CHESS_SYMBOLS_ID); /*[1FA00]*/
+        /***/
+        public static final UnicodeBlock DOGRA = new UnicodeBlock("DOGRA", DOGRA_ID); /*[11800]*/
+        /***/
+        public static final UnicodeBlock GEORGIAN_EXTENDED =
+                new UnicodeBlock("GEORGIAN_EXTENDED", GEORGIAN_EXTENDED_ID); /*[1C90]*/
+        /***/
+        public static final UnicodeBlock GUNJALA_GONDI =
+                new UnicodeBlock("GUNJALA_GONDI", GUNJALA_GONDI_ID); /*[11D60]*/
+        /***/
+        public static final UnicodeBlock HANIFI_ROHINGYA =
+                new UnicodeBlock("HANIFI_ROHINGYA", HANIFI_ROHINGYA_ID); /*[10D00]*/
+        /***/
+        public static final UnicodeBlock INDIC_SIYAQ_NUMBERS =
+                new UnicodeBlock("INDIC_SIYAQ_NUMBERS", INDIC_SIYAQ_NUMBERS_ID); /*[1EC70]*/
+        /***/
+        public static final UnicodeBlock MAKASAR = new UnicodeBlock("MAKASAR", MAKASAR_ID); /*[11EE0]*/
+        /***/
+        public static final UnicodeBlock MAYAN_NUMERALS =
+                new UnicodeBlock("MAYAN_NUMERALS", MAYAN_NUMERALS_ID); /*[1D2E0]*/
+        /***/
+        public static final UnicodeBlock MEDEFAIDRIN =
+                new UnicodeBlock("MEDEFAIDRIN", MEDEFAIDRIN_ID); /*[16E40]*/
+        /***/
+        public static final UnicodeBlock OLD_SOGDIAN =
+                new UnicodeBlock("OLD_SOGDIAN", OLD_SOGDIAN_ID); /*[10F00]*/
+        /***/
+        public static final UnicodeBlock SOGDIAN = new UnicodeBlock("SOGDIAN", SOGDIAN_ID); /*[10F30]*/
+
+        // New blocks in Unicode 12.0
+
+        /***/
+        public static final UnicodeBlock EGYPTIAN_HIEROGLYPH_FORMAT_CONTROLS =
+                new UnicodeBlock("EGYPTIAN_HIEROGLYPH_FORMAT_CONTROLS", EGYPTIAN_HIEROGLYPH_FORMAT_CONTROLS_ID); /*[13430]*/
+        /***/
+        public static final UnicodeBlock ELYMAIC = new UnicodeBlock("ELYMAIC", ELYMAIC_ID); /*[10FE0]*/
+        /***/
+        public static final UnicodeBlock NANDINAGARI =
+                new UnicodeBlock("NANDINAGARI", NANDINAGARI_ID); /*[119A0]*/
+        /***/
+        public static final UnicodeBlock NYIAKENG_PUACHUE_HMONG =
+                new UnicodeBlock("NYIAKENG_PUACHUE_HMONG", NYIAKENG_PUACHUE_HMONG_ID); /*[1E100]*/
+        /***/
+        public static final UnicodeBlock OTTOMAN_SIYAQ_NUMBERS =
+                new UnicodeBlock("OTTOMAN_SIYAQ_NUMBERS", OTTOMAN_SIYAQ_NUMBERS_ID); /*[1ED00]*/
+        /***/
+        public static final UnicodeBlock SMALL_KANA_EXTENSION =
+                new UnicodeBlock("SMALL_KANA_EXTENSION", SMALL_KANA_EXTENSION_ID); /*[1B130]*/
+        /***/
+        public static final UnicodeBlock SYMBOLS_AND_PICTOGRAPHS_EXTENDED_A =
+                new UnicodeBlock("SYMBOLS_AND_PICTOGRAPHS_EXTENDED_A", SYMBOLS_AND_PICTOGRAPHS_EXTENDED_A_ID); /*[1FA70]*/
+        /***/
+        public static final UnicodeBlock TAMIL_SUPPLEMENT =
+                new UnicodeBlock("TAMIL_SUPPLEMENT", TAMIL_SUPPLEMENT_ID); /*[11FC0]*/
+        /***/
+        public static final UnicodeBlock WANCHO = new UnicodeBlock("WANCHO", WANCHO_ID); /*[1E2C0]*/
+
+        // New blocks in Unicode 13.0
+
+        /***/
+        public static final UnicodeBlock CHORASMIAN =
+                new UnicodeBlock("CHORASMIAN", CHORASMIAN_ID); /*[10FB0]*/
+        /***/
+        public static final UnicodeBlock CJK_UNIFIED_IDEOGRAPHS_EXTENSION_G =
+                new UnicodeBlock("CJK_UNIFIED_IDEOGRAPHS_EXTENSION_G",
+                        CJK_UNIFIED_IDEOGRAPHS_EXTENSION_G_ID); /*[30000]*/
+        /***/
+        public static final UnicodeBlock DIVES_AKURU =
+                new UnicodeBlock("DIVES_AKURU", DIVES_AKURU_ID); /*[11900]*/
+        /***/
+        public static final UnicodeBlock KHITAN_SMALL_SCRIPT =
+                new UnicodeBlock("KHITAN_SMALL_SCRIPT", KHITAN_SMALL_SCRIPT_ID); /*[18B00]*/
+        /***/
+        public static final UnicodeBlock LISU_SUPPLEMENT =
+                new UnicodeBlock("LISU_SUPPLEMENT", LISU_SUPPLEMENT_ID); /*[11FB0]*/
+        /***/
+        public static final UnicodeBlock SYMBOLS_FOR_LEGACY_COMPUTING =
+                new UnicodeBlock("SYMBOLS_FOR_LEGACY_COMPUTING", SYMBOLS_FOR_LEGACY_COMPUTING_ID); /*[1FB00]*/
+        /***/
+        public static final UnicodeBlock TANGUT_SUPPLEMENT =
+                new UnicodeBlock("TANGUT_SUPPLEMENT", TANGUT_SUPPLEMENT_ID); /*[18D00]*/
+        /***/
+        public static final UnicodeBlock YEZIDI = new UnicodeBlock("YEZIDI", YEZIDI_ID); /*[10E80]*/
+
+        // New blocks in Unicode 14.0
+
+        /***/
+        public static final UnicodeBlock ARABIC_EXTENDED_B =
+                new UnicodeBlock("ARABIC_EXTENDED_B", ARABIC_EXTENDED_B_ID); /*[0870]*/
+        /***/
+        public static final UnicodeBlock CYPRO_MINOAN =
+                new UnicodeBlock("CYPRO_MINOAN", CYPRO_MINOAN_ID); /*[12F90]*/
+        /***/
+        public static final UnicodeBlock ETHIOPIC_EXTENDED_B =
+                new UnicodeBlock("ETHIOPIC_EXTENDED_B", ETHIOPIC_EXTENDED_B_ID); /*[1E7E0]*/
+        /***/
+        public static final UnicodeBlock KANA_EXTENDED_B =
+                new UnicodeBlock("KANA_EXTENDED_B", KANA_EXTENDED_B_ID); /*[1AFF0]*/
+        /***/
+        public static final UnicodeBlock LATIN_EXTENDED_F =
+                new UnicodeBlock("LATIN_EXTENDED_F", LATIN_EXTENDED_F_ID); /*[10780]*/
+        /***/
+        public static final UnicodeBlock LATIN_EXTENDED_G =
+                new UnicodeBlock("LATIN_EXTENDED_G", LATIN_EXTENDED_G_ID); /*[1DF00]*/
+        /***/
+        public static final UnicodeBlock OLD_UYGHUR =
+                new UnicodeBlock("OLD_UYGHUR", OLD_UYGHUR_ID); /*[10F70]*/
+        /***/
+        public static final UnicodeBlock TANGSA = new UnicodeBlock("TANGSA", TANGSA_ID); /*[16A70]*/
+        /***/
+        public static final UnicodeBlock TOTO = new UnicodeBlock("TOTO", TOTO_ID); /*[1E290]*/
+        /***/
+        public static final UnicodeBlock UNIFIED_CANADIAN_ABORIGINAL_SYLLABICS_EXTENDED_A =
+                new UnicodeBlock("UNIFIED_CANADIAN_ABORIGINAL_SYLLABICS_EXTENDED_A",
+                        UNIFIED_CANADIAN_ABORIGINAL_SYLLABICS_EXTENDED_A_ID); /*[11AB0]*/
+        /***/
+        public static final UnicodeBlock VITHKUQI =
+                new UnicodeBlock("VITHKUQI", VITHKUQI_ID); /*[10570]*/
+        /***/
+        public static final UnicodeBlock ZNAMENNY_MUSICAL_NOTATION =
+                new UnicodeBlock("ZNAMENNY_MUSICAL_NOTATION",
+                        ZNAMENNY_MUSICAL_NOTATION_ID); /*[1CF00]*/
+
+        // New blocks in Unicode 15.0
+
+        /***/
+        public static final UnicodeBlock ARABIC_EXTENDED_C =
+                new UnicodeBlock("ARABIC_EXTENDED_C", ARABIC_EXTENDED_C_ID); /*[10EC0]*/
+        /***/
+        public static final UnicodeBlock CJK_UNIFIED_IDEOGRAPHS_EXTENSION_H =
+                new UnicodeBlock("CJK_UNIFIED_IDEOGRAPHS_EXTENSION_H",
+                        CJK_UNIFIED_IDEOGRAPHS_EXTENSION_H_ID); /*[31350]*/
+        /***/
+        public static final UnicodeBlock CYRILLIC_EXTENDED_D =
+                new UnicodeBlock("CYRILLIC_EXTENDED_D", CYRILLIC_EXTENDED_D_ID); /*[1E030]*/
+        /***/
+        public static final UnicodeBlock DEVANAGARI_EXTENDED_A =
+                new UnicodeBlock("DEVANAGARI_EXTENDED_A", DEVANAGARI_EXTENDED_A_ID); /*[11B00]*/
+        /***/
+        public static final UnicodeBlock KAKTOVIK_NUMERALS =
+                new UnicodeBlock("KAKTOVIK_NUMERALS", KAKTOVIK_NUMERALS_ID); /*[1D2C0]*/
+        /***/
+        public static final UnicodeBlock KAWI = new UnicodeBlock("KAWI", KAWI_ID); /*[11F00]*/
+        /***/
+        public static final UnicodeBlock NAG_MUNDARI =
+                new UnicodeBlock("NAG_MUNDARI", NAG_MUNDARI_ID); /*[1E4D0]*/
+
         /**
          */
         public static final UnicodeBlock INVALID_CODE
@@ -2126,7 +2447,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
                 m = mref.get();
             }
             if (m == null) {
-                m = new HashMap<String, UnicodeBlock>(BLOCKS_.length);
+                m = new HashMap<>(BLOCKS_.length);
                 for (int i = 0; i < BLOCKS_.length; ++i) {
                     UnicodeBlock b = BLOCKS_[i];
                     String name = trimBlockName(
@@ -2134,7 +2455,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
                                     UProperty.NameChoice.LONG));
                     m.put(name, b);
                 }
-                mref = new SoftReference<Map<String, UnicodeBlock>>(m);
+                mref = new SoftReference<>(m);
             }
             UnicodeBlock b = m.get(trimBlockName(blockName));
             if (b == null) {
@@ -2576,6 +2897,39 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
         /***/
         public static final int AFRICAN_QAF = 88;
 
+        /***/
+        public static final int MALAYALAM_BHA = 89;
+        /***/
+        public static final int MALAYALAM_JA = 90;
+        /***/
+        public static final int MALAYALAM_LLA = 91;
+        /***/
+        public static final int MALAYALAM_LLLA = 92;
+        /***/
+        public static final int MALAYALAM_NGA = 93;
+        /***/
+        public static final int MALAYALAM_NNA = 94;
+        /***/
+        public static final int MALAYALAM_NNNA = 95;
+        /***/
+        public static final int MALAYALAM_NYA = 96;
+        /***/
+        public static final int MALAYALAM_RA = 97;
+        /***/
+        public static final int MALAYALAM_SSA = 98;
+        /***/
+        public static final int MALAYALAM_TTA = 99;
+
+        /***/
+        public static final int HANIFI_ROHINGYA_KINNA_YA = 100;
+        /***/
+        public static final int HANIFI_ROHINGYA_PA = 101;
+
+        /***/
+        public static final int THIN_YEH = 102;
+        /***/
+        public static final int VERTICAL_TAIL = 103;
+
         /**
          * One more than the highest normal JoiningGroup value.
          * The highest value is available via UCharacter.getIntPropertyMaxValue(UProperty.JoiningGroup).
@@ -2584,7 +2938,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
          * @hide unsupported on Android
          */
         @Deprecated
-        public static final int COUNT = 89;
+        public static final int COUNT = 104;
     }
 
     /**
@@ -2640,6 +2994,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
         public static final int GLUE_AFTER_ZWJ = 16;  /*[GAZ]*/
         /***/
         public static final int ZWJ = 17;             /*[ZWJ]*/
+
         /**
          * One more than the highest normal GraphemeClusterBreak value.
          * The highest value is available via UCharacter.getIntPropertyMaxValue(UProperty.GRAPHEME_CLUSTER_BREAK).
@@ -2713,6 +3068,8 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
         public static final int GLUE_AFTER_ZWJ = 20;   /*[GAZ]*/
         /***/
         public static final int ZWJ = 21;              /*[ZWJ]*/
+        /***/
+        public static final int WSEGSPACE = 22;        /*[WSEGSPACE]*/
         /**
          * One more than the highest normal WordBreak value.
          * The highest value is available via UCharacter.getIntPropertyMaxValue(UProperty.WORD_BREAK).
@@ -2721,7 +3078,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
          * @hide unsupported on Android
          */
         @Deprecated
-        public static final int COUNT = 22;
+        public static final int COUNT = 23;
     }
 
     /**
@@ -3021,6 +3378,142 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
          */
         @Deprecated
         public static final int COUNT = 3;
+    }
+
+    /**
+     * Indic Positional Category constants.
+     *
+     * @see UProperty#INDIC_POSITIONAL_CATEGORY
+     */
+    public static interface IndicPositionalCategory {
+        /***/
+        public static final int NA = 0;
+        /***/
+        public static final int BOTTOM = 1;
+        /***/
+        public static final int BOTTOM_AND_LEFT = 2;
+        /***/
+        public static final int BOTTOM_AND_RIGHT = 3;
+        /***/
+        public static final int LEFT = 4;
+        /***/
+        public static final int LEFT_AND_RIGHT = 5;
+        /***/
+        public static final int OVERSTRUCK = 6;
+        /***/
+        public static final int RIGHT = 7;
+        /***/
+        public static final int TOP = 8;
+        /***/
+        public static final int TOP_AND_BOTTOM = 9;
+        /***/
+        public static final int TOP_AND_BOTTOM_AND_RIGHT = 10;
+        /***/
+        public static final int TOP_AND_LEFT = 11;
+        /***/
+        public static final int TOP_AND_LEFT_AND_RIGHT = 12;
+        /***/
+        public static final int TOP_AND_RIGHT = 13;
+        /***/
+        public static final int VISUAL_ORDER_LEFT = 14;
+        /***/
+        public static final int TOP_AND_BOTTOM_AND_LEFT = 15;
+    }
+
+    /**
+     * Indic Syllabic Category constants.
+     *
+     * @see UProperty#INDIC_SYLLABIC_CATEGORY
+     */
+    public static interface IndicSyllabicCategory {
+        /***/
+        public static final int OTHER = 0;
+        /***/
+        public static final int AVAGRAHA = 1;
+        /***/
+        public static final int BINDU = 2;
+        /***/
+        public static final int BRAHMI_JOINING_NUMBER = 3;
+        /***/
+        public static final int CANTILLATION_MARK = 4;
+        /***/
+        public static final int CONSONANT = 5;
+        /***/
+        public static final int CONSONANT_DEAD = 6;
+        /***/
+        public static final int CONSONANT_FINAL = 7;
+        /***/
+        public static final int CONSONANT_HEAD_LETTER = 8;
+        /***/
+        public static final int CONSONANT_INITIAL_POSTFIXED = 9;
+        /***/
+        public static final int CONSONANT_KILLER = 10;
+        /***/
+        public static final int CONSONANT_MEDIAL = 11;
+        /***/
+        public static final int CONSONANT_PLACEHOLDER = 12;
+        /***/
+        public static final int CONSONANT_PRECEDING_REPHA = 13;
+        /***/
+        public static final int CONSONANT_PREFIXED = 14;
+        /***/
+        public static final int CONSONANT_SUBJOINED = 15;
+        /***/
+        public static final int CONSONANT_SUCCEEDING_REPHA = 16;
+        /***/
+        public static final int CONSONANT_WITH_STACKER = 17;
+        /***/
+        public static final int GEMINATION_MARK = 18;
+        /***/
+        public static final int INVISIBLE_STACKER = 19;
+        /***/
+        public static final int JOINER = 20;
+        /***/
+        public static final int MODIFYING_LETTER = 21;
+        /***/
+        public static final int NON_JOINER = 22;
+        /***/
+        public static final int NUKTA = 23;
+        /***/
+        public static final int NUMBER = 24;
+        /***/
+        public static final int NUMBER_JOINER = 25;
+        /***/
+        public static final int PURE_KILLER = 26;
+        /***/
+        public static final int REGISTER_SHIFTER = 27;
+        /***/
+        public static final int SYLLABLE_MODIFIER = 28;
+        /***/
+        public static final int TONE_LETTER = 29;
+        /***/
+        public static final int TONE_MARK = 30;
+        /***/
+        public static final int VIRAMA = 31;
+        /***/
+        public static final int VISARGA = 32;
+        /***/
+        public static final int VOWEL = 33;
+        /***/
+        public static final int VOWEL_DEPENDENT = 34;
+        /***/
+        public static final int VOWEL_INDEPENDENT = 35;
+    }
+
+    /**
+     * Vertical Orientation constants.
+     *
+     * @see UProperty#VERTICAL_ORIENTATION
+     */
+    public static interface VerticalOrientation {
+        /***/
+        public static final int ROTATED = 0;
+        /***/
+        public static final int TRANSFORMED_ROTATED = 1;
+        /***/
+        public static final int TRANSFORMED_UPRIGHT = 2;
+        /***/
+        public static final int UPRIGHT = 3;
     }
 
     // public data members -----------------------------------------------
@@ -3368,7 +3861,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * one-to-one mappings; it also omits information about context-sensitive
      * case mappings.<br> For more information about Unicode case mapping
      * please refer to the
-     * <a href=http://www.unicode.org/unicode/reports/tr21/>Technical report
+     * <a href=https://www.unicode.org/reports/tr21/>Technical report
      * #21</a>.<br>
      * Up-to-date Unicode implementation of java.lang.Character.isLowerCase()
      * @param ch code point to determine if it is in lowercase
@@ -3444,7 +3937,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * one-to-one mappings; it also omits information about context-sensitive
      * case mappings.<br>
      * For more information about Unicode case mapping please refer to the
-     * <a href=http://www.unicode.org/unicode/reports/tr21/>
+     * <a href=https://www.unicode.org/reports/tr21/>
      * Technical report #21</a>.<br>
      * Up-to-date Unicode implementation of java.lang.Character.isTitleCase().
      * @param ch code point to determine if it is in title case
@@ -3476,7 +3969,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * </ul>
      * Up-to-date Unicode implementation of
      * java.lang.Character.isUnicodeIdentifierPart().<br>
-     * See <a href=http://www.unicode.org/unicode/reports/tr8/>UTR #8</a>.
+     * See <a href=https://www.unicode.org/reports/tr8/>UTR #8</a>.
      * @param ch code point to determine if is can be part of a Unicode
      *        identifier
      * @return true if code point is any character belonging a unicode
@@ -3514,7 +4007,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * </ul>
      * Up-to-date Unicode implementation of
      * java.lang.Character.isUnicodeIdentifierStart().<br>
-     * See <a href=http://www.unicode.org/unicode/reports/tr8/>UTR #8</a>.
+     * See <a href=https://www.unicode.org/reports/tr8/>UTR #8</a>.
      * @param ch code point to determine if it can start a Unicode identifier
      * @return true if code point is the first character belonging a unicode
      *              identifier
@@ -3540,7 +4033,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * U+0000..U+0008, U+000E..U+001B, U+007F..U+009F.<br>
      * Up-to-date Unicode implementation of
      * java.lang.Character.isIdentifierIgnorable().<br>
-     * See <a href=http://www.unicode.org/unicode/reports/tr8/>UTR #8</a>.
+     * See <a href=https://www.unicode.org/reports/tr8/>UTR #8</a>.
      * <p>Note that Unicode just recommends to ignore Cf (format controls).
      * @param ch code point to be determined if it can be ignored in a Unicode
      *        identifier.
@@ -3568,7 +4061,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * For example, the case conversion for dot-less i and dotted I in Turkish,
      * or for final sigma in Greek.
      * For more information about Unicode case mapping please refer to the
-     * <a href=http://www.unicode.org/unicode/reports/tr21/>
+     * <a href=https://www.unicode.org/reports/tr21/>
      * Technical report #21</a>.<br>
      * Up-to-date Unicode implementation of java.lang.Character.isUpperCase().
      * @param ch code point to determine if it is in uppercase
@@ -3593,7 +4086,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * Full case mappings are applied by the case mapping functions
      * that take String parameters rather than code points (int).
      * See also the User Guide chapter on C/POSIX migration:
-     * http://www.icu-project.org/userguide/posix.html#case_mappings
+     * https://unicode-org.github.io/icu/userguide/icu/posix#case-mappings
      *
      * @param ch code point whose lowercase equivalent is to be retrieved
      * @return the lowercase equivalent code point
@@ -3640,7 +4133,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * Full case mappings are applied by the case mapping functions
      * that take String parameters rather than code points (int).
      * See also the User Guide chapter on C/POSIX migration:
-     * http://www.icu-project.org/userguide/posix.html#case_mappings
+     * https://unicode-org.github.io/icu/userguide/icu/posix#case-mappings
      *
      * @param ch code point  whose title case is to be retrieved
      * @return titlecase code point
@@ -3662,7 +4155,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * Full case mappings are applied by the case mapping functions
      * that take String parameters rather than code points (int).
      * See also the User Guide chapter on C/POSIX migration:
-     * http://www.icu-project.org/userguide/posix.html#case_mappings
+     * https://unicode-org.github.io/icu/userguide/icu/posix#case-mappings
      *
      * @param ch code point whose uppercase is to be retrieved
      * @return uppercase code point
@@ -3883,7 +4376,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * UCharacter.MIN_VALUE and UCharacter.MAX_VALUE or does not have a name.
      * <br>
      * Note calling any methods related to code point names, e.g. get*Name*()
-     * incurs a one-time initialisation cost to construct the name tables.
+     * incurs a one-time initialization cost to construct the name tables.
      * @param ch the code point for which to get the name
      * @return most current Unicode name
      */
@@ -3939,7 +4432,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      *      "&lt;codepoint_type-codepoint_hex_digits&gt;". E.g., &lt;noncharacter-fffe&gt;
      * </ul>
      * Note calling any methods related to code point names, e.g. get*Name*()
-     * incurs a one-time initialisation cost to construct the name tables.
+     * incurs a one-time initialization cost to construct the name tables.
      * @param ch the code point for which to get the name
      * @return a name for the argument codepoint
      */
@@ -3953,7 +4446,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * UCharacter.MIN_VALUE and UCharacter.MAX_VALUE or does not have a name.
      * <br>
      * Note calling any methods related to code point names, e.g. get*Name*()
-     * incurs a one-time initialisation cost to construct the name tables.
+     * incurs a one-time initialization cost to construct the name tables.
      * @param ch the code point for which to get the name alias
      * @return Unicode name alias, or null
      */
@@ -3983,7 +4476,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * <strong>[icu]</strong> <p>Finds a Unicode code point by its most current Unicode name and
      * return its code point value. All Unicode names are in uppercase.
      * Note calling any methods related to code point names, e.g. get*Name*()
-     * incurs a one-time initialisation cost to construct the name tables.
+     * incurs a one-time initialization cost to construct the name tables.
      * @param name most current Unicode character name whose code point is to
      *        be returned
      * @return code point or -1 if name is not found
@@ -4022,7 +4515,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      *      "&lt;codepoint_type-codepoint_hex_digits&gt;". E.g. &lt;noncharacter-FFFE&gt;
      * </ul>
      * Note calling any methods related to code point names, e.g. get*Name*()
-     * incurs a one-time initialisation cost to construct the name tables.
+     * incurs a one-time initialization cost to construct the name tables.
      * @param name codepoint name
      * @return code point associated with the name or -1 if the name is not
      *         found.
@@ -4036,7 +4529,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * <strong>[icu]</strong> <p>Find a Unicode character by its corrected name alias and return
      * its code point value. All Unicode names are in uppercase.
      * Note calling any methods related to code point names, e.g. get*Name*()
-     * incurs a one-time initialisation cost to construct the name tables.
+     * incurs a one-time initialization cost to construct the name tables.
      * @param name Unicode name alias whose code point is to be returned
      * @return code point or -1 if name is not found
      */
@@ -4238,6 +4731,26 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
     /**
      * <strong>[icu]</strong> Returns a code point corresponding to the two surrogate code units.
      *
+     * @param lead the lead unit
+     *        (In ICU 2.1-69 the type of both parameters was <code>char</code>.)
+     * @param trail the trail unit
+     * @return code point if lead and trail form a valid surrogate pair.
+     * @exception IllegalArgumentException thrown when the code units do
+     *            not form a valid surrogate pair
+     * @see #toCodePoint(int, int)
+     */
+    public static int getCodePoint(int lead, int trail)
+    {
+        if (isHighSurrogate(lead) && isLowSurrogate(trail)) {
+            return toCodePoint(lead, trail);
+        }
+        throw new IllegalArgumentException("Not a valid surrogate pair");
+    }
+
+    // BEGIN Android patch: Keep the `char` version on Android. See ICU-21655
+    /**
+     * <strong>[icu]</strong> Returns a code point corresponding to the two surrogate code units.
+     *
      * @param lead the lead char
      * @param trail the trail char
      * @return code point if surrogate characters are valid.
@@ -4246,11 +4759,9 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      */
     public static int getCodePoint(char lead, char trail)
     {
-        if (Character.isSurrogatePair(lead, trail)) {
-            return Character.toCodePoint(lead, trail);
-        }
-        throw new IllegalArgumentException("Illegal surrogate characters");
+        return getCodePoint((int) lead, (int) trail);
     }
+    // END Android patch: Keep the `char` version on Android. See ICU-21655
 
     /**
      * <strong>[icu]</strong> Returns the code point corresponding to the BMP code point.
@@ -4276,7 +4787,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      */
     public static String toUpperCase(String str)
     {
-        return toUpperCase(getDefaultCaseLocale(), str);
+        return CaseMapImpl.toUpper(getDefaultCaseLocale(), 0, str);
     }
 
     /**
@@ -4287,7 +4798,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      */
     public static String toLowerCase(String str)
     {
-        return toLowerCase(getDefaultCaseLocale(), str);
+        return CaseMapImpl.toLower(getDefaultCaseLocale(), 0, str);
     }
 
     /**
@@ -4305,7 +4816,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * @param str source string to be performed on
      * @param breakiter break iterator to determine the positions in which
      *        the character should be title cased.
-     * @return lowercase version of the argument string
+     * @return titlecase version of the argument string
      */
     public static String toTitleCase(String str, BreakIterator breakiter)
     {
@@ -4330,75 +4841,6 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
         return UCaseProps.getCaseLocale(locale);
     }
 
-    private static String toLowerCase(int caseLocale, String str) {
-        if (str.length() <= 100) {
-            if (str.isEmpty()) {
-                return str;
-            }
-            // Collect and apply only changes.
-            // Good if no or few changes. Bad (slow) if many changes.
-            Edits edits = new Edits();
-            StringBuilder replacementChars = CaseMapImpl.toLower(
-                    caseLocale, CaseMapImpl.OMIT_UNCHANGED_TEXT, str, new StringBuilder(), edits);
-            return applyEdits(str, replacementChars, edits);
-        } else {
-            return CaseMapImpl.toLower(caseLocale, 0, str,
-                    new StringBuilder(str.length()), null).toString();
-        }
-    }
-
-    private static String toUpperCase(int caseLocale, String str) {
-        if (str.length() <= 100) {
-            if (str.isEmpty()) {
-                return str;
-            }
-            // Collect and apply only changes.
-            // Good if no or few changes. Bad (slow) if many changes.
-            Edits edits = new Edits();
-            StringBuilder replacementChars = CaseMapImpl.toUpper(
-                    caseLocale, CaseMapImpl.OMIT_UNCHANGED_TEXT, str, new StringBuilder(), edits);
-            return applyEdits(str, replacementChars, edits);
-        } else {
-            return CaseMapImpl.toUpper(caseLocale, 0, str,
-                    new StringBuilder(str.length()), null).toString();
-        }
-    }
-
-    private static String toTitleCase(int caseLocale, int options, BreakIterator titleIter, String str) {
-        if (str.length() <= 100) {
-            if (str.isEmpty()) {
-                return str;
-            }
-            // Collect and apply only changes.
-            // Good if no or few changes. Bad (slow) if many changes.
-            Edits edits = new Edits();
-            StringBuilder replacementChars = CaseMapImpl.toTitle(
-                    caseLocale, options | CaseMapImpl.OMIT_UNCHANGED_TEXT, titleIter, str,
-                    new StringBuilder(), edits);
-            return applyEdits(str, replacementChars, edits);
-        } else {
-            return CaseMapImpl.toTitle(caseLocale, options, titleIter, str,
-                    new StringBuilder(str.length()), null).toString();
-        }
-    }
-
-    private static String applyEdits(String str, StringBuilder replacementChars, Edits edits) {
-        if (!edits.hasChanges()) {
-            return str;
-        }
-        StringBuilder result = new StringBuilder(str.length() + edits.lengthDelta());
-        for (Edits.Iterator ei = edits.getCoarseIterator(); ei.next();) {
-            if (ei.hasChange()) {
-                int i = ei.replacementIndex();
-                result.append(replacementChars, i, i + ei.newLength());
-            } else {
-                int i = ei.sourceIndex();
-                result.append(str, i, i + ei.oldLength());
-            }
-        }
-        return result.toString();
-    }
-
     /**
      * Returns the uppercase version of the argument string.
      * Casing is dependent on the argument locale and context-sensitive.
@@ -4408,7 +4850,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      */
     public static String toUpperCase(Locale locale, String str)
     {
-        return toUpperCase(getCaseLocale(locale), str);
+        return CaseMapImpl.toUpper(getCaseLocale(locale), 0, str);
     }
 
     /**
@@ -4419,7 +4861,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * @return uppercase version of the argument string
      */
     public static String toUpperCase(ULocale locale, String str) {
-        return toUpperCase(getCaseLocale(locale), str);
+        return CaseMapImpl.toUpper(getCaseLocale(locale), 0, str);
     }
 
     /**
@@ -4431,7 +4873,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      */
     public static String toLowerCase(Locale locale, String str)
     {
-        return toLowerCase(getCaseLocale(locale), str);
+        return CaseMapImpl.toLower(getCaseLocale(locale), 0, str);
     }
 
     /**
@@ -4442,7 +4884,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * @return lowercase version of the argument string
      */
     public static String toLowerCase(ULocale locale, String str) {
-        return toLowerCase(getCaseLocale(locale), str);
+        return CaseMapImpl.toLower(getCaseLocale(locale), 0, str);
     }
 
     /**
@@ -4461,7 +4903,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * @param str source string to be performed on
      * @param breakiter break iterator to determine the positions in which
      *        the character should be title cased.
-     * @return lowercase version of the argument string
+     * @return titlecase version of the argument string
      */
     public static String toTitleCase(Locale locale, String str,
             BreakIterator breakiter)
@@ -4485,7 +4927,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * @param str source string to be performed on
      * @param titleIter break iterator to determine the positions in which
      *        the character should be title cased.
-     * @return lowercase version of the argument string
+     * @return titlecase version of the argument string
      */
     public static String toTitleCase(ULocale locale, String str,
             BreakIterator titleIter) {
@@ -4509,96 +4951,18 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * @param titleIter break iterator to determine the positions in which
      *        the character should be title cased.
      * @param options bit set to modify the titlecasing operation
-     * @return lowercase version of the argument string
+     * @return titlecase version of the argument string
      * @see #TITLECASE_NO_LOWERCASE
      * @see #TITLECASE_NO_BREAK_ADJUSTMENT
      */
     public static String toTitleCase(ULocale locale, String str,
             BreakIterator titleIter, int options) {
-        if(titleIter == null) {
-            if (locale == null) {
-                locale = ULocale.getDefault();
-            }
-            titleIter = BreakIterator.getWordInstance(locale);
+        if (titleIter == null && locale == null) {
+            locale = ULocale.getDefault();
         }
+        titleIter = CaseMapImpl.getTitleBreakIterator(locale, options, titleIter);
         titleIter.setText(str);
-        return toTitleCase(getCaseLocale(locale), options, titleIter, str);
-    }
-
-
-    private static final int BREAK_MASK =
-            (1<<UCharacterCategory.DECIMAL_DIGIT_NUMBER)
-            | (1<<UCharacterCategory.OTHER_LETTER)
-            | (1<<UCharacterCategory.MODIFIER_LETTER);
-
-    /**
-     * Return a string with just the first word titlecased, for menus and UI, etc. This does not affect most of the string,
-     * and sometimes has no effect at all; the original string is returned whenever casing
-     * would not be appropriate for the first word (such as for CJK characters or initial numbers).
-     * Initial non-letters are skipped in order to find the character to change.
-     * Characters past the first affected are left untouched: see also TITLECASE_NO_LOWERCASE.
-     * <p>Examples:
-     * <table border='1'><tr><th>Source</th><th>Result</th><th>Locale</th></tr>
-     * <tr><td>anglo-American locale</td><td>Anglo-American locale</td></tr>
-     * <tr><td>“contact us”</td><td>“Contact us”</td></tr>
-     * <tr><td>49ers win!</td><td>49ers win!</td></tr>
-     * <tr><td>丰(abc)</td><td>丰(abc)</td></tr>
-     * <tr><td>«ijs»</td><td>«Ijs»</td></tr>
-     * <tr><td>«ijs»</td><td>«IJs»</td><td>nl-BE</td></tr>
-     * <tr><td>«ijs»</td><td>«İjs»</td><td>tr-DE</td></tr>
-     * </table>
-     * @param locale the locale for accessing exceptional behavior (eg for tr).
-     * @param str the source string to change
-     * @return the modified string, or the original if no modifications were necessary.
-     * @deprecated ICU internal only
-     * @hide original deprecated declaration
-     * @hide draft / provisional / internal are hidden on Android
-     */
-    @Deprecated
-    public static String toTitleFirst(ULocale locale, String str) {
-        int c = 0;
-        for (int i = 0; i < str.length(); i += UCharacter.charCount(c)) {
-            c = UCharacter.codePointAt(str, i);
-            int propertyMask = UCharacter.getIntPropertyValue(c, UProperty.GENERAL_CATEGORY_MASK);
-            if ((propertyMask & BREAK_MASK) != 0) { // handle "49ers", initial CJK
-                break;
-            }
-            if (UCaseProps.INSTANCE.getType(c) == UCaseProps.NONE) {
-                continue;
-            }
-
-            // we now have the first cased character
-            // What we really want is something like:
-            // String titled = UCharacter.toTitleCase(locale, str, i, outputCharsTaken);
-            // That is, just give us the titlecased string, for the locale, at i and following,
-            // and tell us how many characters are replaced.
-            // The following won't work completely: it needs some more substantial changes to UCaseProps
-
-            String substring = str.substring(i, i+UCharacter.charCount(c));
-            String titled = UCharacter.toTitleCase(locale, substring, BreakIterator.getSentenceInstance(locale), 0);
-
-            // skip if no change
-            if (titled.codePointAt(0) == c) {
-                // Using 0 is safe, since any change in titling will not have first initial character
-                break;
-            }
-            StringBuilder result = new StringBuilder(str.length()).append(str, 0, i);
-            int startOfSuffix;
-
-            // handle dutch, but check first for 'i', since that's faster. Should be built into UCaseProps.
-
-            if (c == 'i' && locale.getLanguage().equals("nl") && i < str.length() && str.charAt(i+1) == 'j') {
-                result.append("IJ");
-                startOfSuffix = 2;
-            } else {
-                result.append(titled);
-                startOfSuffix = i + UCharacter.charCount(c);
-            }
-
-            // add the remainder, and return
-            return result.append(str, startOfSuffix, str.length()).toString();
-        }
-        return str; // no change
+        return CaseMapImpl.toTitle(getCaseLocale(locale), options, titleIter, str);
     }
 
     /**
@@ -4618,18 +4982,19 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * @param titleIter break iterator to determine the positions in which
      *        the character should be title cased.
      * @param options bit set to modify the titlecasing operation
-     * @return lowercase version of the argument string
+     * @return titlecase version of the argument string
      * @see #TITLECASE_NO_LOWERCASE
      * @see #TITLECASE_NO_BREAK_ADJUSTMENT
      */
     public static String toTitleCase(Locale locale, String str,
             BreakIterator titleIter,
             int options) {
-        if(titleIter == null) {
-            titleIter = BreakIterator.getWordInstance(locale);
+        if (titleIter == null && locale == null) {
+            locale = Locale.getDefault();
         }
+        titleIter = CaseMapImpl.getTitleBreakIterator(locale, options, titleIter);
         titleIter.setText(str);
-        return toTitleCase(getCaseLocale(locale), options, titleIter, str);
+        return CaseMapImpl.toTitle(getCaseLocale(locale), options, titleIter, str);
     }
 
     /**
@@ -4644,7 +5009,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * Full case mappings are applied by the case mapping functions
      * that take String parameters rather than code points (int).
      * See also the User Guide chapter on C/POSIX migration:
-     * http://www.icu-project.org/userguide/posix.html#case_mappings
+     * https://unicode-org.github.io/icu/userguide/icu/posix#case-mappings
      *
      * @param ch             the character to be converted
      * @param defaultmapping Indicates whether the default mappings defined in
@@ -4711,7 +5076,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * Full case mappings are applied by the case mapping functions
      * that take String parameters rather than code points (int).
      * See also the User Guide chapter on C/POSIX migration:
-     * http://www.icu-project.org/userguide/posix.html#case_mappings
+     * https://unicode-org.github.io/icu/userguide/icu/posix#case-mappings
      *
      * @param ch the character to be converted
      * @param options A bit set for special processing. Currently the recognised options
@@ -4739,19 +5104,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * @see #foldCase(int, boolean)
      */
     public static final String foldCase(String str, int options) {
-        if (str.length() <= 100) {
-            if (str.isEmpty()) {
-                return str;
-            }
-            // Collect and apply only changes.
-            // Good if no or few changes. Bad (slow) if many changes.
-            Edits edits = new Edits();
-            StringBuilder replacementChars = CaseMapImpl.fold(
-                    options | CaseMapImpl.OMIT_UNCHANGED_TEXT, str, new StringBuilder(), edits);
-            return applyEdits(str, replacementChars, edits);
-        } else {
-            return CaseMapImpl.fold(options, str, new StringBuilder(str.length()), null).toString();
-        }
+        return CaseMapImpl.fold(options, str);
     }
 
     /**
@@ -4972,7 +5325,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
     }
 
     /**
-     * <strong>[icu]</strong> <p>Check a binary Unicode property for a code point.
+     * <strong>[icu]</strong> Check a binary Unicode property for a code point.
      * <p>Unicode, especially in version 3.2, defines many more properties
      * than the original set in UnicodeData.txt.
      * <p>This API is intended to reflect Unicode properties as defined in
@@ -4998,6 +5351,41 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
     public static boolean hasBinaryProperty(int ch, int property)
     {
         return UCharacterProperty.INSTANCE.hasBinaryProperty(ch, property);
+    }
+
+    /**
+     * <strong>[icu]</strong> Returns true if the property is true for the string.
+     * Same as {@link #hasBinaryProperty(int, int)}
+     * if the string contains exactly one code point.
+     *
+     * <p>Most properties apply only to single code points.
+     * <a href="https://www.unicode.org/reports/tr51/#Emoji_Sets">UTS #51 Unicode Emoji</a>
+     * defines several properties of strings.
+     *
+     * @param s String to test.
+     * @param property UProperty selector constant, identifies which binary property to check.
+     *        Must be BINARY_START&lt;=which&lt;BINARY_LIMIT.
+     * @return true or false according to the binary Unicode property value for the string.
+     *         Also false if <code>property</code> is out of bounds or if the Unicode version
+     *         does not have data for the property at all.
+     *
+     * @see android.icu.lang.UProperty
+     */
+    public static boolean hasBinaryProperty(CharSequence s, int property) {
+        int length = s.length();
+        if (length == 1) {
+            return hasBinaryProperty(s.charAt(0), property);  // single code point
+        } else if (length == 2) {
+            // first code point
+            int c = Character.codePointAt(s, 0);
+            if (Character.charCount(c) == length) {
+                return hasBinaryProperty(c, property);  // single code point
+            }
+        }
+        // Only call into EmojiProps for a relevant property,
+        // so that we not unnecessarily try to load its data file.
+        return UProperty.BASIC_EMOJI <= property && property <= UProperty.RGI_EMOJI &&
+            EmojiProps.INSTANCE.hasBinaryProperty(s, property);
     }
 
     /**
@@ -5046,7 +5434,7 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
     }
 
     /**
-     * <strong>[icu]</strong> <p>Returns the property value for an Unicode property type of a code point.
+     * <strong>[icu]</strong> Returns the property value for a Unicode property type of a code point.
      * Also returns binary and mask property values.
      * <p>Unicode, especially in version 3.2, defines many more properties than
      * the original set in UnicodeData.txt.
@@ -5070,8 +5458,9 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      *        UProperty.MASK_START &lt;= type &lt; UProperty.MASK_LIMIT.
      * @return numeric value that is directly the property value or,
      *         for enumerated properties, corresponds to the numeric value of
-     *         the enumerated constant of the respective property value
-     *         enumeration type (cast to enum type if necessary).
+     *         the enumerated constant of the respective property value type
+     *         ({@link ECharacterCategory}, {@link ECharacterDirection},
+     *         {@link DecompositionType}, etc.).
      *         Returns 0 or 1 (for false / true) for binary Unicode properties.
      *         Returns a bit-mask for mask properties.
      *         Returns 0 if 'type' is out of bounds or if the Unicode version
@@ -5255,25 +5644,67 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
     }
 
     /**
-     * Same as {@link Character#isHighSurrogate}.
+     * Same as {@link Character#isHighSurrogate},
+     * except that the ICU version accepts <code>int</code> for code points.
+     *
+     * @param codePoint the code point to check
+     *        (In ICU 3.0-69 the type of this parameter was <code>char</code>.)
+     * @return true if codePoint is a high (lead) surrogate
+     */
+    public static boolean isHighSurrogate(int codePoint) {
+        return (codePoint & LEAD_SURROGATE_BITMASK) == LEAD_SURROGATE_BITS;
+    }
+
+    // BEGIN Android patch: Keep the `char` version on Android. See ICU-21655
+    /**
+     * Same as {@link Character#isHighSurrogate},
      *
      * @param ch the char to check
      * @return true if ch is a high (lead) surrogate
      */
     public static boolean isHighSurrogate(char ch) {
-        return Character.isHighSurrogate(ch);
+        return isHighSurrogate((int) ch);
     }
+    // END Android patch: Keep the `char` version on Android. See ICU-21655
 
     /**
-     * Same as {@link Character#isLowSurrogate}.
+     * Same as {@link Character#isLowSurrogate},
+     * except that the ICU version accepts <code>int</code> for code points.
+     *
+     * @param codePoint the code point to check
+     *        (In ICU 3.0-69 the type of this parameter was <code>char</code>.)
+     * @return true if codePoint is a low (trail) surrogate
+     */
+    public static boolean isLowSurrogate(int codePoint) {
+        return (codePoint & TRAIL_SURROGATE_BITMASK) == TRAIL_SURROGATE_BITS;
+    }
+
+    // BEGIN Android patch: Keep the `char` version on Android. See ICU-21655
+    /**
+     * Same as {@link Character#isLowSurrogate},
      *
      * @param ch the char to check
      * @return true if ch is a low (trail) surrogate
      */
     public static boolean isLowSurrogate(char ch) {
-        return Character.isLowSurrogate(ch);
+        return isLowSurrogate((int) ch);
+    }
+    // END Android patch: Keep the `char` version on Android. See ICU-21655
+
+    /**
+     * Same as {@link Character#isSurrogatePair},
+     * except that the ICU version accepts <code>int</code> for code points.
+     *
+     * @param high the high (lead) unit
+     *        (In ICU 3.0-69 the type of both parameters was <code>char</code>.)
+     * @param low the low (trail) unit
+     * @return true if high, low form a surrogate pair
+     */
+    public static final boolean isSurrogatePair(int high, int low) {
+        return isHighSurrogate(high) && isLowSurrogate(low);
     }
 
+    // BEGIN Android patch: Keep the `char` version on Android. See ICU-21655
     /**
      * Same as {@link Character#isSurrogatePair}.
      *
@@ -5282,8 +5713,9 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * @return true if high, low form a surrogate pair
      */
     public static final boolean isSurrogatePair(char high, char low) {
-        return Character.isSurrogatePair(high, low);
+        return isSurrogatePair((int) high, (int) low);
     }
+    // END Android patch: Keep the `char` version on Android. See ICU-21655
 
     /**
      * Same as {@link Character#charCount}.
@@ -5298,6 +5730,24 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
     }
 
     /**
+     * Same as {@link Character#toCodePoint},
+     * except that the ICU version accepts <code>int</code> for code points.
+     * Returns the code point represented by the two surrogate code units.
+     * This does not check the surrogate pair for validity.
+     *
+     * @param high the high (lead) surrogate
+     *        (In ICU 3.0-69 the type of both parameters was <code>char</code>.)
+     * @param low the low (trail) surrogate
+     * @return the code point formed by the surrogate pair
+     * @see #getCodePoint(int, int)
+     */
+    public static final int toCodePoint(int high, int low) {
+        // see ICU4C U16_GET_SUPPLEMENTARY()
+        return (high << 10) + low - U16_SURROGATE_OFFSET;
+    }
+
+    // BEGIN Android patch: Keep the `char` version on Android. See ICU-21655
+    /**
      * Same as {@link Character#toCodePoint}.
      * Returns the code point represented by the two surrogate code units.
      * This does not check the surrogate pair for validity.
@@ -5307,8 +5757,9 @@ public final class UCharacter implements ECharacterCategory, ECharacterDirection
      * @return the code point formed by the surrogate pair
      */
     public static final int toCodePoint(char high, char low) {
-        return Character.toCodePoint(high, low);
+        return toCodePoint((int) high, (int) low);
     }
+    // END Android patch: Keep the `char` version on Android. See ICU-21655
 
     /**
      * Same as {@link Character#codePointAt(CharSequence, int)}.

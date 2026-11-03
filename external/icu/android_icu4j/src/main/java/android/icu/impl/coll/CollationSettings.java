@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 *******************************************************************************
 * Copyright (C) 2013-2015, International Business Machines
@@ -139,9 +139,7 @@ public final class CollationSettings extends SharedObject {
         if(codesLength == codesAndRanges.length) {
             codes = codesAndRanges;
         } else {
-            // TODO: Java 6: Arrays.copyOf(codes, codesLength);
-            codes = new int[codesLength];
-            System.arraycopy(codesAndRanges, 0, codes, 0, codesLength);
+            codes = Arrays.copyOf(codesAndRanges, codesLength);
         }
         int rangesStart = codesLength;
         int rangesLimit = codesAndRanges.length;

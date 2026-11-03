@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 1996-2014, International Business Machines Corporation and
@@ -28,16 +28,19 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import android.icu.dev.test.format.MeasureUnitTest;
 import android.icu.dev.test.format.PluralRulesTest;
+import android.icu.dev.test.number.NumberFormatterApiTest;
+import android.icu.dev.test.number.PropertiesTest;
 import android.icu.impl.JavaTimeZone;
 import android.icu.impl.OlsonTimeZone;
 import android.icu.impl.TimeZoneAdapter;
 import android.icu.impl.URLHandler;
-import android.icu.impl.Utility;
 import android.icu.math.BigDecimal;
 import android.icu.math.MathContext;
+import android.icu.message2.Mf2DataModel;
 import android.icu.util.AnnualTimeZoneRule;
 import android.icu.util.Calendar;
 import android.icu.util.Currency;
@@ -46,6 +49,7 @@ import android.icu.util.DateTimeRule;
 import android.icu.util.GregorianCalendar;
 import android.icu.util.ICUCloneNotSupportedException;
 import android.icu.util.ICUException;
+import android.icu.util.ICUInputTooLongException;
 import android.icu.util.ICUUncheckedIOException;
 import android.icu.util.InitialTimeZoneRule;
 import android.icu.util.RuleBasedTimeZone;
@@ -55,6 +59,7 @@ import android.icu.util.TimeZone;
 import android.icu.util.TimeZoneRule;
 import android.icu.util.ULocale;
 import android.icu.util.VTimeZone;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author emader
@@ -62,6 +67,7 @@ import android.icu.util.VTimeZone;
  * TODO To change the template for this generated type comment go to
  * Window - Preferences - Java - Code Style - Code Templates
  */
+@MainTestShard
 public class SerializableTestUtility {
     private static Class serializable;
     static {
@@ -707,7 +713,7 @@ public class SerializableTestUtility {
             return a == null ? b == null :
                     b == null ? false :
                             a.getClass().equals(b.getClass()) &&
-                            Utility.objectEquals(a.getMessage(), b.getMessage()) &&
+                            Objects.equals(a.getMessage(), b.getMessage()) &&
                             sameThrowable(a.getCause(), b.getCause());
         }
     }
@@ -745,6 +751,40 @@ public class SerializableTestUtility {
                     new ICUCloneNotSupportedException(new RuntimeException("rte1")),
                     new ICUCloneNotSupportedException("msg2", new RuntimeException("rte2"))
             };
+        }
+    }
+
+    private static class ICUInputTooLongExceptionHandler extends ExceptionHandlerBase {
+        @Override
+        public Object[] getTestObjects() {
+            return new ICUInputTooLongException[] {
+                    new ICUInputTooLongException(),
+                    new ICUInputTooLongException("msg1"),
+                    new ICUInputTooLongException(new RuntimeException("rte1")),
+                    new ICUInputTooLongException("msg2", new RuntimeException("rte2"))
+            };
+        }
+    }
+
+    private static class Mf2DataModelOrderedMapHandler implements Handler {
+        @Override
+        public Object[] getTestObjects() {
+            Mf2DataModel.OrderedMap<String, Object> mapWithContent = new Mf2DataModel.OrderedMap<>();
+            mapWithContent.put("number", Double.valueOf(3.1416));
+            mapWithContent.put("date", new Date(1664582400000L /* 20221001T000000Z */));
+            mapWithContent.put("string", "testing");
+            return new Mf2DataModel.OrderedMap[] {
+                    new Mf2DataModel.OrderedMap(),
+                    mapWithContent
+            };
+        }
+
+        @Override
+        public boolean hasSameBehavior(Object a, Object b) {
+            // OrderedMap extends LinkedHashMap, without adding any functionality, nothing to test.
+            Mf2DataModel.OrderedMap ra = (Mf2DataModel.OrderedMap)a;
+            Mf2DataModel.OrderedMap rb = (Mf2DataModel.OrderedMap)b;
+            return ra.equals(rb);
         }
     }
 
@@ -817,6 +857,11 @@ public class SerializableTestUtility {
         map.put("android.icu.text.DateFormat$Field", new FormatHandler.DateFormatFieldHandler());
         map.put("android.icu.text.ChineseDateFormat$Field", new FormatHandler.ChineseDateFormatFieldHandler());
         map.put("android.icu.text.MessageFormat$Field", new FormatHandler.MessageFormatFieldHandler());
+        map.put("android.icu.text.RelativeDateTimeFormatter$Field", new FormatHandler.RelativeDateTimeFormatterFieldHandler());
+        map.put("android.icu.text.DateIntervalFormat$SpanField", new FormatHandler.DateIntervalSpanFieldHandler());
+        map.put("android.icu.text.ListFormatter$Field", new FormatHandler.ListFormatterFieldHandler());
+        map.put("android.icu.text.ListFormatter$SpanField", new FormatHandler.ListFormatterSpanFieldHandler());
+        map.put("android.icu.number.NumberRangeFormatter$SpanField", new FormatHandler.NumberRangeFormatterSpanFieldHandler());
 
         map.put("android.icu.impl.duration.BasicDurationFormat", new FormatHandler.BasicDurationFormatHandler());
         map.put("android.icu.impl.RelativeDateFormat", new FormatHandler.RelativeDateFormatHandler());
@@ -827,11 +872,20 @@ public class SerializableTestUtility {
         map.put("android.icu.text.PluralRules$FixedDecimal", new PluralRulesTest.FixedDecimalHandler());
         map.put("android.icu.util.MeasureUnit", new MeasureUnitTest.MeasureUnitHandler());
         map.put("android.icu.util.TimeUnit", new MeasureUnitTest.MeasureUnitHandler());
+        map.put("android.icu.util.NoUnit", new MeasureUnitTest.MeasureUnitHandler());
         map.put("android.icu.text.MeasureFormat", new MeasureUnitTest.MeasureFormatHandler());
+        map.put("android.icu.impl.number.Properties", new PropertiesTest.ICU59PropertiesHandler());
+        map.put("android.icu.impl.number.DecimalFormatProperties", new PropertiesTest.PropertiesHandler());
+        map.put("android.icu.impl.number.CustomSymbolCurrency", new CurrencyHandler());
+        map.put("android.icu.number.SkeletonSyntaxException", new ExceptionHandler.SkeletonSyntaxExceptionHandler());
+        map.put("android.icu.impl.number.LocalizedNumberFormatterAsFormat", new NumberFormatterApiTest.FormatHandler());
 
         map.put("android.icu.util.ICUException", new ICUExceptionHandler());
         map.put("android.icu.util.ICUUncheckedIOException", new ICUUncheckedIOExceptionHandler());
         map.put("android.icu.util.ICUCloneNotSupportedException", new ICUCloneNotSupportedExceptionHandler());
+        map.put("android.icu.util.ICUInputTooLongException", new ICUInputTooLongExceptionHandler());
+
+        map.put("android.icu.message2.Mf2DataModel$OrderedMap", new Mf2DataModelOrderedMapHandler());
     }
 
     /*
@@ -923,6 +977,11 @@ public class SerializableTestUtility {
 
             if (className.equals("android.icu.text.PluralRules$FixedDecimal")) {
                 // Known Issue: "10268", "Serializable interface is not implemented in PluralRules$FixedDecimal"
+                return;
+            }
+
+            if (className.equals("android.icu.text.DecimalFormat_ICU58")) {
+                // Do not test the legacy DecimalFormat class in ICU 59
                 return;
             }
 

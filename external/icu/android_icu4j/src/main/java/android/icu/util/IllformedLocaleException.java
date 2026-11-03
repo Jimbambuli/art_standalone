@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2009-2012, International Business Machines Corporation and    *
@@ -14,7 +14,6 @@ package android.icu.util;
  * indicate that an argument is not a well-formed BCP 47 tag.
  * 
  * @see ULocale
- * @hide Only a subset of ICU is exposed in Android
  */
 public class IllformedLocaleException extends RuntimeException {
 

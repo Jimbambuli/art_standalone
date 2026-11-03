@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 *******************************************************************************
 * Copyright (C) 1996-2014, International Business Machines Corporation and    *
@@ -11,6 +11,8 @@
 package android.icu.dev.test.lang;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.dev.test.UTF16Util;
@@ -19,12 +21,15 @@ import android.icu.lang.UCharacter;
 import android.icu.text.ReplaceableString;
 import android.icu.text.UTF16;
 import android.icu.text.UTF16.StringComparator;
+import android.icu.testsharding.MainTestShard;
 
 /**
 * Testing class for UTF16
 * @author Syn Wee Quek
 * @since feb 09 2001
 */
+@MainTestShard
+@RunWith(JUnit4.class)
 public final class UTF16Test extends TestFmwk
 {
     // constructor ===================================================
@@ -231,7 +236,7 @@ public final class UTF16Test extends TestFmwk
         UTF16.charAt(replaceable, 13) != 0x10002) {
         errln("FAIL Getting character from replaceable error" );
           }
-          
+
           StringBuffer strbuffer = new StringBuffer("0xD805");
           UTF16.charAt((CharSequence)strbuffer, 0);
     }
@@ -478,26 +483,35 @@ public final class UTF16Test extends TestFmwk
     @Test
     public void TestGetCharCountSurrogate()
     {
-        if (UTF16.getCharCount(0x61) != 1 ||
-        UTF16.getCharCount(0x10000) != 2) {
-        errln("FAIL getCharCount result failure");
+        if (UTF16.getCharCount(0x61) != 1 || UTF16.getCharCount(0x10000) != 2) {
+            errln("FAIL getCharCount result failure");
         }
+        // ICU-21655 (ICU 70) widened the surrogate functions from char to int.
+        // Test with both types, in case someone like Android retains binary-compatibility overloads.
         if (UTF16.getLeadSurrogate(0x61) != 0 ||
-        UTF16.getTrailSurrogate(0x61) != 0x61 ||
-        UTF16.isLeadSurrogate((char)0x61) ||
-        UTF16.isTrailSurrogate((char)0x61) ||
-        UTF16.getLeadSurrogate(0x10000) != 0xd800 ||
-        UTF16.getTrailSurrogate(0x10000) != 0xdc00 ||
-        UTF16.isLeadSurrogate((char)0xd800) != true ||
-        UTF16.isTrailSurrogate((char)0xd800) ||
-        UTF16.isLeadSurrogate((char)0xdc00) ||
-        UTF16.isTrailSurrogate((char)0xdc00) != true) {
-        errln("FAIL *Surrogate result failure");
+                UTF16.getTrailSurrogate(0x61) != 0x61 ||
+                UTF16.isLeadSurrogate((char)0x61) ||
+                UTF16.isTrailSurrogate((char)0x61) ||
+                UTF16.isLeadSurrogate(0x61) ||
+                UTF16.isTrailSurrogate(0x61) ||
+                UTF16.getLeadSurrogate(0x10000) != 0xd800 ||
+                UTF16.getTrailSurrogate(0x10000) != 0xdc00 ||
+                UTF16.isLeadSurrogate((char)0xd800) != true ||
+                UTF16.isTrailSurrogate((char)0xd800) ||
+                UTF16.isLeadSurrogate((char)0xdc00) ||
+                UTF16.isTrailSurrogate((char)0xdc00) != true ||
+                UTF16.isLeadSurrogate(0xd800) != true ||
+                UTF16.isTrailSurrogate(0xd800) ||
+                UTF16.isLeadSurrogate(0xdc00) ||
+                UTF16.isTrailSurrogate(0xdc00) != true) {
+            errln("FAIL *Surrogate result failure");
         }
 
         if (UTF16.isSurrogate((char)0x61) || !UTF16.isSurrogate((char)0xd800)
-            || !UTF16.isSurrogate((char)0xdc00)) {
-        errln("FAIL isSurrogate result failure");
+                || !UTF16.isSurrogate((char)0xdc00)
+                || UTF16.isSurrogate(0x61) || !UTF16.isSurrogate(0xd800)
+                || !UTF16.isSurrogate(0xdc00)) {
+            errln("FAIL isSurrogate result failure");
         }
     }
 
@@ -1627,7 +1641,7 @@ public final class UTF16Test extends TestFmwk
         'A',
         -1,
     };
-    
+
 
     final String cpString = "" +
         UCharacter.MIN_HIGH_SURROGATE +

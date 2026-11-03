@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *   Copyright (C) 1996-2016, International Business Machines
  *   Corporation and others.  All Rights Reserved.
@@ -418,17 +418,15 @@ public abstract class DateFormat extends UFormat {
      * <strong>[icu]</strong> FieldPosition selector for 'b' field alignment.
      * No related Calendar field.
      * This displays the fixed day period (am/pm/midnight/noon).
-     * @hide draft / provisional / internal are hidden on Android
      */
-    final static int AM_PM_MIDNIGHT_NOON_FIELD = 35;
+    public final static int AM_PM_MIDNIGHT_NOON_FIELD = 35;
 
     /**
      * <strong>[icu]</strong> FieldPosition selector for 'B' field alignment.
      * No related Calendar field.
      * This displays the flexible day period.
-     * @hide draft / provisional / internal are hidden on Android
      */
-    final static int FLEXIBLE_DAY_PERIOD_FIELD = 36;
+    public final static int FLEXIBLE_DAY_PERIOD_FIELD = 36;
 
     /**
      * <strong>[icu]</strong> FieldPosition selector time separator,
@@ -492,6 +490,31 @@ public abstract class DateFormat extends UFormat {
      * boolean attributes for this instance. Inclusion in this is indicates a true condition.
      */
     private EnumSet<BooleanAttribute> booleanAttributes = EnumSet.allOf(BooleanAttribute.class);
+
+    /**
+     * Hour Cycle
+     */
+    public enum HourCycle {
+        /**
+         * hour in am/pm (0~11)
+         */
+        HOUR_CYCLE_11,
+
+        /**
+         * hour in am/pm (1~12)
+         */
+        HOUR_CYCLE_12,
+
+        /**
+         * hour in day (0~23)
+         */
+        HOUR_CYCLE_23,
+
+        /**
+         * hour in day (1~24)
+         */
+        HOUR_CYCLE_24;
+    };
 
     /*
      * Capitalization setting, hoisted to DateFormat ICU 53
@@ -1217,6 +1240,32 @@ public abstract class DateFormat extends UFormat {
     @Deprecated
     public static final String HOUR_TZ = "jz";
 
+    /**
+     * Constant for Unicode string name of new (in 2019) Japanese calendar era,
+     * root/English abbreviated version (ASCII-range characters).
+     * @deprecated This API is ICU internal only.
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    @Deprecated
+    public static final String JP_ERA_2019_ROOT = "Reiwa";
+
+    /**
+     * Constant for Unicode string name of new (in 2019) Japanese calendar era,
+     * Japanese abbreviated version (Han, or fullwidth Latin for testing).
+     * @deprecated This API is ICU internal only.
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    @Deprecated
+    public static final String JP_ERA_2019_JA = "\u4EE4\u548C";
+
+    /**
+     * Constant for Unicode string name of new (in 2019) Japanese calendar era,
+     * root and Japanese narrow version (ASCII-range characters).
+     * @deprecated This API is ICU internal only.
+     * @hide draft / provisional / internal are hidden on Android
+     */
+    @Deprecated
+    public static final String JP_ERA_2019_NARROW = "R";
 
     /**
      * Gets the time formatter with the default formatting style
@@ -1459,11 +1508,20 @@ public abstract class DateFormat extends UFormat {
      */
     public void setNumberFormat(NumberFormat newNumberFormat)
     {
-        this.numberFormat = newNumberFormat;
-        /*In order to parse String like "11.10.2001" to DateTime correctly
-          in Locale("fr","CH") [Richard/GCL]
-        */
-        this.numberFormat.setParseIntegerOnly(true);
+        numberFormat = (NumberFormat)newNumberFormat.clone();
+        fixNumberFormatForDates(numberFormat);
+    }
+
+    // no matter what the locale's default number format looked like, we want
+    // to modify it so that it doesn't use thousands separators, doesn't always
+    // show the decimal point, and recognizes integers only when parsing
+    static void fixNumberFormatForDates(NumberFormat nf) {
+        nf.setGroupingUsed(false);
+        if (nf instanceof DecimalFormat) {
+            ((DecimalFormat)nf).setDecimalSeparatorAlwaysShown(false);
+        }
+        nf.setParseIntegerOnly(true);
+        nf.setMinimumFractionDigits(0);
     }
 
     /**
@@ -1734,7 +1792,7 @@ public abstract class DateFormat extends UFormat {
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     //-------------------------------------------------------------------------
-    // Public static interface for creating custon DateFormats for different
+    // Public static interface for creating custom DateFormats for different
     // types of Calendars.
     //-------------------------------------------------------------------------
 
@@ -1828,7 +1886,7 @@ public abstract class DateFormat extends UFormat {
     static final public DateFormat getDateTimeInstance(Calendar cal, int dateStyle,
                                                  int timeStyle, Locale locale)
     {
-        return getDateTimeInstance(dateStyle, timeStyle, ULocale.forLocale(locale));
+        return getDateTimeInstance(cal, dateStyle, timeStyle, ULocale.forLocale(locale));
     }
 
     /**
@@ -1874,7 +1932,6 @@ public abstract class DateFormat extends UFormat {
      *
      * @param cal   The calendar system for which a date/time format is desired.
      * @param locale The locale for which the date/time format is desired.
-     * @hide draft / provisional / internal are hidden on Android
      */
     static final public DateFormat getInstance(Calendar cal, ULocale locale) {
         return getDateTimeInstance(cal, SHORT, SHORT, locale);
@@ -2012,6 +2069,9 @@ public abstract class DateFormat extends UFormat {
      */
     public final static DateFormat getInstanceForSkeleton(
         Calendar cal, String skeleton, ULocale locale) {
+        if (cal != null) {
+            locale = locale.setKeywordValue("calendar", cal.getType());
+        }
         DateTimePatternGenerator generator = DateTimePatternGenerator.getInstance(locale);
         final String bestPattern = generator.getBestPattern(skeleton);
         SimpleDateFormat format = new SimpleDateFormat(bestPattern, locale);
@@ -2126,7 +2186,7 @@ public abstract class DateFormat extends UFormat {
             GregorianCalendar cal = new GregorianCalendar();
             CAL_FIELD_COUNT = cal.getFieldCount();
             CAL_FIELDS = new Field[CAL_FIELD_COUNT];
-            FIELD_NAME_MAP = new HashMap<String, Field>(CAL_FIELD_COUNT);
+            FIELD_NAME_MAP = new HashMap<>(CAL_FIELD_COUNT);
         }
 
         // Java fields -------------------
@@ -2268,13 +2328,11 @@ public abstract class DateFormat extends UFormat {
 
         /**
          * <strong>[icu]</strong> Constant identifying the am/pm/midnight/noon field.
-         * @hide draft / provisional / internal are hidden on Android
          */
         public static final Field AM_PM_MIDNIGHT_NOON = new Field("am/pm/midnight/noon", -1);
 
         /**
          * <strong>[icu]</strong> Constant identifying the flexible day period field.
-         * @hide draft / provisional / internal are hidden on Android
          */
         public static final Field FLEXIBLE_DAY_PERIOD = new Field("flexible day period", -1);
 

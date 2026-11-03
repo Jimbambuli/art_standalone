@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 *******************************************************************************
 * Copyright (C) 1996-2014, International Business Machines Corporation and    *
@@ -15,9 +15,12 @@ package android.icu.dev.test.util;
 import java.util.Arrays;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.util.VersionInfo;
+import android.icu.testsharding.MainTestShard;
 
 
 /**
@@ -25,6 +28,8 @@ import android.icu.util.VersionInfo;
 * @author Syn Wee Quek
 * @since release 2.1 March 01 2002
 */
+@MainTestShard
+@RunWith(JUnit4.class)
 public final class VersionInfoTest extends TestFmwk
 {
     // constructor ---------------------------------------------------
@@ -134,6 +139,18 @@ public final class VersionInfoTest extends TestFmwk
                       COMPARE_LESS_[i]);
             }
         }
+    }
+
+    @Test
+    public void TestCompareLarge() {
+        // One version with major<128, one >=128.
+        VersionInfo small = VersionInfo.getInstance(13);
+        VersionInfo large = VersionInfo.getInstance(222);  // >=128
+        assertTrue(small + " < " + large, small.compareTo(large) < 0);
+        // Difference only in the last bit.
+        small = VersionInfo.getInstance(222, 0, 1, 2);
+        large = VersionInfo.getInstance(222, 0, 1, 3);
+        assertTrue(small + " < " + large, small.compareTo(large) < 0);
     }
 
     /**

@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 *******************************************************************************
 *   Copyright (C) 2008-2010, International Business Machines
@@ -17,6 +17,7 @@ import org.junit.Test;
 import android.icu.impl.Utility;
 import android.icu.text.Bidi;
 import android.icu.text.BidiRun;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * Regression test for Bidi multiple paragraphs
@@ -24,6 +25,7 @@ import android.icu.text.BidiRun;
  * @author Lina Kemmel, Matitiahu Allouche
  */
 
+@MainTestShard
 public class TestMultipleParagraphs extends BidiFmwk {
 
     private static final String text =
@@ -203,7 +205,7 @@ public class TestMultipleParagraphs extends BidiFmwk {
             errln("For line limits " + i + "-" + k + " got failure");
         }
 
-        /* check level of block separator at end of paragraph when orderParagraphsLTR==FALSE */
+        /* check level of block separator at end of paragraph when orderParagraphsLTR==false */
         try {
             bidi.setPara(src, Bidi.RTL, null);
         } catch (IllegalArgumentException e) {
@@ -257,7 +259,7 @@ public class TestMultipleParagraphs extends BidiFmwk {
         orderParagraphsLTR = bidi.isOrderParagraphsLTR();
         assertTrue("orderParagraphsLTR is false", orderParagraphsLTR);
 
-        /* check level of block separator at end of paragraph when orderParagraphsLTR==TRUE */
+        /* check level of block separator at end of paragraph when orderParagraphsLTR==true */
         try {
             bidi.setPara(src, Bidi.RTL, null);
         } catch (IllegalArgumentException e) {
@@ -377,7 +379,7 @@ public class TestMultipleParagraphs extends BidiFmwk {
         }
 
         /* check handling of whitespace before end of paragraph separator when
-         * orderParagraphsLTR==TRUE, when last paragraph has, and lacks, a terminating B
+         * orderParagraphsLTR==true, when last paragraph has, and lacks, a terminating B
          */
         chars = src.toCharArray();
         Arrays.fill(chars, '\u0020');

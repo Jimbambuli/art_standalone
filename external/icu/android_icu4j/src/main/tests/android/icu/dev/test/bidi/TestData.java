@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 *******************************************************************************
 *   Copyright (C) 2001-2013, International Business Machines
@@ -12,6 +12,7 @@ package android.icu.dev.test.bidi;
 
 import android.icu.lang.UCharacterDirection;
 import android.icu.text.Bidi;
+import android.icu.testsharding.MainTestShard;
 
 
 /**
@@ -20,6 +21,7 @@ import android.icu.text.Bidi;
  * Ported from C by Lina Kemmel, Matitiahu Allouche
  *
  */
+@MainTestShard
 public class TestData {
     protected static final int L   = UCharacterDirection.LEFT_TO_RIGHT;
     protected static final int R   = UCharacterDirection.RIGHT_TO_LEFT;

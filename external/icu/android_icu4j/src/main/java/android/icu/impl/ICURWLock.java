@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /**
  *******************************************************************************
  * Copyright (C) 2001-2013, International Business Machines Corporation and    *
@@ -45,6 +45,7 @@ public class ICURWLock {
 
     /**
      * Internal class used to gather statistics on the RWLock.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public final static class Stats {
         /**

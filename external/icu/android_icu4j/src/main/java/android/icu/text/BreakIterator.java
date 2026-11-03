@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 1996-2016, International Business Machines Corporation and    *
@@ -15,6 +15,7 @@ import java.text.StringCharacterIterator;
 import java.util.Locale;
 import java.util.MissingResourceException;
 
+import android.icu.impl.CSCharacterIterator;
 import android.icu.impl.CacheValue;
 import android.icu.impl.ICUDebug;
 import android.icu.util.ICUCloneNotSupportedException;
@@ -181,30 +182,28 @@ import android.icu.util.ULocale;
  * public static int nextWordStartAfter(int pos, String text) {
  *     BreakIterator wb = BreakIterator.getWordInstance();
  *     wb.setText(text);
- *     int last = wb.following(pos);
- *     int current = wb.next();
- *     while (current != BreakIterator.DONE) {
- *         for (int p = last; p &lt; current; p++) {
- *             if (Character.isLetter(text.charAt(p)))
- *                 return last;
+ *     int wordStart = wb.following(pos);
+ *     for (;;) {
+ *         int wordLimit = wb.next();
+ *         if (wordLimit == BreakIterator.DONE) {
+ *             return BreakIterator.DONE;
  *         }
- *         last = current;
- *         current = wb.next();
- *     }
- *     return BreakIterator.DONE;
+ *         int wordStatus = wb.getRuleStatus();
+ *         if (wordStatus != BreakIterator.WORD_NONE) {
+ *             return wordStart;
+ *         }
+ *         wordStart = wordLimit;
+ *      }
  * }
  * </pre>
- * (The iterator returned by BreakIterator.getWordInstance() is unique in that
+ * The iterator returned by {@link #getWordInstance} is unique in that
  * the break positions it returns don't represent both the start and end of the
  * thing being iterated over.  That is, a sentence-break iterator returns breaks
  * that each represent the end of one sentence and the beginning of the next.
  * With the word-break iterator, the characters between two boundaries might be a
  * word, or they might be the punctuation or whitespace between two words.  The
- * above code uses a simple heuristic to determine which boundary is the beginning
- * of a word: If the characters between this boundary and the next boundary
- * include at least one letter (this can be an alphabetical letter, a CJK ideograph,
- * a Hangul syllable, a Kana character, etc.), then the text between this boundary
- * and the next is a word; otherwise, it's the material between words.)
+ * above code uses {@link #getRuleStatus} to identify and ignore boundaries associated
+ * with punctuation or other non-word characters.
  * </blockquote>
  *
  * @see CharacterIterator
@@ -424,14 +423,13 @@ public abstract class BreakIterator implements Cloneable
 
     /**
      * For RuleBasedBreakIterators, return the status tag from the
-     * break rule that determined the most recently
-     * returned break position.
+     * break rule that determined the boundary at the current iteration position.
      * <p>
      * For break iterator types that do not support a rule status,
      * a default value of 0 is returned.
      * <p>
-     * @return The status from the break rule that determined the most recently
-     *         returned break position.
+     * @return The status from the break rule that determined the boundary
+     * at the current iteration position.
      */
 
     public int  getRuleStatus() {
@@ -440,7 +438,7 @@ public abstract class BreakIterator implements Cloneable
 
     /**
      * For RuleBasedBreakIterators, get the status (tag) values from the break rule(s)
-     * that determined the most recently returned break position.
+     * that determined the the boundary at the current iteration position.
      * <p>
      * For break iterator types that do not support rule status,
      * no values are returned.
@@ -451,7 +449,7 @@ public abstract class BreakIterator implements Cloneable
      *
      * @param fillInArray an array to be filled in with the status values.
      * @return          The number of rule status values from rules that determined
-     *                  the most recent boundary returned by the break iterator.
+     *                  the the boundary at the current iteration position.
      *                  In the event that the array is too small, the return value
      *                  is the total number of status values that were available,
      *                  not the reduced number that were actually returned.
@@ -465,12 +463,19 @@ public abstract class BreakIterator implements Cloneable
 
     /**
      * Returns a CharacterIterator over the text being analyzed.
-     * For at least some subclasses of BreakIterator, this is a reference
-     * to the <b>actual iterator being used</b> by the BreakIterator,
-     * and therefore, this function's return value should be treated as
-     * <tt>const</tt>.  No guarantees are made about the current position
-     * of this iterator when it is returned.  If you need to move that
+     * <p>
+     * <b><i>Caution:</i></b>The state of the returned CharacterIterator
+     * must not be modified in any way while the BreakIterator is still in use.
+     * Doing so will lead to undefined behavior of the BreakIterator.
+     * Clone the returned CharacterIterator first and work with that.
+     * <p>
+     * The returned CharacterIterator is a reference
+     * to the <b>actual iterator being used</b> by the BreakIterator.
+     * No guarantees are made about the current position
+     * of this iterator when it is returned; it may differ from the
+     * BreakIterators current position.  If you need to move that
      * position to examine the text, clone this function's return value first.
+     *
      * @return A CharacterIterator over the text being analyzed.
      */
     public abstract CharacterIterator getText();
@@ -489,11 +494,31 @@ public abstract class BreakIterator implements Cloneable
     }
 
     /**
-     * Sets the iterator to analyze a new piece of text.  The
-     * BreakIterator is passed a CharacterIterator through which
-     * it will access the text itself.  The current iteration
-     * position is reset to the CharacterIterator's start index.
+     * Sets the iterator to analyze a new piece of text.  The new
+     * piece of text is passed in as a CharSequence, and the current
+     * iteration position is reset to the beginning of the text.
+     * (The old text is dropped.)
+     * <p>
+     * The text underlying the CharSequence must not be be modified while
+     * the BreakIterator holds a references to it. (As could possibly occur
+     * with a StringBuilder, for example).
+     * @param newText A CharSequence containing the text to analyze with
+     * this BreakIterator.
+     */
+    public void setText(CharSequence newText) {
+        setText(new CSCharacterIterator(newText));
+    }
+
+    /**
+     * Sets the iterator to analyze a new piece of text. This function resets
+     * the current iteration position to the beginning of the text.
      * (The old iterator is dropped.)
+     * <p>
+     * <b><i>Caution:</i></b> The supplied CharacterIterator is used
+     * directly by the BreakIterator, and must not be altered in any
+     * way by code outside of the BreakIterator.
+     * Doing so will lead to undefined behavior of the BreakIterator.
+     *
      * @param newText A CharacterIterator referring to the text
      * to analyze with this BreakIterator (the iterator's current
      * position is ignored, but its other state is significant).
@@ -518,7 +543,11 @@ public abstract class BreakIterator implements Cloneable
     public static final int KIND_SENTENCE = 3;
     /**
      * <strong>[icu]</strong>
+     * @see #getTitleInstance
+     * @see #getWordInstance
+     * @deprecated ICU 64 Use {@link #getWordInstance} instead.
      */
+    @Deprecated
     public static final int KIND_TITLE = 4;
 
     /**
@@ -678,7 +707,9 @@ public abstract class BreakIterator implements Cloneable
      * Unicode 3.2 only. For Unicode 4.0 and above title boundary iteration,
      * please use a word boundary iterator. {@link #getWordInstance}
      * @return A new instance of BreakIterator that locates title boundaries.
+     * @deprecated ICU 64 Use {@link #getWordInstance} instead.
      */
+    @Deprecated
     public static BreakIterator getTitleInstance()
     {
         return getTitleInstance(ULocale.getDefault());
@@ -692,7 +723,9 @@ public abstract class BreakIterator implements Cloneable
      * @param where A Locale specifying the language of the text being analyzed.
      * @return A new instance of BreakIterator that locates title boundaries.
      * @throws NullPointerException if <code>where</code> is null.
+     * @deprecated ICU 64 Use {@link #getWordInstance} instead.
      */
+    @Deprecated
     public static BreakIterator getTitleInstance(Locale where)
     {
         return getBreakInstance(ULocale.forLocale(where), KIND_TITLE);
@@ -705,7 +738,10 @@ public abstract class BreakIterator implements Cloneable
      * please use Word Boundary iterator.{@link #getWordInstance}
      * @param where A Locale specifying the language of the text being analyzed.
      * @return A new instance of BreakIterator that locates title boundaries.
-     * @throws NullPointerException if <code>where</code> is null.*/
+     * @throws NullPointerException if <code>where</code> is null.
+     * @deprecated ICU 64 Use {@link #getWordInstance} instead.
+     */
+    @Deprecated
     public static BreakIterator getTitleInstance(ULocale where)
     {
         return getBreakInstance(where, KIND_TITLE);
@@ -822,10 +858,6 @@ public abstract class BreakIterator implements Cloneable
 
         BreakIteratorCache cache = new BreakIteratorCache(where, result);
         iterCache[kind] = CacheValue.getInstance(cache);
-        if (result instanceof RuleBasedBreakIterator) {
-            RuleBasedBreakIterator rbbi = (RuleBasedBreakIterator)result;
-            rbbi.setBreakType(kind);
-        }
 
         return result;
     }

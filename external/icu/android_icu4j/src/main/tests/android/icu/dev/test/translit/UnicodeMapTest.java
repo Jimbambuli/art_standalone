@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 1996-2016, International Business Machines Corporation and
@@ -23,6 +23,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestBoilerplate;
 import android.icu.dev.test.TestFmwk;
@@ -35,11 +37,14 @@ import android.icu.lang.UCharacter;
 import android.icu.lang.UProperty;
 import android.icu.text.UTF16;
 import android.icu.text.UnicodeSet;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @test
  * @summary General test of UnicodeSet
  */
+@MainTestShard
+@RunWith(JUnit4.class)
 public class UnicodeMapTest extends TestFmwk {
 
     static final int MODIFY_TEST_LIMIT = 32;
@@ -67,7 +72,7 @@ public class UnicodeMapTest extends TestFmwk {
         assertEquals("EntryRange<T>", expected, CollectionUtilities.join(foo.entryRanges(), "\n") + (foo.size() == 0 ? "" : "\n"));
         assertEquals("EntryRange<T>", expected, foo.toString());
     }
-    
+
     @Test
     public void TestRemove() {
         UnicodeMap<Double> foo = new UnicodeMap()
@@ -82,14 +87,14 @@ public class UnicodeMapTest extends TestFmwk {
         .put("abc", 3d)
         .put("mark", 999d)
         .freeze();
-        
+
         UnicodeMap<Double> afterFiiRemoval = new UnicodeMap()
         .put(0x20, -2d)
         .putAll(0x26, 0x29, -2d)
         .put("xy", 2d)
         .put("mark", 4d)
         .freeze();
-        
+
         UnicodeMap<Double> afterFiiRetained = new UnicodeMap()
         .putAll(0x21, 0x25, -2d)
         .put("abc", 3d)
@@ -98,7 +103,7 @@ public class UnicodeMapTest extends TestFmwk {
         UnicodeMap<Double> test = new UnicodeMap<Double>().putAll(foo)
                 .removeAll(fii);
         assertEquals("removeAll", afterFiiRemoval, test);
-        
+
         test = new UnicodeMap<Double>().putAll(foo)
                 .retainAll(fii);
         assertEquals("retainAll", afterFiiRetained, test);
@@ -161,9 +166,9 @@ public class UnicodeMapTest extends TestFmwk {
     }
 
     /**
-     * @param rand 
+     * @param rand
      * @param nextInt
-     * @param test 
+     * @param test
      * @return
      */
     private SortedMap<String, Integer> fillRandomMap(Random rand, int max, SortedMap<String, Integer> test) {
@@ -219,6 +224,7 @@ public class UnicodeMapTest extends TestFmwk {
     }
 
     static Comparator<String> OneFirstComparator = new Comparator<String>() {
+        @Override
         public int compare(String o1, String o2) {
             int cp1 = UnicodeSet.getSingleCodePoint(o1);
             int cp2 = UnicodeSet.getSingleCodePoint(o2);
@@ -235,14 +241,14 @@ public class UnicodeMapTest extends TestFmwk {
     };
 
     /**
-     * @param rand 
+     * @param rand
      * @param others
      * @return
      */
     private String getRandomKey(Random rand) {
         int r = rand.nextInt(30);
         if (r == 0) {
-            return UTF16.valueOf(r); 
+            return UTF16.valueOf(r);
         } else if (r < 10) {
             return UTF16.valueOf('A'-1+r);
         } else if (r < 20) {
@@ -297,7 +303,7 @@ public class UnicodeMapTest extends TestFmwk {
         }
         return true;
     }
-    
+
     @Test
     public void TestCloneAsThawed11721 () {
         UnicodeMap<Integer> test = new UnicodeMap().put("abc", 3).freeze();
@@ -317,6 +323,7 @@ public class UnicodeMapTest extends TestFmwk {
     static String[] TEST_VALUES = {"A", "B", "C", "D", "E", "F"};
     static Random random = new Random(12345);
 
+    @Test
     public void TestUnicodeMapRandom() {
         // do random change to both, then compare
         random.setSeed(12345); // reproducible results
@@ -339,9 +346,9 @@ public class UnicodeMapTest extends TestFmwk {
         checkNext(map1, map2, LIMIT);
     }
 
-    private static final int SET_LIMIT = 0x10FFFF;
     private static final int propEnum = UProperty.GENERAL_CATEGORY;
 
+    @Test
     public void TestUnicodeMapGeneralCategory() {
         logln("Setting General Category");
         UnicodeMap<String> map1 = new UnicodeMap();
@@ -349,12 +356,23 @@ public class UnicodeMapTest extends TestFmwk {
         //Map<Integer, String> map3 = new TreeMap<Integer, String>();
         map1 = new UnicodeMap<String>();
         map2 = new TreeMap<Integer,String>();
-        for (int cp = 0; cp <= SET_LIMIT; ++cp) {
+        for (int cp = 0;;) {
               int enumValue = UCharacter.getIntPropertyValue(cp, propEnum);
               //if (enumValue <= 0) continue; // for smaller set
               String value = UCharacter.getPropertyValueName(propEnum,enumValue, UProperty.NameChoice.LONG);
               map1.put(cp, value);
               map2.put(cp, value);
+              cp++;
+              // Unicode is huge, skip over large parts of it.
+              if (cp == 0x08FF) {           // General Scripts Area.
+                  cp = 0xD700;              // Hangul Syllables Area.
+              } else if (cp == 0x100FF) {   // General Scripts Area.
+                  cp = 0x1F000;             // Symbols Area.
+              } else if (cp == 0x200FF) {   // CJK Unified Ideographs Extensions.
+                  cp = 0x10FF00;            // Supplementary Private Use Area-B.
+              } else if (cp == 0x10FFFF) {  // The end of Unicode.
+                  break;
+              }
         }
         checkNext(map1, map2, Integer.MAX_VALUE);
 
@@ -378,6 +396,7 @@ public class UnicodeMapTest extends TestFmwk {
         }
     }
 
+    @Test
     public void TestAUnicodeMap2() {
         UnicodeMap foo = new UnicodeMap();
         @SuppressWarnings("unused")
@@ -386,6 +405,7 @@ public class UnicodeMapTest extends TestFmwk {
         Set fii = foo.stringKeys(); // make sure doesn't NPE
     }
 
+    @Test
     public void TestAUnicodeMapInverse() {
         UnicodeMap<Character> foo1 = new UnicodeMap<Character>()
                 .putAll('a', 'z', 'b')
@@ -453,6 +473,7 @@ public class UnicodeMapTest extends TestFmwk {
     }
 
     static Comparator<Map.Entry<Integer, String>> ENTRY_COMPARATOR = new Comparator<Map.Entry<Integer, String>>() {
+        @Override
         public int compare(Map.Entry<Integer, String> o1, Map.Entry<Integer, String> o2) {
             if (o1 == o2) return 0;
             if (o1 == null) return -1;

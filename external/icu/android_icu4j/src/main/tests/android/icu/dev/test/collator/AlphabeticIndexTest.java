@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2008-2015, International Business Machines Corporation and
@@ -19,6 +19,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.dev.util.CollectionUtilities;
@@ -40,10 +42,13 @@ import android.icu.text.RuleBasedCollator;
 import android.icu.text.UTF16;
 import android.icu.text.UnicodeSet;
 import android.icu.util.ULocale;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author Mark Davis
  */
+@MainTestShard
+@RunWith(JUnit4.class)
 public class AlphabeticIndexTest extends TestFmwk {
     /**
      *
@@ -68,7 +73,7 @@ public class AlphabeticIndexTest extends TestFmwk {
             /* Greek*/  {"el", "\u0391:\u0392:\u0393:\u0394:\u0395:\u0396:\u0397:\u0398:\u0399:\u039A:\u039B:\u039C:\u039D:\u039E:\u039F:\u03A0:\u03A1:\u03A3:\u03A4:\u03A5:\u03A6:\u03A7:\u03A8:\u03A9"},
             /* English*/    {"en", "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:V:W:X:Y:Z"},
             /* Spanish*/    {"es", "A:B:C:D:E:F:G:H:I:J:K:L:M:N:\u00D1:O:P:Q:R:S:T:U:V:W:X:Y:Z"},
-            /* Estonian*/   {"et", "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:\u0160:Z:\u017D:T:U:V:\u00D5:\u00C4:\u00D6:\u00DC:X:Y"},
+            /* Estonian*/   {"et", "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:\u0160:Z:\u017D:T:U:V:W:\u00D5:\u00C4:\u00D6:\u00DC:X:Y"},
             /* Basque*/ {"eu", "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:V:W:X:Y:Z"},
             /* Finnish*/    {"fi", "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:V:W:X:Y:Z:\u00C5:\u00C4:\u00D6"},
             /* Filipino*/   {"fil", "A:B:C:D:E:F:G:H:I:J:K:L:M:N:\u00D1:Ng:O:P:Q:R:S:T:U:V:W:X:Y:Z"},
@@ -82,7 +87,7 @@ public class AlphabeticIndexTest extends TestFmwk {
             /* Latvian*/    {"lv", "A:B:C:\u010C:D:E:F:G:\u0122:H:I:J:K:\u0136:L:\u013B:M:N:\u0145:O:P:Q:R:S:\u0160:T:U:V:W:X:Z:\u017D"},
             /* Norwegian Bokm\u00E5l*/  {"nb", "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:V:W:X:Y:Z:\u00C6:\u00D8:\u00C5"},
             /* Dutch*/  {"nl", "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:V:W:X:Y:Z"},
-            /* Polish*/ {"pl", "A:\u0104:B:C:\u0106:D:E:\u0118:F:G:H:I:J:K:L:\u0141:M:N:\u0143:O:\u00D3:P:Q:R:S:\u015A:T:U:V:W:X:Y:Z:\u0179:\u017B"},
+            /* Polish*/ {"pl", "A:B:C:\u0106:D:E:F:G:H:I:J:K:L:\u0141:M:N:O:\u00D3:P:Q:R:S:\u015A:T:U:V:W:X:Y:Z:\u0179:\u017B"},
             /* Portuguese*/ {"pt", "A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:V:W:X:Y:Z"},
             /* Romanian*/   {"ro", "A:\u0102:\u00C2:B:C:D:E:F:G:H:I:\u00CE:J:K:L:M:N:O:P:Q:R:S:\u0218:T:\u021A:U:V:W:X:Y:Z"},
             /* Russian*/    {"ru", "\u0410:\u0411:\u0412:\u0413:\u0414:\u0415:\u0416:\u0417:\u0418:\u0419:\u041A:\u041B:\u041C:\u041D:\u041E:\u041F:\u0420:\u0421:\u0422:\u0423:\u0424:\u0425:\u0426:\u0427:\u0428:\u0429:\u042B:\u042D:\u042E:\u042F"},
@@ -1157,5 +1162,25 @@ public class AlphabeticIndexTest extends TestFmwk {
         assertEquals("Wrong bucket label", "inflow", inflowBucket.getLabel());
         assertEquals("Wrong bucket label", "inflow", index.getInflowLabel());
         assertEquals("Bucket size not 1", 1, inflowBucket.size());
+    }
+
+    @Test
+    public void testHasBuckets() {
+        checkHasBuckets(new Locale("am"), UScript.ETHIOPIC);
+        checkHasBuckets(new Locale("haw"), UScript.LATIN);
+        checkHasBuckets(new Locale("hy"), UScript.ARMENIAN);
+        checkHasBuckets(new Locale("vai"), UScript.VAI);
+    }
+
+    private void checkHasBuckets(Locale locale, int script) {
+        AlphabeticIndex.ImmutableIndex index =
+                new AlphabeticIndex<String>(locale).buildImmutableIndex();
+        String loc = locale.toString();
+        assertTrue(loc + " at least 3 buckets", index.getBucketCount() >= 3);
+        AlphabeticIndex.Bucket bucket = index.getBucket(1);
+        assertEquals(loc + " real bucket", AlphabeticIndex.Bucket.LabelType.NORMAL,
+                bucket.getLabelType());
+        assertEquals(loc + " expected script", script,
+                UScript.getScript(bucket.getLabel().codePointAt(0)));
     }
 }

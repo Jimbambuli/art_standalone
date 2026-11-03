@@ -1,17 +1,17 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*****************************************************************************************
  *
  *   Copyright (C) 1996-2014, International Business Machines
  *   Corporation and others.  All Rights Reserved.
  **/
 
-/** 
+/**
  * Port From:   JDK 1.4b1 : java.text.Format.IntlTestDateFormatSymbols
  * Source File: java/text/format/IntlTestDateFormatSymbols.java
  **/
- 
+
 /*
     @test 1.4 98/03/06
     @summary test International Date Format Symbols
@@ -22,12 +22,18 @@ package android.icu.dev.test.format;
 import java.util.Locale;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
+import android.icu.dev.test.TestFmwk;
 import android.icu.text.DateFormatSymbols;
 import android.icu.util.Calendar;
 import android.icu.util.ULocale;
+import android.icu.testsharding.MainTestShard;
 
-public class IntlTestDateFormatSymbols extends android.icu.dev.test.TestFmwk
+@MainTestShard
+@RunWith(JUnit4.class)
+public class IntlTestDateFormatSymbols extends TestFmwk
 {
     // Test getMonths
     @Test
@@ -57,7 +63,7 @@ public class IntlTestDateFormatSymbols extends android.icu.dev.test.TestFmwk
 
         int[] context = {DateFormatSymbols.STANDALONE, DateFormatSymbols.FORMAT};
         int[] width = {DateFormatSymbols.WIDE, DateFormatSymbols.ABBREVIATED, DateFormatSymbols.NARROW};
-        
+
         for (int i = 0; i < context.length; i++) {
             for (int j = 0; j < width.length; j++) {
                 String[] month =symbol.getMonths(context[i],width[j]);
@@ -71,7 +77,7 @@ public class IntlTestDateFormatSymbols extends android.icu.dev.test.TestFmwk
             }
         }
     }
-    
+
     @Test
     public void TestGetWeekdays2(){
         DateFormatSymbols symbol;
@@ -79,7 +85,7 @@ public class IntlTestDateFormatSymbols extends android.icu.dev.test.TestFmwk
 
         int[] context = {DateFormatSymbols.STANDALONE, DateFormatSymbols.FORMAT};
         int[] width = {DateFormatSymbols.WIDE, DateFormatSymbols.ABBREVIATED, DateFormatSymbols.NARROW};
-        
+
         for (int i = 0; i < context.length; i++) {
             for (int j = 0; j < width.length; j++) {
                 String[] wd =symbol.getWeekdays(context[i],width[j]);
@@ -92,9 +98,9 @@ public class IntlTestDateFormatSymbols extends android.icu.dev.test.TestFmwk
                 }
             }
         }
-        
+
     }
-    
+
     @Test
     public void TestGetEraNames(){
         DateFormatSymbols symbol;
@@ -103,7 +109,7 @@ public class IntlTestDateFormatSymbols extends android.icu.dev.test.TestFmwk
         for (int i = 0; i < s.length; i++) {
             logln(s[i]);
         }
-        
+
     }
 
     private boolean UnicodeStringsArePrefixes(String[] prefixArray, String[] baseArray){
@@ -139,17 +145,32 @@ public class IntlTestDateFormatSymbols extends android.icu.dev.test.TestFmwk
         // just do some VERY basic tests to make sure that get/set work
 
         long count;
-        final String[] eras = en.getEras();
-        fr.setEras(eras);
-        final String[] eras1 = fr.getEras();
-        count = eras.length;
-        if( count != eras1.length) {
+        final String[] erasEn = en.getEras();
+        final String[] eraNamesEn = en.getEraNames();
+        final String[] erasNarrowEn = en.getNarrowEras();
+        fr.setEras(erasEn);
+        fr.setNarrowEras(erasNarrowEn);
+        final String[] erasFr = fr.getEras();
+        final String[] erasNarrowFr = fr.getNarrowEras();
+        count = erasEn.length;
+        if( count != erasFr.length || count != erasNarrowFr.length) {
             errln("ERROR: setEras() failed (different size array)");
         }
-        else {
+        else { // like the C++ tests
             for(int i = 0; i < count; i++) {
-                if(! eras[i].equals(eras1[i])) {
+                if(! erasEn[i].equals(erasFr[i])) {
                     errln("ERROR: setEras() failed (different string values)");
+                }
+                if(! erasNarrowEn[i].equals(erasNarrowFr[i])) {
+                    errln("ERROR: setNarrowEras() failed (different string values)");
+                }
+                if( eraNamesEn[i].length() <= erasEn[i].length() ) {
+                    // At least for English we know a wide eraName should be longer than an abbrev era
+                    errln("ERROR: english eraNames[i] not longer than eras[i]");
+                }
+                if( erasNarrowEn[i].length() >= erasEn[i].length() ) {
+                    // At least for English we know a narrowEra should be shorter than an abbrev era
+                    errln("ERROR: english erasNarrow[i] not shorter than eras[i]");
                 }
             }
         }
@@ -433,6 +454,21 @@ public class IntlTestDateFormatSymbols extends android.icu.dev.test.TestFmwk
             }
         }
 
+        final String[] narrowQuarters = en.getQuarters(DateFormatSymbols.FORMAT,DateFormatSymbols.NARROW);
+        fr2.setQuarters(narrowQuarters,DateFormatSymbols.FORMAT,DateFormatSymbols.NARROW);
+        final String[] narrowQuarters1 = fr2.getQuarters(DateFormatSymbols.FORMAT,DateFormatSymbols.NARROW);
+        count = narrowQuarters.length;
+        if( count != narrowQuarters1.length) {
+            errln("ERROR: setQuarters(FORMAT, NARROW) failed (different size array)");
+        }
+        else {
+            for(int i = 0; i < count; i++) {
+                if(! narrowQuarters[i].equals(narrowQuarters1[i])) {
+                    errln("ERROR: setQuarters(FORMAT, NARROW) failed (different string values)");
+                }
+            }
+        }
+
         final String[] standaloneQuarters = en.getQuarters(DateFormatSymbols.STANDALONE,DateFormatSymbols.WIDE);
         fr.setQuarters(standaloneQuarters,DateFormatSymbols.STANDALONE,DateFormatSymbols.WIDE);
         final String[] standaloneQuarters1 = fr.getQuarters(DateFormatSymbols.STANDALONE,DateFormatSymbols.WIDE);
@@ -459,6 +495,21 @@ public class IntlTestDateFormatSymbols extends android.icu.dev.test.TestFmwk
             for(int i = 0; i < count; i++) {
                 if(! standaloneShortQuarters[i].equals(standaloneShortQuarters1[i])) {
                     errln("ERROR: setQuarters(STANDALONE, ABBREVIATED) failed (different string values)");
+                }
+            }
+        }
+
+        final String[] standaloneNarrowQuarters = en.getQuarters(DateFormatSymbols.STANDALONE,DateFormatSymbols.NARROW);
+        fr2.setQuarters(standaloneNarrowQuarters,DateFormatSymbols.STANDALONE,DateFormatSymbols.NARROW);
+        final String[] standaloneNarrowQuarters1 = fr2.getQuarters(DateFormatSymbols.STANDALONE,DateFormatSymbols.NARROW);
+        count = standaloneNarrowQuarters.length;
+        if( count != standaloneNarrowQuarters1.length) {
+            errln("ERROR: setQuarters(STANDALONE, NARROW) failed (different size array)");
+        }
+        else {
+            for(int i = 0; i < count; i++) {
+                if(! standaloneNarrowQuarters[i].equals(standaloneNarrowQuarters1[i])) {
+                    errln("ERROR: setQuarters(STANDALONE, NARROW) failed (different string values)");
                 }
             }
         }
@@ -509,7 +560,7 @@ public class IntlTestDateFormatSymbols extends android.icu.dev.test.TestFmwk
         if(! en.equals(fr)) {
             errln("ERROR: Clone failed");
         }
-        
+
         final String[] shortYearNames = zhChiCal.getYearNames(DateFormatSymbols.FORMAT, DateFormatSymbols.ABBREVIATED);
         final String[] narrowYearNames = zhChiCal.getYearNames(DateFormatSymbols.STANDALONE, DateFormatSymbols.NARROW);
         if (shortYearNames == null || shortYearNames.length != 60 ||
@@ -538,7 +589,7 @@ public class IntlTestDateFormatSymbols extends android.icu.dev.test.TestFmwk
                 !testZodiacNames[0].equals("Rat") || !testZodiacNames[11].equals("Pig")) {
             errln("ERROR: setZodiacNames then getZodiacNames not working for zh@calendar=chinese");
         }
-        
+
         String leapMonthPatternFmtAbbrev = zhChiCal.getLeapMonthPattern(DateFormatSymbols.FORMAT, DateFormatSymbols.ABBREVIATED);
         if (leapMonthPatternFmtAbbrev == null || !leapMonthPatternFmtAbbrev.equals("\u95F0{0}")) {
             errln("ERROR: invalid FORMAT/ABBREVIATED leapMonthPattern from zh@calendar=chinese");

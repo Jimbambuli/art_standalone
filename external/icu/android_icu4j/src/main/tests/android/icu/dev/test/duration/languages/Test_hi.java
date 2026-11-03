@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 ******************************************************************************
 * Copyright (C) 2007-2010, International Business Machines Corporation and   *
@@ -16,10 +16,12 @@ import org.junit.Test;
 
 import android.icu.dev.test.duration.LanguageTestFmwk;
 import android.icu.impl.duration.TimeUnitConstants;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * Test cases for hi
  */
+@MainTestShard
 public class Test_hi extends LanguageTestFmwk implements TimeUnitConstants {
   public Test_hi() {
     super("hi", false);

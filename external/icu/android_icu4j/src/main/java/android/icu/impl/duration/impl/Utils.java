@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 ******************************************************************************
 * Copyright (C) 2007-2012, International Business Machines Corporation and   *
@@ -189,7 +189,10 @@ public class Utils {
 //    }
 //  }
 
-  public static class ChineseDigits {
+  /**
+ * @hide Only a subset of ICU is exposed in Android
+ */
+public static class ChineseDigits {
     final char[] digits;
     final char[] units;
     final char[] levels;

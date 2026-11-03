@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2007-2013, International Business Machines Corporation and         *
@@ -31,6 +31,7 @@ import android.icu.util.ULocale;
 
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author srl
@@ -39,6 +40,7 @@ import junitparams.Parameters;
  * analog of dadrcal.cpp
  *
  */
+@MainTestShard
 @RunWith(JUnitParamsRunner.class)
 public class DataDrivenCalendarTest extends TestFmwk {
 

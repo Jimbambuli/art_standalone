@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2003-2014, International Business Machines Corporation and    *
@@ -127,12 +127,10 @@ public class StringPrepParseException extends ParseException {
     /**
      * Mock implementation of hashCode(). This implementation always returns a constant
      * value. When Java assertion is enabled, this method triggers an assertion failure.
-     * @deprecated This API is ICU internal only.
+     * @return a hash code value for this object.
      * @hide original deprecated declaration
-     * @hide draft / provisional / internal are hidden on Android
      */
     @Override
-    @Deprecated
     public int hashCode() {
         assert false : "hashCode not designed";
         return 42;

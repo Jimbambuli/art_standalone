@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /**
 *******************************************************************************
 * Copyright (C) 1996-2010, International Business Machines Corporation and    *
@@ -17,6 +17,7 @@ import java.util.Map;
 
 import android.icu.lang.UCharacter;
 import android.icu.lang.UCharacterCategory;
+import android.icu.testsharding.MainTestShard;
 
 /**
 * A class to compare the difference in methods between java.lang.Character and
@@ -26,6 +27,7 @@ import android.icu.lang.UCharacterCategory;
 * @see android.icu.lang.UCharacter
 */
 
+@MainTestShard
 public final class UCharacterCompare
 { 
     // private variables ================================================

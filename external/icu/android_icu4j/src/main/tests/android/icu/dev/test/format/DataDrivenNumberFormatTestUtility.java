@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2015, International Business Machines Corporation and         *
@@ -10,24 +10,28 @@
 package android.icu.dev.test.format;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.dev.test.TestUtil;
 import android.icu.impl.Utility;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * A collection of methods to run the data driven number format test suite.
  */
-public class DataDrivenNumberFormatTestUtility {
-    
+@MainTestShard
+public class DataDrivenNumberFormatTestUtility extends TestFmwk {
+
     /**
      * Base class for code under test.
      */
     public static abstract class CodeUnderTest {
-        
+
         /**
          * Returns the ID of the code under test. This ID is used to identify
          * tests that are known to fail for this particular code under test.
@@ -38,105 +42,123 @@ public class DataDrivenNumberFormatTestUtility {
         public Character Id() {
             return null;
         }
-        
+
         /**
          *  Runs a single formatting test. On success, returns null.
          *  On failure, returns the error. This implementation just returns null.
          *  Subclasses should override.
          *  @param tuple contains the parameters of the format test.
          */
-        public String format(NumberFormatTestData tuple) {
+        public String format(DataDrivenNumberFormatTestData tuple) {
+            if (tuple.output != null && tuple.output.equals("fail")) return "fail";
             return null;
         }
-        
+
         /**
          *  Runs a single toPattern test. On success, returns null.
          *  On failure, returns the error. This implementation just returns null.
          *  Subclasses should override.
          *  @param tuple contains the parameters of the format test.
          */
-        public String toPattern(NumberFormatTestData tuple) {
+        public String toPattern(DataDrivenNumberFormatTestData tuple) {
+            if (tuple.output != null && tuple.output.equals("fail")) return "fail";
             return null;
         }
-        
+
         /**
          *  Runs a single parse test. On success, returns null.
          *  On failure, returns the error. This implementation just returns null.
          *  Subclasses should override.
          *  @param tuple contains the parameters of the format test.
          */
-        public String parse(NumberFormatTestData tuple) {
+        public String parse(DataDrivenNumberFormatTestData tuple) {
+            if (tuple.output != null && tuple.output.equals("fail")) return "fail";
             return null;
         }
-        
+
         /**
          *  Runs a single parse currency test. On success, returns null.
          *  On failure, returns the error. This implementation just returns null.
          *  Subclasses should override.
          *  @param tuple contains the parameters of the format test.
          */
-        public String parseCurrency(NumberFormatTestData tuple) {
+        public String parseCurrency(DataDrivenNumberFormatTestData tuple) {
+            if (tuple.output != null && tuple.output.equals("fail")) return "fail";
             return null;
         }
-        
+
         /**
          * Runs a single select test. On success, returns null.
          *  On failure, returns the error. This implementation just returns null.
          *  Subclasses should override.
          * @param tuple contains the parameters of the format test.
          */
-        public String select(NumberFormatTestData tuple) {
+        public String select(DataDrivenNumberFormatTestData tuple) {
+            if (tuple.output != null && tuple.output.equals("fail")) return "fail";
             return null;
         }
     }
-    
+
     private static enum RunMode {
         SKIP_KNOWN_FAILURES,
-        INCLUDE_KNOWN_FAILURES     
+        INCLUDE_KNOWN_FAILURES,
+        CHECK_FOR_UNKNOWN_IDS
     }
-    
+
     private final CodeUnderTest codeUnderTest;
+    private final String allowedIDs;
     private String fileLine = null;
     private int fileLineNumber = 0;
-    private String fileTestName = "";   
-    private NumberFormatTestData tuple = new NumberFormatTestData();
-      
+    private String fileTestName = "";
+    private DataDrivenNumberFormatTestData tuple = new DataDrivenNumberFormatTestData();
+
     /**
      * Runs all the tests in the data driven test suite against codeUnderTest.
      * @param fileName The name of the test file. A relative file name under
      *   com/ibm/icu/dev/data such as "data.txt"
      * @param codeUnderTest the code under test
      */
-    
-    static void runSuite(
+
+    public static void runSuite(
             String fileName, CodeUnderTest codeUnderTest) {
         new DataDrivenNumberFormatTestUtility(codeUnderTest)
                 .run(fileName, RunMode.SKIP_KNOWN_FAILURES);
     }
-    
+
     /**
      * Runs every format test in data driven test suite including those
-     * that are known to fail.
-     * 
+     * that are known to fail.  If a test is supposed to fail but actually
+     * passes, an error is printed.
+     *
      * @param fileName The name of the test file. A relative file name under
      *   com/ibm/icu/dev/data such as "data.txt"
      * @param codeUnderTest the code under test
      */
-    static void runFormatSuiteIncludingKnownFailures(
+    public static void runFormatSuiteIncludingKnownFailures(
             String fileName, CodeUnderTest codeUnderTest) {
         new DataDrivenNumberFormatTestUtility(codeUnderTest)
                 .run(fileName, RunMode.INCLUDE_KNOWN_FAILURES);
     }
-    
-    private DataDrivenNumberFormatTestUtility(
-            CodeUnderTest codeUnderTest) {
-        this.codeUnderTest = codeUnderTest;
+
+    /**
+     * Checks the data file for no unknown IDs in "breaks" columns.
+     */
+    public static void checkNoUnknownIDs(String fileName, String allowedIDs) {
+        new DataDrivenNumberFormatTestUtility(allowedIDs).run(fileName, RunMode.CHECK_FOR_UNKNOWN_IDS);
     }
-       
+
+    private DataDrivenNumberFormatTestUtility(CodeUnderTest codeUnderTest) {
+        this.codeUnderTest = codeUnderTest;
+        this.allowedIDs = null;
+    }
+
+    private DataDrivenNumberFormatTestUtility(String allowedIDs) {
+        this.codeUnderTest = null;
+        this.allowedIDs = allowedIDs;
+    }
+
     private void run(String fileName, RunMode runMode) {
-        Character codeUnderTestIdObj = codeUnderTest.Id();
-        char codeUnderTestId =
-                codeUnderTestIdObj == null ? 0 : Character.toUpperCase(codeUnderTestIdObj.charValue());
+        char codeUnderTestId = (codeUnderTest == null) ? 0 : codeUnderTest.Id();
         BufferedReader in = null;
         try {
             in = TestUtil.getDataReader("numberformattestspecification.txt", "UTF-8");
@@ -145,7 +167,7 @@ public class DataDrivenNumberFormatTestUtility {
             if (fileLine != null && fileLine.charAt(0) == '\uFEFF') {
                 fileLine = fileLine.substring(1);
             }
-            
+
             int state = 0;
             List<String> columnValues;
             List<String> columnNames = null;
@@ -167,7 +189,7 @@ public class DataDrivenNumberFormatTestUtility {
                 if (state == 0) {
                     if (fileLine.startsWith("test ")) {
                         fileTestName = fileLine;
-                        tuple = new NumberFormatTestData();
+                        tuple = new DataDrivenNumberFormatTestData();
                     } else if (fileLine.startsWith("set ")) {
                         if (!setTupleField()) {
                             return;
@@ -182,6 +204,11 @@ public class DataDrivenNumberFormatTestUtility {
                 } else if (state == 1) {
                     columnNames = splitBy((char) 0x09);
                     state = 2;
+                    // "breaks" column must be last!
+                    if (columnNames.contains("breaks")
+                            && columnNames.indexOf("breaks") != columnNames.size() - 1) {
+                        showError("'breaks' column must be last!");
+                    }
                 // run the tests
                 } else {
                     int columnNamesSize = columnNames.size();
@@ -197,19 +224,58 @@ public class DataDrivenNumberFormatTestUtility {
                             return;
                         }
                     }
-                    if (runMode == RunMode.INCLUDE_KNOWN_FAILURES
-                            || !breaks(codeUnderTestId)) {
-                        String errorMessage = isPass(tuple);
-                        if (errorMessage != null) {
-                            showError(errorMessage);
+                    if (runMode == RunMode.CHECK_FOR_UNKNOWN_IDS) {
+                        String actualIDs = tuple.breaks;
+                        if (actualIDs != null) {
+                            // Make sure there are no IDs in actualIDs that are not in allowedIDs.
+                            // As a bonus, check that actualIDs are in alphabetical order.
+                            char prevID = 0;
+                            for (int i=0; i<actualIDs.length(); i++) {
+                                char currID = actualIDs.charAt(i);
+                                if (allowedIDs.indexOf(currID) == -1) {
+                                    showError("Unknown ID: " + currID);
+                                }
+                                if (prevID > currID) {
+                                    showError("IDs not in alphabetical order: " + actualIDs);
+                                }
+                                prevID = currID;
+                            }
+                        }
+                    } else if (runMode == RunMode.INCLUDE_KNOWN_FAILURES || !breaks(codeUnderTestId)) {
+                        String errorMessage;
+                        Exception err = null;
+                        boolean shouldFail = (tuple.output != null && tuple.output.equals("fail"))
+                                ? !breaks(codeUnderTestId)
+                                : breaks(codeUnderTestId);
+                        try {
+                            errorMessage = isPass(tuple);
+                        } catch (Exception e) {
+                            err = e;
+                            errorMessage = "Exception: " + e + ": " + e.getCause();
+                        }
+                        if (shouldFail && errorMessage == null) {
+                            showError("Expected failure, but passed");
+                        } else if (!shouldFail && errorMessage != null) {
+                            if (err != null) {
+                                ByteArrayOutputStream os = new ByteArrayOutputStream();
+                                PrintStream ps = new PrintStream(os);
+                                err.printStackTrace(ps);
+                                String stackTrace = os.toString();
+                                showError(errorMessage + "     Stack trace: " + stackTrace.substring(0, 500));
+                            } else {
+                                showError(errorMessage);
+                            }
                         }
                     }
                 }
                 fileLine = null;
             }
         } catch (Exception e) {
-            showError(e.toString());
-            e.printStackTrace();
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            PrintStream ps = new PrintStream(os);
+            e.printStackTrace(ps);
+            String stackTrace = os.toString();
+            showError("MAJOR ERROR: " + e.toString() + "     Stack trace: " + stackTrace.substring(0,500));
         } finally {
             try {
                 if (in != null) {
@@ -229,7 +295,7 @@ public class DataDrivenNumberFormatTestUtility {
     private static boolean isSpace(char c) {
         return (c == 0x09 || c == 0x20 || c == 0x3000);
     }
-    
+
     private boolean setTupleField() {
         List<String> parts = splitBy(3, (char) 0x20);
         if (parts.size() < 3) {
@@ -238,37 +304,37 @@ public class DataDrivenNumberFormatTestUtility {
         }
         return setField(parts.get(1), parts.get(2));
     }
-    
+
     private boolean setField(String name, String value) {
         try {
             tuple.setField(name,  Utility.unescape(value));
             return true;
         } catch (Exception e) {
-            showError("No such field: " + name + ", or bad value: " + value);
+            showError("No such field: " + name + ", or bad value: " + value + ": " + e);
             return false;
         }
     }
-    
+
     private boolean clearField(String name) {
         try {
             tuple.clearField(name);
             return true;
         } catch (Exception e) {
-            showError("Field cannot be clared: " + name);
+            showError("Field cannot be cleared: " + name);
             return false;
         }
     }
-    
+
     private void showError(String message) {
         TestFmwk.errln(String.format("line %d: %s\n%s\n%s", fileLineNumber, Utility.escape(message), fileTestName,fileLine));
     }
-   
+
     private List<String> splitBy(char delimiter) {
         return splitBy(Integer.MAX_VALUE, delimiter);
     }
-      
+
     private List<String> splitBy(int max, char delimiter) {
-        ArrayList<String> result = new ArrayList<String>();    
+        ArrayList<String> result = new ArrayList<String>();
         int colIdx = 0;
         int colStart = 0;
         int len = fileLine.length();
@@ -283,7 +349,7 @@ public class DataDrivenNumberFormatTestUtility {
         }
         result.add(fileLine.substring(colStart, len));
         return result;
-    }  
+    }
 
     private boolean readLine(BufferedReader in) throws IOException {
         String line = in.readLine();
@@ -302,8 +368,8 @@ public class DataDrivenNumberFormatTestUtility {
         fileLine = idx == 0 ? "" : line;
         return true;
     }
-    
-    private String isPass(NumberFormatTestData tuple) {
+
+    private String isPass(DataDrivenNumberFormatTestData tuple) {
         StringBuilder result = new StringBuilder();
         if (tuple.format != null && tuple.output != null) {
             String errorMessage = codeUnderTest.format(tuple);

@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  **********************************************************************
  * Copyright (c) 2002-2016, International Business Machines
@@ -22,10 +22,10 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
-import android.icu.dev.test.TestUtil;
-import android.icu.dev.test.TestUtil.JavaVendor;
 import android.icu.impl.CurrencyData;
 import android.icu.text.CurrencyDisplayNames;
 import android.icu.text.CurrencyMetaInfo;
@@ -38,11 +38,14 @@ import android.icu.util.Currency;
 import android.icu.util.GregorianCalendar;
 import android.icu.util.TimeZone;
 import android.icu.util.ULocale;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @test
  * @summary General test of Currency
  */
+@MainTestShard
+@RunWith(JUnit4.class)
 public class CurrencyTest extends TestFmwk {
     /**
      * Test of basic API.
@@ -52,6 +55,7 @@ public class CurrencyTest extends TestFmwk {
         Currency usd = Currency.getInstance("USD");
         /*int hash = */usd.hashCode();
         Currency jpy = Currency.getInstance("JPY");
+        Currency jpy2 = Currency.getInstance("jpy");
         if (usd.equals(jpy)) {
             errln("FAIL: USD == JPY");
         }
@@ -63,6 +67,12 @@ public class CurrencyTest extends TestFmwk {
         }
         if (!usd.equals(usd)) {
             errln("FAIL: USD != USD");
+        }
+        if (!jpy.equals(jpy2)) {
+            errln("FAIL: JPY != jpy");
+        }
+        if (!jpy2.equals(jpy)) {
+            errln("FAIL: jpy != JPY");
         }
 
         try {
@@ -87,7 +97,7 @@ public class CurrencyTest extends TestFmwk {
         }
 
         try {
-            usd.getName(ULocale.US, 5, new boolean[1]);
+            usd.getName(ULocale.US, 6, new boolean[1]);
             errln("expected getName with invalid type parameter to throw exception");
         }
         catch (Exception e) {
@@ -170,7 +180,7 @@ public class CurrencyTest extends TestFmwk {
         Locale[] locs = Currency.getAvailableLocales();
         found = false;
         for (int i = 0; i < locs.length; ++i) {
-            if (locs[i].equals(fu_FU)) {
+            if (locs[i].equals(fu_FU.toLocale())) {
                 found = true;
                 break;
             }
@@ -188,17 +198,96 @@ public class CurrencyTest extends TestFmwk {
         // Do a basic check of getName()
         // USD { "US$", "US Dollar"            } // 04/04/1792-
         ULocale en = ULocale.ENGLISH;
+        ULocale en_CA = ULocale.forLanguageTag("en-CA");
+        ULocale en_US = ULocale.forLanguageTag("en-US");
+        ULocale en_NZ = ULocale.forLanguageTag("en-NZ");
         boolean[] isChoiceFormat = new boolean[1];
-        Currency usd = Currency.getInstance("USD");
+        Currency USD = Currency.getInstance("USD");
+        Currency CAD = Currency.getInstance("CAD");
+        Currency USX = Currency.getInstance("USX");
         // Warning: HARD-CODED LOCALE DATA in this test.  If it fails, CHECK
         // THE LOCALE DATA before diving into the code.
-        assertEquals("USD.getName(SYMBOL_NAME)",
+        assertEquals("USD.getName(SYMBOL_NAME, en)",
                 "$",
-                usd.getName(en, Currency.SYMBOL_NAME, isChoiceFormat));
-        assertEquals("USD.getName(LONG_NAME)",
+                USD.getName(en, Currency.SYMBOL_NAME, isChoiceFormat));
+        assertEquals("USD.getName(NARROW_SYMBOL_NAME, en)",
+                "$",
+                USD.getName(en, Currency.NARROW_SYMBOL_NAME, isChoiceFormat));
+        assertEquals("USD.getName(LONG_NAME, en)",
                 "US Dollar",
-                usd.getName(en, Currency.LONG_NAME, isChoiceFormat));
-        // TODO add more tests later
+                USD.getName(en, Currency.LONG_NAME, isChoiceFormat));
+        assertEquals("CAD.getName(SYMBOL_NAME, en)",
+                "CA$",
+                CAD.getName(en, Currency.SYMBOL_NAME, isChoiceFormat));
+        assertEquals("CAD.getName(NARROW_SYMBOL_NAME, en)",
+                "$",
+                CAD.getName(en, Currency.NARROW_SYMBOL_NAME, isChoiceFormat));
+        assertEquals("CAD.getName(SYMBOL_NAME, en_CA)",
+                "$",
+                CAD.getName(en_CA, Currency.SYMBOL_NAME, isChoiceFormat));
+        assertEquals("USD.getName(SYMBOL_NAME, en_CA)",
+                "US$",
+                USD.getName(en_CA, Currency.SYMBOL_NAME, isChoiceFormat));
+        assertEquals("USD.getName(NARROW_SYMBOL_NAME, en_CA)",
+                "US$",
+                USD.getName(en_CA, Currency.NARROW_SYMBOL_NAME, isChoiceFormat));
+        assertEquals("USD.getName(SYMBOL_NAME) in en_NZ",
+                "US$",
+                USD.getName(en_NZ, Currency.SYMBOL_NAME, isChoiceFormat));
+        assertEquals("CAD.getName(SYMBOL_NAME)",
+                "CA$",
+                CAD.getName(en_NZ, Currency.SYMBOL_NAME, isChoiceFormat));
+        assertEquals("USX.getName(SYMBOL_NAME)",
+                "USX",
+                USX.getName(en_US, Currency.SYMBOL_NAME, isChoiceFormat));
+        assertEquals("USX.getName(NARROW_SYMBOL_NAME)",
+                "USX",
+                USX.getName(en_US, Currency.NARROW_SYMBOL_NAME, isChoiceFormat));
+        assertEquals("USX.getName(LONG_NAME)",
+                "USX",
+                USX.getName(en_US, Currency.LONG_NAME, isChoiceFormat));
+    }
+
+    @Test
+    public void testCurrencyVariants() {
+        Object[][] cases = new Object[][] {
+            {"en-US", "CAD", "CA$", "$", "CA$", "CA$"},
+            {"en-US", "CDF", "CDF", "CDF", "CDF", "CDF"},
+            {"sw-CD", "CDF", "FC", "FC", "FC", "FC"},
+            {"en-US", "GEL", "GEL", "₾", "GEL", "GEL"},
+            {"ka-GE", "GEL", "₾", "₾", "₾", "₾"},
+            {"ka", "GEL", "₾", "₾", "₾", "₾"},
+            {"zh-TW", "TWD", "$", "$", "NT$", "$"},
+            {"ccp", "TRY", "TRY", "₺", "TRY", "TL"}
+        };
+        for (Object[] cas : cases) {
+            ULocale locale = new ULocale((String) cas[0]);
+            String isoCode = (String) cas[1];
+            String expectedShort = (String) cas[2];
+            String expectedNarrow = (String) cas[3];
+            String expectedFormal = (String) cas[4];
+            String expectedVariant = (String) cas[5];
+
+            CurrencyDisplayNames cdn = CurrencyDisplayNames.getInstance(locale);
+            assertEquals("Short symbol: " + locale + ": " + isoCode,
+                    expectedShort, cdn.getSymbol(isoCode));
+            assertEquals("Narrow symbol: " + locale + ": " + isoCode,
+                    expectedNarrow, cdn.getNarrowSymbol(isoCode));
+            assertEquals("Formal symbol: " + locale + ": " + isoCode,
+                    expectedFormal, cdn.getFormalSymbol(isoCode));
+            assertEquals("Variant symbol: " + locale + ": " + isoCode,
+                    expectedVariant, cdn.getVariantSymbol(isoCode));
+
+            Currency currency = Currency.getInstance(isoCode);
+            assertEquals("Old API, Short symbol: " + locale + ": " + isoCode,
+                    expectedShort, currency.getName(locale, Currency.SYMBOL_NAME, null));
+            assertEquals("Old API, Narrow symbol: " + locale + ": " + isoCode,
+                    expectedNarrow, currency.getName(locale, Currency.NARROW_SYMBOL_NAME, null));
+            assertEquals("Old API, Formal symbol: " + locale + ": " + isoCode,
+                    expectedFormal, currency.getName(locale, Currency.FORMAL_SYMBOL_NAME, null));
+            assertEquals("Old API, Variant symbol: " + locale + ": " + isoCode,
+                    expectedVariant, currency.getName(locale, Currency.VARIANT_SYMBOL_NAME, null));
+        }
     }
 
     @Test
@@ -283,6 +372,18 @@ public class CurrencyTest extends TestFmwk {
         assertNotNull("have currency data for Germany (Java Locale)", cdn);
         assertEquals("de_USD_name (Locale)", "US-Dollar", cdn.getName("USD"));
         assertNull("de_FOO_name (Locale)", cdn.getName("FOO"));
+
+        // Locale version with noSubstitute=false
+        cdn = CurrencyDisplayNames.getInstance(Locale.GERMANY, false);
+        assertNotNull("have currency data for Germany (Java Locale, false)", cdn);
+        assertEquals("de_USD_name (Locale, false)", "US-Dollar", cdn.getName("USD"));
+        assertEquals("de_USD_plural_foo (Locale, false)", "US-Dollar", cdn.getPluralName("USD", "foo"));
+
+        // Locale version with no boolean attribute; should behave the same as noSubstitute=false
+        cdn = CurrencyDisplayNames.getInstance(Locale.GERMANY);
+        assertNotNull("have currency data for Germany (Java Locale, default)", cdn);
+        assertEquals("de_USD_name (Locale, default)", "US-Dollar", cdn.getName("USD"));
+        assertEquals("de_USD_plural_foo (Locale, default)", "US-Dollar", cdn.getPluralName("USD", "foo"));
     }
 
     // Coverage-only test of CurrencyData
@@ -383,7 +484,7 @@ public class CurrencyTest extends TestFmwk {
 
         // but not one millisecond before the start of the first day
         Date eurFirstDateMinus1ms = new Date(eurFirstDate.getTime() - 1);
-        assertEquals("EUR not avilable before very start of first date", 1, metainfo.currencyInfo(filter.withDate(eurFirstDateMinus1ms)).size());
+        assertEquals("EUR not available before very start of first date", 1, metainfo.currencyInfo(filter.withDate(eurFirstDateMinus1ms)).size());
 
         // end time is last millisecond of day
         GregorianCalendar cal = new GregorianCalendar();
@@ -439,7 +540,7 @@ public class CurrencyTest extends TestFmwk {
 
         // but not one millisecond before the start of the first day
         long eurFirstDateMinus1ms = eurFirstDate - 1;
-        assertEquals("EUR not avilable before very start of first date", 1,
+        assertEquals("EUR not available before very start of first date", 1,
                      metainfo.currencyInfo(filter.withDate(eurFirstDateMinus1ms)).size());
 
         // Deutschmark available from first millisecond on
@@ -468,8 +569,23 @@ public class CurrencyTest extends TestFmwk {
         assertTrue("More than one currency for switzerland", currencies.size() > 1);
         assertEquals(
                 "With tender",
-                Arrays.asList(new String[] {"CHF", "CHE", "CHW"}),
+                Arrays.asList(new String[] {"CHF"}), // no longer include currencies with tender=false
                 metainfo.currencies(filter.withTender()));
+    }
+
+    @Test
+    public void TestFullCurrencyList() {
+        CurrencyMetaInfo metainfo = CurrencyMetaInfo.getInstance();
+        if (metainfo == null) {
+            errln("Unable to get CurrencyMetaInfo instance.");
+            return;
+        }
+        List<String> currencies = metainfo.currencies(null);
+        assertTrue("Full currencies list should include UYW", currencies.contains("UYW")); // ICU-21622
+        assertTrue("Full currencies list should include VES", currencies.contains("VES")); // ICU-21685
+        assertFalse("Full currencies list should not include EQE", currencies.contains("EQE")); // ICU-21685
+        assertTrue("Full currencies list should include SLE", currencies.contains("SLE")); // CLDR 41/42, ICU-21989
+        assertTrue("Full currencies list should include VED", currencies.contains("VED")); // CLDR 41, ICU-21989
     }
 
     // Coverage-only test of the CurrencyMetaInfo class
@@ -576,9 +692,8 @@ public class CurrencyTest extends TestFmwk {
             { "eo_AO", "1969-12-31" },
             { "eo_DE@currency=DEM", "2000-12-23", "EUR", "DEM" },
             { "eo-DE-u-cu-dem", "2000-12-23", "EUR", "DEM" },
-            { "en_US", null, "USD", "USN" },
-            { "en_US_PREEURO", null, "USD", "USN" },
-            { "en_US_Q", null, "USD", "USN" },
+            { "en_US", null, "USD" }, // no longer include currencies with tender=false
+            { "en_US_Q", null, "USD" }, // no longer include currencies with tender=false
         };
 
         DateFormat fmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
@@ -605,19 +720,18 @@ public class CurrencyTest extends TestFmwk {
             String[] actual = Currency.getAvailableCurrencyCodes(locale, date);
 
             // Order is not important as of 4.4.  We never documented that it was.
-            Set<String> expectedSet = new HashSet<String>();
+            Set<String> expectedSet = new HashSet<>();
             if (expected != null) {
                 expectedSet.addAll(Arrays.asList(expected));
             }
-            Set<String> actualSet = new HashSet<String>();
+            Set<String> actualSet = new HashSet<>();
             if (actual != null) {
                 actualSet.addAll(Arrays.asList(actual));
             }
             assertEquals(locale + " on " + timeString, expectedSet, actualSet);
 
             // With Java Locale
-            // Note: skip this test on Java 6 or older when keywords are available
-            if (locale.getKeywords() == null || TestUtil.getJavaVendor() == JavaVendor.Android || TestUtil.getJavaVersion() >= 7) {
+            if (locale.getKeywords() == null) {
                 Locale javaloc = locale.toLocale();
                 String[] actualWithJavaLocale = Currency.getAvailableCurrencyCodes(javaloc, date);
                 // should be exactly same with the ULocale version
@@ -667,20 +781,20 @@ public class CurrencyTest extends TestFmwk {
         final String[][] PREFERRED = {
             {"root",                 },
             {"und",                  },
-            {"und_ZZ",          "XAG", "XAU", "XBA", "XBB", "XBC", "XBD", "XDR", "XPD", "XPT", "XSU", "XTS", "XUA", "XXX"},
-            {"en_US",           "USD", "USN"},
+            {"und_ZZ",               }, // no longer include currencies with tender=false
+            {"en_US",           "USD"}, // no longer include currencies with tender=false
             {"en_029",               },
             {"en_TH",           "THB"},
             {"de",              "EUR"},
             {"de_DE",           "EUR"},
-            {"de_ZZ",           "XAG", "XAU", "XBA", "XBB", "XBC", "XBD", "XDR", "XPD", "XPT", "XSU", "XTS", "XUA", "XXX"},
+            {"de_ZZ",                }, // no longer include currencies with tender=false
             {"ar",              "EGP"},
             {"ar_PS",           "ILS", "JOD"},
-            {"en@currency=CAD",     "USD", "USN"},
+            {"en@currency=CAD",     "USD"}, // no longer include currencies with tender=false
             {"fr@currency=ZZZ",     "EUR"},
             {"de_DE@currency=DEM",  "EUR"},
             {"en_US@rg=THZZZZ",     "THB"},
-            {"de@rg=USZZZZ",        "USD", "USN"},
+            {"de@rg=USZZZZ",        "USD"}, // no longer include currencies with tender=false
             {"en_US@currency=CAD;rg=THZZZZ",  "THB"},
         };
 
@@ -700,7 +814,7 @@ public class CurrencyTest extends TestFmwk {
             String[] all = Currency.getKeywordValuesForLocale("currency", loc, false);
             // The items in the two collections should match (ignore order,
             // behavior change from 4.3.3)
-            Set<String> returnedSet = new HashSet<String>();
+            Set<String> returnedSet = new HashSet<>();
             returnedSet.addAll(Arrays.asList(all));
             assertEquals(loc.toString(), ALLSET, returnedSet);
         }
@@ -867,12 +981,23 @@ public class CurrencyTest extends TestFmwk {
         Currency currency = Currency.getInstance(ULocale.JAPAN);
         // It appears as though this always returns 0 irrespective of the currency or usage.
         double roundingIncrement = currency.getRoundingIncrement(Currency.CurrencyUsage.CASH);
-        // TODO: replace the JUnit import with TestFmwk assertEquals.
         assertEquals("Rounding increment not zero", 0.0, roundingIncrement, 0.0);
     }
 
     @Test
     public void TestCurrencyDataCtor() throws Exception {
         checkDefaultPrivateConstructor(CurrencyData.class);
+    }
+    @Test
+    public void testSierraLeoneCurrency21997() {
+        // CLDR 41: Check that currency of Sierra Leone is SLL (which is legal tender)
+        // and not the newer currency SLE (which is not legal tender), as of CLDR 41.
+        // Test will fail once SLE is declared legal.
+        // CLDR 42: Now check that currency of Sierra Leone is SLE (which is legal tender)
+        Currency currency = Currency.getInstance(ULocale.forLanguageTag("en-SL"));
+        String result = currency.getCurrencyCode();
+        if (!"SLE".equals(result)) {
+            errln("Currency code of en-SL is not SLE but " + result);
+        }
     }
 }

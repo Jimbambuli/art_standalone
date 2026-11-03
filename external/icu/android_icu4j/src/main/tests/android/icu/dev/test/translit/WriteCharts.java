@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 1996-2010, International Business Machines Corporation and    *
@@ -28,7 +28,9 @@ import android.icu.text.Transliterator;
 import android.icu.text.UTF16;
 import android.icu.text.UnicodeSet;
 import android.icu.text.UnicodeSetIterator;
+import android.icu.testsharding.MainTestShard;
 
+@MainTestShard
 public class WriteCharts {
     public static void main(String[] args) throws IOException {
         if (false) {
@@ -300,7 +302,7 @@ public class WriteCharts {
             out.println("The samples are mechanically generated, and only include single characters");
             out.println("from the source set. Thus it will <i>not</i> contain examples where the transliteration");
             out.println("depends on the context around the character. For a more detailed -- and interactive -- example, see the");
-            out.println("<a href='http://demo.icu-project.org/icu-bin/translit'>Transliteration Demo</a></p><hr>");
+            out.println("<a href='https://icu4c-demos.unicode.org/icu-bin/translit'>Transliteration Demo</a></p><hr>");
             
             // set up the headers
             int columnCount = 3;

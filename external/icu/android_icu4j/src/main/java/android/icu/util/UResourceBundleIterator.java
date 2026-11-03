@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 ******************************************************************************
 * Copyright (C) 2004-2009, International Business Machines Corporation and   *
@@ -19,7 +19,7 @@ import java.util.NoSuchElementException;
  * ICUResourceBundleIterator iterator = resB.getIterator();
  * ICUResourceBundle temp;
  * while (iterator.hasNext()) {
- *    temp = iterartor.next();  
+ *    temp = iterator.next();  
  *    int type = temp.getType();
  *    switch(type){
  *      case UResourceBundle.STRING:
@@ -56,6 +56,7 @@ public class UResourceBundleIterator{
      * @return the UResourceBundle object
      * @throws NoSuchElementException If there does not exist such an element.
      */
+    @android.compat.annotation.UnsupportedAppUsage
     public UResourceBundle next()throws NoSuchElementException{
         if(index<size){
             return bundle.get(index++);
@@ -85,8 +86,9 @@ public class UResourceBundleIterator{
     
     /**
      * Checks whether the given resource has another element to iterate over.
-     * @return TRUE if there are more elements, FALSE if there is no more elements
+     * @return true if there are more elements, false if there is no more elements
      */
+    @android.compat.annotation.UnsupportedAppUsage
     public boolean hasNext(){
         return index < size;   
     }

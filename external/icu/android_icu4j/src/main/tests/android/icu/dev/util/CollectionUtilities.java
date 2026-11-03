@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 1996-2015, International Business Machines Corporation and    *
@@ -23,10 +23,14 @@ import java.util.regex.Matcher;
 import android.icu.text.UTF16;
 import android.icu.text.UnicodeSet;
 import android.icu.text.UnicodeSetIterator;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * Utilities that ought to be on collections, but aren't
+ *
+ * @internal CLDR
  */
+@MainTestShard
 public final class CollectionUtilities {
 
     /**

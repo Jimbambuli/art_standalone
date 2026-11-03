@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  *   Copyright (C) 2009-2016, International Business Machines
@@ -27,7 +27,7 @@ import android.icu.util.ICUUncheckedIOException;
  * The primary functions are to produce a normalized string and to detect whether
  * a string is already normalized.
  * The most commonly used normalization forms are those defined in
- * http://www.unicode.org/unicode/reports/tr15/
+ * https://www.unicode.org/reports/tr15/
  * However, this API supports additional normalization forms for specialized purposes.
  * For example, NFKC_Casefold is provided via getInstance("nfkc_cf", COMPOSE)
  * and can be used in implementations of UTS #46.
@@ -65,7 +65,7 @@ public abstract class Normalizer2 {
      * Constants for normalization modes.
      * For details about standard Unicode normalization forms
      * and about the algorithms which are also used with custom mapping tables
-     * see http://www.unicode.org/unicode/reports/tr15/
+     * see https://www.unicode.org/reports/tr15/
      */
     public enum Mode {
         /**
@@ -73,7 +73,7 @@ public abstract class Normalizer2 {
          * Same as standard NFC when using an "nfc" instance.
          * Same as standard NFKC when using an "nfkc" instance.
          * For details about standard Unicode normalization forms
-         * see http://www.unicode.org/unicode/reports/tr15/
+         * see https://www.unicode.org/reports/tr15/
          */
         COMPOSE,
         /**
@@ -81,7 +81,7 @@ public abstract class Normalizer2 {
          * Same as standard NFD when using an "nfc" instance.
          * Same as standard NFKD when using an "nfkc" instance.
          * For details about standard Unicode normalization forms
-         * see http://www.unicode.org/unicode/reports/tr15/
+         * see https://www.unicode.org/reports/tr15/
          */
         DECOMPOSE,
         /**
@@ -177,7 +177,9 @@ public abstract class Normalizer2 {
      * @param name "nfc" or "nfkc" or "nfkc_cf" or name of custom data file
      * @param mode normalization mode (compose or decompose etc.)
      * @return the requested Normalizer2, if successful
+     * @deprecated Don't use because the binary {@code data} format is not stable across API levels.
      */
+    @Deprecated
     public static Normalizer2 getInstance(InputStream data, String name, Mode mode) {
         // TODO: If callers really use this API, then we should add an overload that takes a ByteBuffer.
         ByteBuffer bytes = null;
@@ -211,8 +213,10 @@ public abstract class Normalizer2 {
             if(spanLength==src.length()) {
                 return (String)src;
             }
-            StringBuilder sb=new StringBuilder(src.length()).append(src, 0, spanLength);
-            return normalizeSecondAndAppend(sb, src.subSequence(spanLength, src.length())).toString();
+            if (spanLength != 0) {
+                StringBuilder sb=new StringBuilder(src.length()).append(src, 0, spanLength);
+                return normalizeSecondAndAppend(sb, src.subSequence(spanLength, src.length())).toString();
+            }
         }
         return normalize(src, new StringBuilder(src.length())).toString();
     }

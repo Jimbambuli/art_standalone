@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /**
 *******************************************************************************
 * Copyright (C) 1996-2004, International Business Machines Corporation and    *
@@ -187,7 +187,7 @@ public final class UCharacterUtility
       
     ///CLOVER:OFF
     /**
-    * private constructor to avoid initialisation
+    * private constructor to avoid initialization
     */
     private UCharacterUtility()
     {

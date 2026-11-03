@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2009-2015, International Business Machines Corporation and
@@ -196,8 +196,8 @@ public abstract class Trie2 implements Iterable<Trie2.Range> {
      * @param is   an InputStream containing the serialized form
      *             of a UTrie, version 1 or 2.  The stream must support mark() and reset().
      *             The position of the input stream will be left unchanged.
-     * @param littleEndianOk If FALSE, only big-endian (Java native) serialized forms are recognized.
-     *                    If TRUE, little-endian serialized forms are recognized as well.
+     * @param littleEndianOk If false, only big-endian (Java native) serialized forms are recognized.
+     *                    If true, little-endian serialized forms are recognized as well.
      * @return     the Trie version of the serialized form, or 0 if it is not
      *             recognized as a serialized UTrie
      * @throws     IOException on errors in reading from the input stream.
@@ -338,6 +338,7 @@ public abstract class Trie2 implements Iterable<Trie2.Range> {
      * When iterating, the same Trie2EnumRange object will be reused and returned for each range.
      * If you need to retain complete iteration results, clone each returned Trie2EnumRange,
      * or save the range in some other way, before advancing to the next iteration step.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public static class Range {
         public int     startCodePoint;
@@ -454,6 +455,7 @@ public abstract class Trie2 implements Iterable<Trie2.Range> {
      *     Trie2EnumRange r = i.next();
      *     ...  // Do something with the range r.
      * }
+     * @hide Only a subset of ICU is exposed in Android
      *
      */
     public interface ValueMapper {
@@ -495,6 +497,7 @@ public abstract class Trie2 implements Iterable<Trie2.Range> {
      * Struct-like class for holding the results returned by a UTrie2 CharSequence iterator.
      * The iteration walks over a CharSequence, and for each Unicode code point therein
      * returns the character and its associated Trie2 value.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public static class CharSequenceValues {
         /** string index of the current code point. */
@@ -531,6 +534,7 @@ public abstract class Trie2 implements Iterable<Trie2.Range> {
      * Note that Trie2_16 and Trie2_32 subclass Trie2.CharSequenceIterator.  This is done
      * only for performance reasons.  It does require that any changes made here be propagated
      * into the corresponding code in the subclasses.
+     * @hide Only a subset of ICU is exposed in Android
      */
     public class CharSequenceIterator implements Iterator<CharSequenceValues> {
         /**

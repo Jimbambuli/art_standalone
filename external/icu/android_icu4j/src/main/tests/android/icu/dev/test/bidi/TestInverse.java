@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
 *******************************************************************************
 *   Copyright (C) 2001-2013, International Business Machines
@@ -16,6 +16,7 @@ import org.junit.Test;
 
 import android.icu.impl.Utility;
 import android.icu.text.Bidi;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * Regression test for the basic "inverse" Bidi mode.
@@ -23,6 +24,7 @@ import android.icu.text.Bidi;
  * ported from C by Lina Kemmel, Matitiahu Allouche
  */
 
+@MainTestShard
 public class TestInverse extends BidiFmwk {
 
     private int countRoundtrips = 0;
@@ -60,7 +62,7 @@ public class TestInverse extends BidiFmwk {
         _testManyInverseBidi(bidi, Bidi.DIRECTION_LEFT_TO_RIGHT);
         _testManyInverseBidi(bidi, Bidi.DIRECTION_RIGHT_TO_LEFT);
 
-        logln("inverse Bidi: rountrips: " + countRoundtrips +
+        logln("inverse Bidi: roundtrips: " + countRoundtrips +
               "   non-roundtrips: " + countNonRoundtrips);
 
         _testWriteReverse();

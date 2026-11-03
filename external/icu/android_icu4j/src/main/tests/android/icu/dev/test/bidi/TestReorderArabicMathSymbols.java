@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2012, International Business Machines Corporation and         *
@@ -12,6 +12,7 @@ package android.icu.dev.test.bidi;
 import org.junit.Test;
 
 import android.icu.text.Bidi;
+import android.icu.testsharding.MainTestShard;
 
 
 /**
@@ -20,6 +21,7 @@ import android.icu.text.Bidi;
  * Ported from C by Ramy Said
  */
 
+@MainTestShard
 public class TestReorderArabicMathSymbols extends BidiFmwk {
 
     private static final String[] logicalOrder = {

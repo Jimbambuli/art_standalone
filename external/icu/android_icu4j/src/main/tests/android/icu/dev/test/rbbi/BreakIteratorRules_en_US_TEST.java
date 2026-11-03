@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 1996-2004, International Business Machines Corporation and    *
@@ -10,6 +10,7 @@
 package android.icu.dev.test.rbbi;
 
 import java.util.ListResourceBundle;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * This resource bundle is included for testing and demonstration purposes only.
@@ -17,6 +18,7 @@ import java.util.ListResourceBundle;
  * spaces removed.  Once we have good test cases for Thai, we will replace this
  * with good resource data (and a good dictionary file) for Thai
  */
+@MainTestShard
 public class BreakIteratorRules_en_US_TEST extends ListResourceBundle {
     private static final String DATA_NAME = "/android/icu/dev/data/rbbi/english.dict";
 

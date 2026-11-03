@@ -1,6 +1,6 @@
 /* GENERATED SOURCE. DO NOT MODIFY. */
 // © 2016 and later: Unicode, Inc. and others.
-// License & terms of use: http://www.unicode.org/copyright.html#License
+// License & terms of use: http://www.unicode.org/copyright.html
 /*
  *******************************************************************************
  * Copyright (C) 2010-2015, International Business Machines Corporation and
@@ -13,18 +13,23 @@ import java.io.BufferedReader;
 import java.io.IOException;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
 import android.icu.dev.test.TestFmwk;
 import android.icu.dev.test.TestUtil;
 import android.icu.lang.UCharacterDirection;
 import android.icu.text.Bidi;
 import android.icu.text.BidiClassifier;
+import android.icu.testsharding.MainTestShard;
 
 /**
  * @author Markus W. Scherer
  * BiDi conformance test, using the Unicode BidiTest.txt and BidiCharacterTest.txt files.
  * Ported from ICU4C intltest/bidiconf.cpp .
  */
+@MainTestShard
+@RunWith(JUnit4.class)
 public class BiDiConformanceTest extends TestFmwk {
     public BiDiConformanceTest() {}
 
@@ -100,7 +105,7 @@ outerLoop:
 
     This function performs a conformance test for implementations of the
     Unicode Bidirectional Algorithm, specified in UAX #9: Unicode
-    Bidirectional Algorithm, at http://www.unicode.org/unicode/reports/tr9/
+    Bidirectional Algorithm, at https://www.unicode.org/reports/tr9/
 
     Each test case is represented in a single line which is read from a file
     named BidiCharacter.txt.  Empty, blank and comment lines may also appear
