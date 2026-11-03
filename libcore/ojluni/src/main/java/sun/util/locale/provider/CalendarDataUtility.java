@@ -186,7 +186,10 @@ public class CalendarDataUtility {
 
     private static DateFormatSymbols getDateFormatSymbols(String id, Locale locale) {
         String calendarType = normalizeCalendarType(id);
-        return new DateFormatSymbols(ULocale.forLocale(locale), calendarType);
+        // As Android 14: the constructor (ULocale, String) is gone from ICU4J.
+        ULocale uLocale = ULocale.forLocale(locale)
+                .setKeywordValue("calendar", calendarType);
+        return new DateFormatSymbols(uLocale);
     }
 
     /**

@@ -234,8 +234,11 @@ non_openjdk_javadoc_files := \
   xml/src/main/java/org/xmlpull/v1/sax2/Driver.java \
 
 non_openjdk_java_files := \
+  luni/src/main/java/android/compat/annotation/UnsupportedAppUsage.java \
   luni/src/main/java/android/system/UnixSocketAddress.java \
   luni/src/main/java/java/net/AddressCache.java \
+  luni/src/main/java/libcore/api/CorePlatformApi.java \
+  luni/src/main/java/libcore/api/IntraCoreApi.java \
   luni/src/main/java/libcore/icu/CollationKeyICU.java \
   luni/src/main/java/libcore/icu/DateIntervalFormat.java \
   luni/src/main/java/libcore/icu/DateTimeFormat.java \
