@@ -117,11 +117,13 @@ public class Providers {
     // sun.security.util.ManifestEntryVerifier and java.security.SecureRandom.
     public static Provider getSunProvider() {
         // BEGIN Android-changed: the first provider of the list that loads. On Android
-        // Conscrypt is always there; the native provider above exists only in ATL.
+        // Conscrypt is always there; the native provider above exists only in ATL, in
+        // api-impl.jar on the system class path, not on the boot class path (whose loader
+        // Class.forName(String) would use here).
         Exception first = null;
         for (String className : jarVerificationProviders) {
             try {
-                Class<?> clazz = Class.forName(className);
+                Class<?> clazz = Class.forName(className, true, ClassLoader.getSystemClassLoader());
                 return (Provider)clazz.newInstance();
             } catch (Exception e) {
                 if (first == null) {
