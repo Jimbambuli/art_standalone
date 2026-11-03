@@ -2685,6 +2685,11 @@ extern "C" TwoWordReturn artInvokeInterfaceTrampoline(ArtMethod* interface_metho
     }
   }
 
+  // The compiler and interpreter make sure the conflict trampoline is never
+  // called on a method that resolves to j.l.Object.
+  CHECK(!interface_method->GetDeclaringClass()->IsObjectClass());
+  CHECK(interface_method->GetDeclaringClass()->IsInterface());
+
   DCHECK(!interface_method->IsRuntimeMethod());
   // The compiler makes sure the conflict trampoline is never called on a method that resolves to
   // j.l.Object (Android 11). Code compiled before that (an old boot image or odex) still does: use the
