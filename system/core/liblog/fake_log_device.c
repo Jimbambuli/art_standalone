@@ -378,6 +378,24 @@ static bool should_colorize() {
  *
  * Log format parsing taken from the long-dead utils/Log.cpp.
  */
+/*
+ * The log goes to the stderr the process started with. On Android it goes to logd, so apps may
+ * redirect their own stderr into the log (the "VLC-std" thread of VLC reads fd 2 through a pipe
+ * and logs each line): written to fd 2, every line would come back to that thread, which then
+ * waits on its own full pipe while holding the log lock.
+ */
+static int startup_stderr = -1;
+
+__attribute__((constructor)) static void keep_startup_stderr(void)
+{
+    startup_stderr = fcntl(fileno(stderr), F_DUPFD_CLOEXEC, 3);
+}
+
+static int log_fd(void)
+{
+    return startup_stderr >= 0 ? startup_stderr : fileno(stderr);
+}
+
 static void showLog(LogState *state,
         int logPrio, const char* tag, const char* msg)
 {
@@ -576,7 +594,7 @@ static void showLog(LogState *state,
      */
 
     for(;;) {
-        int cc = writev(fileno(stderr), vec, v-vec);
+        int cc = writev(log_fd(), vec, v-vec);
 
         if (cc == totalLen) break;
         
