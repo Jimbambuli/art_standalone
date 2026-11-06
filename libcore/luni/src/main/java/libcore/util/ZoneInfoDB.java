@@ -150,6 +150,9 @@ public final class ZoneInfoDB {
      */
     public BufferIterator getBufferIterator(String id) {
       checkNotClosed();
+      if (mappedFile == null) {
+        return null;
+      }
 
       // Work out where in the big data file this time zone is.
       int index = Arrays.binarySearch(ids, id);
@@ -166,8 +169,37 @@ public final class ZoneInfoDB {
     private void populateFallback() {
       version = "missing";
       zoneTab = "# Emergency fallback data.\n";
-      ids = new String[] { "GMT" };
-      byteOffsets = rawUtcOffsetsCache = new int[1];
+      List<String> hostIds = new ArrayList<String>();
+      listHostZoneIds("", hostIds);
+      if (hostIds.isEmpty()) {
+        hostIds.add("GMT");
+      }
+      ids = hostIds.toArray(new String[hostIds.size()]);
+      Arrays.sort(ids);
+      byteOffsets = new int[ids.length];
+    }
+
+    /**
+     * Without a tzdata file, the ids are the host's tzfiles (the posix/ and right/ copies and the
+     * non-zone files of the directory left out).
+     */
+    private static void listHostZoneIds(String prefix, List<String> result) {
+      String[] names = new File(HOST_ZONEINFO_DIR + prefix).list();
+      if (names == null) {
+        return;
+      }
+      for (String name : names) {
+        String id = prefix + name;
+        if (name.indexOf('.') >= 0 || name.equals("posix") || name.equals("right") || name.equals("Factory")
+            || name.equals("leapseconds") || name.equals("localtime") || name.equals("posixrules") || name.equals("SECURITY") || name.startsWith("+")) {
+          continue;
+        }
+        if (new File(HOST_ZONEINFO_DIR + id).isDirectory()) {
+          listHostZoneIds(id + "/", result);
+        } else {
+          result.add(id);
+        }
+      }
     }
 
     /**
