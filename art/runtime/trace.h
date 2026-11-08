@@ -49,8 +49,6 @@ class Thread;
 
 using DexIndexBitSet = std::bitset<65536>;
 
-constexpr size_t kMaxThreadIdNumber = kIsTargetBuild ? 65536U : 1048576U;
-using ThreadIDBitSet = std::bitset<kMaxThreadIdNumber>;
 
 enum TracingMode {
   kTracingInactive,
@@ -277,7 +275,9 @@ class Trace final : public instrumentation::InstrumentationListener {
   // is newly discovered.
   bool RegisterMethod(ArtMethod* method)
       REQUIRES_SHARED(Locks::mutator_lock_) REQUIRES(streaming_lock_);
-  bool RegisterThread(Thread* thread)
+  // Streaming: the number the trace gives the thread (the format holds 16 bits, kernel thread ids may be
+  // larger); true if the thread is new to the trace.
+  bool RegisterThread(Thread* thread, uint16_t* id)
       REQUIRES(streaming_lock_);
 
   // Copy a temporary buffer to the main buffer. Used for streaming. Exposed here for lock
@@ -374,7 +374,7 @@ class Trace final : public instrumentation::InstrumentationListener {
   // Streaming mode data.
   Mutex* streaming_lock_;
   std::map<const DexFile*, DexIndexBitSet*> seen_methods_ GUARDED_BY(streaming_lock_);
-  std::unique_ptr<ThreadIDBitSet> seen_threads_ GUARDED_BY(streaming_lock_);
+  std::map<pid_t, uint16_t> thread_ids_ GUARDED_BY(streaming_lock_);
 
   // Bijective map from ArtMethod* to index.
   // Map from ArtMethod* to index in unique_methods_;

@@ -581,7 +581,6 @@ Trace::Trace(File* trace_file,
 
   if (output_mode == TraceOutputMode::kStreaming) {
     streaming_lock_ = new Mutex("tracing lock", LockLevel::kTracingStreamingLock);
-    seen_threads_.reset(new ThreadIDBitSet());
   }
 }
 
@@ -817,16 +816,19 @@ bool Trace::RegisterMethod(ArtMethod* method) {
   return false;
 }
 
-bool Trace::RegisterThread(Thread* thread) {
+bool Trace::RegisterThread(Thread* thread, uint16_t* id) {
   pid_t tid = thread->GetTid();
   CHECK_LT(0U, static_cast<uint32_t>(tid));
-  CHECK_LT(static_cast<uint32_t>(tid), kMaxThreadIdNumber);
 
-  if (!(*seen_threads_)[tid]) {
-    seen_threads_->set(tid);
-    return true;
+  auto it = thread_ids_.find(tid);
+  if (it != thread_ids_.end()) {
+    *id = it->second;
+    return false;
   }
-  return false;
+  // 1, 2, ...: 0 marks a special block in the stream. More threads than 16 bits hold share the last number.
+  *id = static_cast<uint16_t>(std::min<size_t>(thread_ids_.size() + 1, 0xFFFFU));
+  thread_ids_.emplace(tid, *id);
+  return true;
 }
 
 std::string Trace::GetMethodLine(ArtMethod* method) {
@@ -965,18 +967,20 @@ void Trace::LogMethodTraceEvent(Thread* thread, ArtMethod* method,
       WriteToBuf(buf2, sizeof(buf2));
       WriteToBuf(reinterpret_cast<const uint8_t*>(method_line.c_str()), method_line.length());
     }
-    if (RegisterThread(thread)) {
+    uint16_t thread_id;
+    if (RegisterThread(thread, &thread_id)) {
       // It might be better to postpone this. Threads might not have received names...
       std::string thread_name;
       thread->GetThreadName(thread_name);
       uint8_t buf2[7];
       Append2LE(buf2, 0);
       buf2[2] = kOpNewThread;
-      Append2LE(buf2 + 3, static_cast<uint16_t>(thread->GetTid()));
+      Append2LE(buf2 + 3, thread_id);
       Append2LE(buf2 + 5, static_cast<uint16_t>(thread_name.length()));
       WriteToBuf(buf2, sizeof(buf2));
       WriteToBuf(reinterpret_cast<const uint8_t*>(thread_name.c_str()), thread_name.length());
     }
+    Append2LE(stack_buf, thread_id);
     WriteToBuf(stack_buf, sizeof(stack_buf));
   }
 }
