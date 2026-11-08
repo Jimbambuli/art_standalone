@@ -912,6 +912,7 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/util/IllegalFormatPrecisionException.java \
     ojluni/src/main/java/java/util/IllegalFormatWidthException.java \
     ojluni/src/main/java/java/util/IllformedLocaleException.java \
+    ojluni/src/main/java/java/util/ImmutableCollections.java \
     ojluni/src/main/java/java/util/InputMismatchException.java \
     ojluni/src/main/java/java/util/InvalidPropertiesFormatException.java \
     ojluni/src/main/java/java/util/Iterator.java \

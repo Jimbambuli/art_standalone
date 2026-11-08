@@ -410,4 +410,192 @@ public interface Set<E> extends Collection<E> {
     default Spliterator<E> spliterator() {
         return Spliterators.spliterator(this, Spliterator.DISTINCT);
     }
+
+    // Android-added: the unmodifiable factory methods of Java 9 (Android 11), with their contract.
+
+    /**
+     * Returns an unmodifiable Set containing zero elements.
+     * See <a href="#unmodifiable">Unmodifiable Sets</a> for details.
+     *
+     * @param <E> the {@code Set}'s element type
+     * @return an empty {@code Set}
+     * @since 9
+     */
+    static <E> Set<E> of() {
+        return ImmutableCollections.emptySet();
+    }
+
+    /**
+     * Returns an unmodifiable Set containing 1 element.
+     * The elements must not be {@code null}.
+     *
+     * @param <E> the {@code Set}'s element type
+     * @return a {@code Set} containing the specified element
+     * @throws NullPointerException if an element is {@code null}
+     * @since 9
+     */
+    static <E> Set<E> of(E e1) {
+        return new ImmutableCollections.SetN<>((E[]) new Object[] { e1 });
+    }
+
+    /**
+     * Returns an unmodifiable Set containing 2 elements.
+     * The elements must not be {@code null}, and in a Set not equal to each other.
+     *
+     * @param <E> the {@code Set}'s element type
+     * @return a {@code Set} containing the specified elements
+     * @throws NullPointerException if an element is {@code null}
+     * @throws IllegalArgumentException if there are any duplicate elements
+     * @since 9
+     */
+    static <E> Set<E> of(E e1, E e2) {
+        return new ImmutableCollections.SetN<>((E[]) new Object[] { e1, e2 });
+    }
+
+    /**
+     * Returns an unmodifiable Set containing 3 elements.
+     * The elements must not be {@code null}, and in a Set not equal to each other.
+     *
+     * @param <E> the {@code Set}'s element type
+     * @return a {@code Set} containing the specified elements
+     * @throws NullPointerException if an element is {@code null}
+     * @throws IllegalArgumentException if there are any duplicate elements
+     * @since 9
+     */
+    static <E> Set<E> of(E e1, E e2, E e3) {
+        return new ImmutableCollections.SetN<>((E[]) new Object[] { e1, e2, e3 });
+    }
+
+    /**
+     * Returns an unmodifiable Set containing 4 elements.
+     * The elements must not be {@code null}, and in a Set not equal to each other.
+     *
+     * @param <E> the {@code Set}'s element type
+     * @return a {@code Set} containing the specified elements
+     * @throws NullPointerException if an element is {@code null}
+     * @throws IllegalArgumentException if there are any duplicate elements
+     * @since 9
+     */
+    static <E> Set<E> of(E e1, E e2, E e3, E e4) {
+        return new ImmutableCollections.SetN<>((E[]) new Object[] { e1, e2, e3, e4 });
+    }
+
+    /**
+     * Returns an unmodifiable Set containing 5 elements.
+     * The elements must not be {@code null}, and in a Set not equal to each other.
+     *
+     * @param <E> the {@code Set}'s element type
+     * @return a {@code Set} containing the specified elements
+     * @throws NullPointerException if an element is {@code null}
+     * @throws IllegalArgumentException if there are any duplicate elements
+     * @since 9
+     */
+    static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5) {
+        return new ImmutableCollections.SetN<>((E[]) new Object[] { e1, e2, e3, e4, e5 });
+    }
+
+    /**
+     * Returns an unmodifiable Set containing 6 elements.
+     * The elements must not be {@code null}, and in a Set not equal to each other.
+     *
+     * @param <E> the {@code Set}'s element type
+     * @return a {@code Set} containing the specified elements
+     * @throws NullPointerException if an element is {@code null}
+     * @throws IllegalArgumentException if there are any duplicate elements
+     * @since 9
+     */
+    static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6) {
+        return new ImmutableCollections.SetN<>((E[]) new Object[] { e1, e2, e3, e4, e5, e6 });
+    }
+
+    /**
+     * Returns an unmodifiable Set containing 7 elements.
+     * The elements must not be {@code null}, and in a Set not equal to each other.
+     *
+     * @param <E> the {@code Set}'s element type
+     * @return a {@code Set} containing the specified elements
+     * @throws NullPointerException if an element is {@code null}
+     * @throws IllegalArgumentException if there are any duplicate elements
+     * @since 9
+     */
+    static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7) {
+        return new ImmutableCollections.SetN<>((E[]) new Object[] { e1, e2, e3, e4, e5, e6, e7 });
+    }
+
+    /**
+     * Returns an unmodifiable Set containing 8 elements.
+     * The elements must not be {@code null}, and in a Set not equal to each other.
+     *
+     * @param <E> the {@code Set}'s element type
+     * @return a {@code Set} containing the specified elements
+     * @throws NullPointerException if an element is {@code null}
+     * @throws IllegalArgumentException if there are any duplicate elements
+     * @since 9
+     */
+    static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8) {
+        return new ImmutableCollections.SetN<>((E[]) new Object[] { e1, e2, e3, e4, e5, e6, e7, e8 });
+    }
+
+    /**
+     * Returns an unmodifiable Set containing 9 elements.
+     * The elements must not be {@code null}, and in a Set not equal to each other.
+     *
+     * @param <E> the {@code Set}'s element type
+     * @return a {@code Set} containing the specified elements
+     * @throws NullPointerException if an element is {@code null}
+     * @throws IllegalArgumentException if there are any duplicate elements
+     * @since 9
+     */
+    static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9) {
+        return new ImmutableCollections.SetN<>((E[]) new Object[] { e1, e2, e3, e4, e5, e6, e7, e8, e9 });
+    }
+
+    /**
+     * Returns an unmodifiable Set containing 10 elements.
+     * The elements must not be {@code null}, and in a Set not equal to each other.
+     *
+     * @param <E> the {@code Set}'s element type
+     * @return a {@code Set} containing the specified elements
+     * @throws NullPointerException if an element is {@code null}
+     * @throws IllegalArgumentException if there are any duplicate elements
+     * @since 9
+     */
+    static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9, E e10) {
+        return new ImmutableCollections.SetN<>((E[]) new Object[] { e1, e2, e3, e4, e5, e6, e7, e8, e9, e10 });
+    }
+
+    /**
+     * Returns an unmodifiable Set containing an arbitrary number of elements.
+     * The array is copied; the elements must not be {@code null}, and in a Set not equal to each other.
+     *
+     * @param <E> the {@code Set}'s element type
+     * @param elements the elements to be contained in the Set
+     * @return a {@code Set} containing the specified elements
+     * @throws NullPointerException if an element is {@code null} or if the array is {@code null}
+     * @throws IllegalArgumentException if there are any duplicate elements
+     * @since 9
+     */
+    @SafeVarargs
+    @SuppressWarnings("varargs")
+    static <E> Set<E> of(E... elements) {
+        return new ImmutableCollections.SetN<>(ImmutableCollections.checked(elements));
+    }
+
+    /**
+     * Returns an unmodifiable {@code Set} containing the elements of the given Collection, without duplicates.
+     * If the given Collection is already an unmodifiable Set made by {@link #of} or this method, it is returned as it is.
+     *
+     * @param <E> the {@code Set}'s element type
+     * @param coll a {@code Collection} from which elements are drawn, must be non-null
+     * @return a {@code Set} containing the elements of the given {@code Collection}
+     * @throws NullPointerException if coll is null, or if it contains any nulls
+     * @since 10
+     */
+    @SuppressWarnings("unchecked")
+    static <E> Set<E> copyOf(Collection<? extends E> coll) {
+        if (coll instanceof ImmutableCollections.SetN) {
+            return (Set<E>) coll;
+        }
+        return new ImmutableCollections.SetN<>((Collection<E>) coll);
+    }
 }

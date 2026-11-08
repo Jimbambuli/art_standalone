@@ -753,4 +753,182 @@ public interface List<E> extends Collection<E> {
     default Spliterator<E> spliterator() {
         return Spliterators.spliterator(this, Spliterator.ORDERED);
     }
+
+    // Android-added: the unmodifiable factory methods of Java 9 (Android 11), with their contract.
+
+    /**
+     * Returns an unmodifiable List containing zero elements.
+     * See <a href="#unmodifiable">Unmodifiable Lists</a> for details.
+     *
+     * @param <E> the {@code List}'s element type
+     * @return an empty {@code List}
+     * @since 9
+     */
+    static <E> List<E> of() {
+        return ImmutableCollections.emptyList();
+    }
+
+    /**
+     * Returns an unmodifiable List containing 1 element.
+     * The elements must not be {@code null}.
+     *
+     * @param <E> the {@code List}'s element type
+     * @return a {@code List} containing the specified element
+     * @throws NullPointerException if an element is {@code null}
+     * @since 9
+     */
+    static <E> List<E> of(E e1) {
+        return new ImmutableCollections.ListN<>(ImmutableCollections.checked((E[]) new Object[] { e1 }));
+    }
+
+    /**
+     * Returns an unmodifiable List containing 2 elements.
+     * The elements must not be {@code null}.
+     *
+     * @param <E> the {@code List}'s element type
+     * @return a {@code List} containing the specified elements
+     * @throws NullPointerException if an element is {@code null}
+     * @since 9
+     */
+    static <E> List<E> of(E e1, E e2) {
+        return new ImmutableCollections.ListN<>(ImmutableCollections.checked((E[]) new Object[] { e1, e2 }));
+    }
+
+    /**
+     * Returns an unmodifiable List containing 3 elements.
+     * The elements must not be {@code null}.
+     *
+     * @param <E> the {@code List}'s element type
+     * @return a {@code List} containing the specified elements
+     * @throws NullPointerException if an element is {@code null}
+     * @since 9
+     */
+    static <E> List<E> of(E e1, E e2, E e3) {
+        return new ImmutableCollections.ListN<>(ImmutableCollections.checked((E[]) new Object[] { e1, e2, e3 }));
+    }
+
+    /**
+     * Returns an unmodifiable List containing 4 elements.
+     * The elements must not be {@code null}.
+     *
+     * @param <E> the {@code List}'s element type
+     * @return a {@code List} containing the specified elements
+     * @throws NullPointerException if an element is {@code null}
+     * @since 9
+     */
+    static <E> List<E> of(E e1, E e2, E e3, E e4) {
+        return new ImmutableCollections.ListN<>(ImmutableCollections.checked((E[]) new Object[] { e1, e2, e3, e4 }));
+    }
+
+    /**
+     * Returns an unmodifiable List containing 5 elements.
+     * The elements must not be {@code null}.
+     *
+     * @param <E> the {@code List}'s element type
+     * @return a {@code List} containing the specified elements
+     * @throws NullPointerException if an element is {@code null}
+     * @since 9
+     */
+    static <E> List<E> of(E e1, E e2, E e3, E e4, E e5) {
+        return new ImmutableCollections.ListN<>(ImmutableCollections.checked((E[]) new Object[] { e1, e2, e3, e4, e5 }));
+    }
+
+    /**
+     * Returns an unmodifiable List containing 6 elements.
+     * The elements must not be {@code null}.
+     *
+     * @param <E> the {@code List}'s element type
+     * @return a {@code List} containing the specified elements
+     * @throws NullPointerException if an element is {@code null}
+     * @since 9
+     */
+    static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6) {
+        return new ImmutableCollections.ListN<>(ImmutableCollections.checked((E[]) new Object[] { e1, e2, e3, e4, e5, e6 }));
+    }
+
+    /**
+     * Returns an unmodifiable List containing 7 elements.
+     * The elements must not be {@code null}.
+     *
+     * @param <E> the {@code List}'s element type
+     * @return a {@code List} containing the specified elements
+     * @throws NullPointerException if an element is {@code null}
+     * @since 9
+     */
+    static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7) {
+        return new ImmutableCollections.ListN<>(ImmutableCollections.checked((E[]) new Object[] { e1, e2, e3, e4, e5, e6, e7 }));
+    }
+
+    /**
+     * Returns an unmodifiable List containing 8 elements.
+     * The elements must not be {@code null}.
+     *
+     * @param <E> the {@code List}'s element type
+     * @return a {@code List} containing the specified elements
+     * @throws NullPointerException if an element is {@code null}
+     * @since 9
+     */
+    static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8) {
+        return new ImmutableCollections.ListN<>(ImmutableCollections.checked((E[]) new Object[] { e1, e2, e3, e4, e5, e6, e7, e8 }));
+    }
+
+    /**
+     * Returns an unmodifiable List containing 9 elements.
+     * The elements must not be {@code null}.
+     *
+     * @param <E> the {@code List}'s element type
+     * @return a {@code List} containing the specified elements
+     * @throws NullPointerException if an element is {@code null}
+     * @since 9
+     */
+    static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9) {
+        return new ImmutableCollections.ListN<>(ImmutableCollections.checked((E[]) new Object[] { e1, e2, e3, e4, e5, e6, e7, e8, e9 }));
+    }
+
+    /**
+     * Returns an unmodifiable List containing 10 elements.
+     * The elements must not be {@code null}.
+     *
+     * @param <E> the {@code List}'s element type
+     * @return a {@code List} containing the specified elements
+     * @throws NullPointerException if an element is {@code null}
+     * @since 9
+     */
+    static <E> List<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9, E e10) {
+        return new ImmutableCollections.ListN<>(ImmutableCollections.checked((E[]) new Object[] { e1, e2, e3, e4, e5, e6, e7, e8, e9, e10 }));
+    }
+
+    /**
+     * Returns an unmodifiable List containing an arbitrary number of elements.
+     * The array is copied; the elements must not be {@code null}.
+     *
+     * @param <E> the {@code List}'s element type
+     * @param elements the elements to be contained in the List
+     * @return a {@code List} containing the specified elements
+     * @throws NullPointerException if an element is {@code null} or if the array is {@code null}
+     * @since 9
+     */
+    @SafeVarargs
+    @SuppressWarnings("varargs")
+    static <E> List<E> of(E... elements) {
+        return new ImmutableCollections.ListN<>(ImmutableCollections.checked(elements));
+    }
+
+    /**
+     * Returns an unmodifiable {@code List} containing the elements of the given {@code Collection}, in its iteration order.
+     * If the given Collection is already an unmodifiable List made by {@link #of} or this method, it is returned as it is.
+     *
+     * @param <E> the {@code List}'s element type
+     * @param coll a {@code Collection} from which elements are drawn, must be non-null
+     * @return a {@code List} containing the elements of the given {@code Collection}
+     * @throws NullPointerException if coll is null, or if it contains any nulls
+     * @since 10
+     */
+    @SuppressWarnings("unchecked")
+    static <E> List<E> copyOf(Collection<? extends E> coll) {
+        if (coll instanceof ImmutableCollections.ListN) {
+            return (List<E>) coll;
+        }
+        return (List<E>) List.of(coll.toArray());
+    }
 }
