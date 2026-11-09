@@ -72,6 +72,63 @@ public class WolfSSLInternalVerifyCb implements WolfSSLVerifyCallback {
      *         SSL/TLS handshake should continue. Otherwise return 0
      *         to mark verification failure and stop/abort handshake.
      */
+    /* index of the peer certificate: the one that issued no other certificate
+     * of the chain; 0 if that is not unique */
+    private static int findLeafIndex(X509Certificate[] chain) {
+        int leaf = -1;
+        if (chain == null) {
+            return 0;
+        }
+        for (int i = 0; i < chain.length; i++) {
+            boolean issuesOther = false;
+            for (int j = 0; j < chain.length; j++) {
+                if (i != j && chain[j].getIssuerX500Principal().equals(
+                        chain[i].getSubjectX500Principal()) &&
+                        !chain[j].getSubjectX500Principal().equals(
+                        chain[j].getIssuerX500Principal())) {
+                    issuesOther = true;
+                    break;
+                }
+            }
+            if (!issuesOther) {
+                if (leaf != -1) {
+                    return 0;
+                }
+                leaf = i;
+            }
+        }
+        return leaf == -1 ? 0 : leaf;
+    }
+
+    /* chain ordered peer certificate, its issuer, that one's issuer, ...;
+     * certificates not reached that way follow in their old order */
+    private static X509Certificate[] sortLeafFirst(X509Certificate[] chain,
+                                                    int leaf) {
+        X509Certificate[] out = new X509Certificate[chain.length];
+        boolean[] used = new boolean[chain.length];
+        int n = 0;
+        int cur = leaf;
+        while (cur != -1 && !used[cur]) {
+            used[cur] = true;
+            out[n++] = chain[cur];
+            int next = -1;
+            for (int j = 0; j < chain.length; j++) {
+                if (!used[j] && chain[j].getSubjectX500Principal().equals(
+                        chain[cur].getIssuerX500Principal())) {
+                    next = j;
+                    break;
+                }
+            }
+            cur = next;
+        }
+        for (int j = 0; j < chain.length; j++) {
+            if (!used[j]) {
+                out[n++] = chain[j];
+            }
+        }
+        return out;
+    }
+
     public int verifyCallback(int preverify_ok, long x509StorePtr) {
 
         WolfSSLCertificate[] certs = null;
@@ -118,7 +175,19 @@ public class WolfSSLInternalVerifyCb implements WolfSSLVerifyCallback {
             }
 
             /* get authType, use first cert */
-            String sigType = certs[0].getSignatureType();
+            /* The store chain is not in the order TrustManager.checkServerTrusted()
+             * is specified for (peer certificate first): wolfSSL lists the
+             * topmost certificate first. A TrustManager that does not sort
+             * the chain itself (e.g. one that wraps the default one, as K-9
+             * does) got the chain upside down and rejected it ("Failed to
+             * verify intermediate chain cert", error -329). Put the peer
+             * certificate first, then each issuer. */
+            int leaf = findLeafIndex(x509certs);
+            if (x509certs != null) {
+                x509certs = sortLeafFirst(x509certs, leaf);
+            }
+
+            String sigType = certs[leaf].getSignatureType();
             if (sigType.contains("RSA")) {
                 authType = "RSA";
             } else if (sigType.contains("ECDSA")) {

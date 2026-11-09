@@ -348,6 +348,18 @@ public class WolfSSLTrustX509 implements X509TrustManager {
             ret = cm.CertManagerVerifyBuffer(encoded, encoded.length,
                     WolfSSL.SSL_FILETYPE_ASN1);
             if (ret != WolfSSL.SSL_SUCCESS) {
+                if (i == sortedCerts.length - 1) {
+                    /* The topmost certificate may be a cross-signed root
+                     * (e.g. GTS Root R4 issued by GlobalSign Root CA) whose
+                     * issuer is not trusted, while the root itself is a
+                     * trust anchor. Skip it: the next certificate down is
+                     * verified against the trusted certs, so nothing
+                     * unverified is accepted. */
+                    WolfSSLDebug.log(getClass(), WolfSSLDebug.INFO,
+                        "Skipping unverifiable top chain cert: " +
+                        sortedCerts[i].getSubjectX500Principal().getName());
+                    continue;
+                }
                 cm.free();
                 throw new CertificateException("Failed to verify " +
                     "intermediate chain cert");
