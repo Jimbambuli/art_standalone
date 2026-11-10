@@ -212,7 +212,9 @@ std::unique_ptr<OatFile> OatFileAssistant::GetBestOatFile(ClassLoaderContext* co
   // back to a duplicate class check against the parent class loaders, which rejects the oat
   // file if the app ships a class that a parent class loader also defines.
   bool context_okay = GetBestInfo().ClassLoaderContextIsOkay(context, std::vector<int>());
-  if ((!IsUpToDate() || !context_okay) && !is_framework_res) {
+  // Without dex files (the resource splits of an app) there is nothing to compile, as in GetDexOptNeeded();
+  // dex2oat would only fail with "No dex files" at every start.
+  if ((!IsUpToDate() || !context_okay) && !is_framework_res && HasOriginalDexFiles()) {
     // Compile the dex file.
     std::vector<std::string> arg_vector;
 
