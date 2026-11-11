@@ -809,6 +809,34 @@ public final class Locale implements Cloneable, Serializable {
         return getInstance(language, "", country, variant, null);
     }
 
+    /**
+     * Obtains a locale from language, country and variant (JDK 19, Android 16). The values are
+     * normalized as by {@link #Locale(String, String, String)}.
+     *
+     * @exception NullPointerException if any argument is null.
+     */
+    public static Locale of(String language, String country, String variant) {
+        return new Locale(language, country, variant);
+    }
+
+    /**
+     * Obtains a locale from language and country (JDK 19, Android 16).
+     *
+     * @exception NullPointerException if either argument is null.
+     */
+    public static Locale of(String language, String country) {
+        return new Locale(language, country);
+    }
+
+    /**
+     * Obtains a locale from a language code (JDK 19, Android 16).
+     *
+     * @exception NullPointerException if the argument is null.
+     */
+    public static Locale of(String language) {
+        return new Locale(language);
+    }
+
     static Locale getInstance(String language, String script, String country,
                                       String variant, LocaleExtensions extensions) {
         if (language== null || script == null || country == null || variant == null) {
