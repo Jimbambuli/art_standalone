@@ -1675,6 +1675,16 @@ class Thread implements Runnable {
     }
 
     /**
+     * Returns the identifier of this Thread (JDK 19, Android 16). The same value as
+     * {@link #getId()}.
+     *
+     * @return this thread's ID.
+     */
+    public final long threadId() {
+        return tid;
+    }
+
+    /**
      * A thread state.  A thread can be in one of the following states:
      * <ul>
      * <li>{@link #NEW}<br>
