@@ -1747,7 +1747,9 @@ bool Runtime::Init(RuntimeArgumentMap&& runtime_options_in) {
   VLOG(startup) << "Runtime::Init exiting";
 
   // Set OnlyUseSystemOatFiles only after boot classpath has been set up.
-  if (is_zygote_ || runtime_options.Exists(Opt::OnlyUseSystemOatFiles)) {
+  // ATL: a zygote (one per app, see ATL's zygote.c) uses the oat files of its class path from the dalvik cache like
+  // the app's other processes do; restricted to /system, they would be loaded without their compiled code.
+  if (runtime_options.Exists(Opt::OnlyUseSystemOatFiles)) {
     oat_file_manager_->SetOnlyUseSystemOatFiles(/*enforce=*/ true,
                                                 /*assert_no_files_loaded=*/ true);
   }
