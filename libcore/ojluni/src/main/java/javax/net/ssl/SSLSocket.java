@@ -1406,4 +1406,15 @@ public abstract class SSLSocket extends Socket
     public String toString() {
         return "SSL" + super.toString();
     }
+
+    /**
+     * Returns the application protocol value negotiated on this connection
+     * (ALPN, Java 9): null if not yet determined, "" if none is used.
+     *
+     * @throws UnsupportedOperationException if the underlying provider does
+     *         not implement the operation
+     */
+    public String getApplicationProtocol() {
+        throw new UnsupportedOperationException();
+    }
 }

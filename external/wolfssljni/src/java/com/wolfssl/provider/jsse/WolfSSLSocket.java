@@ -1028,6 +1028,15 @@ public class WolfSSLSocket extends SSLSocket {
     }
 
     /**
+     * Returns the ALPN protocol negotiated on this socket, or null if the
+     * handshake has not finished (SSLSocket.getApplicationProtocol(), Java 9).
+     */
+    @Override
+    public synchronized String getApplicationProtocol() {
+        return EngineHelper.getAlpnSelectedProtocolString();
+    }
+
+    /**
      * Returns the SSLSession in use by this SSLSocket.
      *
      * @return SSLSession object, otherwise null if not handshaking or

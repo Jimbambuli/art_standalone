@@ -74,6 +74,7 @@ public class SSLParameters {
     private Map<Integer, SNIServerName> sniNames = null;
     private Map<Integer, SNIMatcher> sniMatchers = null;
     private boolean preferLocalCipherSuites;
+    private String[] applicationProtocols = new String[0];
 
     /**
      * Constructs SSLParameters.
@@ -463,5 +464,30 @@ public class SSLParameters {
      */
     public final boolean getUseCipherSuitesOrder() {
         return preferLocalCipherSuites;
+    }
+
+    /**
+     * Returns a prioritized array of application-layer protocol names that
+     * can be negotiated over the SSL/TLS protocols (ALPN, Java 9).
+     */
+    public String[] getApplicationProtocols() {
+        return applicationProtocols.clone();
+    }
+
+    /**
+     * Sets the prioritized array of application-layer protocol names (ALPN, Java 9).
+     *
+     * @throws IllegalArgumentException if protocols is null, or if any element
+     *         is null or an empty string
+     */
+    public void setApplicationProtocols(String[] protocols) {
+        if (protocols == null)
+            throw new IllegalArgumentException("protocols was null");
+        String[] tempProtocols = protocols.clone();
+        for (String p : tempProtocols) {
+            if (p == null || p.equals(""))
+                throw new IllegalArgumentException("An element of protocols was null/empty");
+        }
+        applicationProtocols = tempProtocols;
     }
 }
