@@ -198,6 +198,19 @@ public final class Objects {
      * @return {@code obj} if not {@code null}
      * @throws NullPointerException if {@code obj} is {@code null}
      */
+    /**
+     * Checks if the {@code index} is within the bounds of the range from
+     * {@code 0} (inclusive) to {@code length} (exclusive) (Java 9).
+     *
+     * @return {@code index} if it is within bounds of the range
+     * @throws IndexOutOfBoundsException if the {@code index} is out of bounds
+     */
+    public static int checkIndex(int index, int length) {
+        if (index < 0 || index >= length)
+            throw new IndexOutOfBoundsException("Index " + index + " out of bounds for length " + length);
+        return index;
+    }
+
     public static <T> T requireNonNull(T obj) {
         if (obj == null)
             throw new NullPointerException();
