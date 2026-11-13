@@ -390,6 +390,12 @@ extern "C" size_t ResXMLParser_getAttributeCount(const struct ResXMLParser *pars
   return parserPtr->getAttributeCount();
 }
 
+extern "C" int32_t ResXMLParser_getTextID(const struct ResXMLParser *parser)
+{
+  const android::ResXMLParser *parserPtr = reinterpret_cast<const android::ResXMLParser *>(parser);
+  return parserPtr->getTextID();
+}
+
 extern "C" uint32_t ResXMLParser_getAttributeNameID(const struct ResXMLParser *parser, size_t idx)
 {
   const android::ResXMLParser *parserPtr = reinterpret_cast<const android::ResXMLParser *>(parser);

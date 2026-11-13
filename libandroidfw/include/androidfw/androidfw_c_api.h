@@ -552,6 +552,7 @@ enum event_code_t ResXMLParser_next(struct ResXMLParser *parser);
 int ResXMLParser_getElementNameID(struct ResXMLParser *parser);
 const struct ResStringPool *ResXMLParser_getStrings(struct ResXMLParser *parser);
 size_t ResXMLParser_getAttributeCount(const struct ResXMLParser *parser);
+int32_t ResXMLParser_getTextID(const struct ResXMLParser *parser);
 uint32_t ResXMLParser_getAttributeNameID(const struct ResXMLParser *parser, size_t idx);
 uint32_t ResXMLParser_getAttributeNameResID(const struct ResXMLParser *parser, size_t idx);
 ssize_t ResXMLParser_indexOfAttribute(const struct ResXMLParser *parser, const char16_t* ns, size_t nsLen, const char16_t* attr, size_t attrLen);
