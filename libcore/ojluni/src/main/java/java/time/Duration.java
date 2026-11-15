@@ -61,6 +61,7 @@
  */
 package java.time;
 
+import static java.time.LocalTime.MINUTES_PER_HOUR;
 import static java.time.LocalTime.NANOS_PER_SECOND;
 import static java.time.LocalTime.SECONDS_PER_DAY;
 import static java.time.LocalTime.SECONDS_PER_HOUR;
@@ -1180,6 +1181,105 @@ public final class Duration
         long totalNanos = Math.multiplyExact(seconds, NANOS_PER_SECOND);
         totalNanos = Math.addExact(totalNanos, nanos);
         return totalNanos;
+    }
+
+    /**
+     * Extracts the number of days in the duration.
+     * <p>
+     * This returns the total number of days in the duration by dividing the
+     * number of seconds by 86400.
+     * This is based on the standard definition of a day as 24 hours.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the number of days in the duration, may be negative
+     * @since 9
+     */
+    public long toDaysPart(){
+        return seconds / SECONDS_PER_DAY;
+    }
+
+    /**
+     * Extracts the number of hours part in the duration.
+     * <p>
+     * This returns the number of remaining hours when dividing {@link #toHours}
+     * by hours in a day.
+     * This is based on the standard definition of a day as 24 hours.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the number of hours part in the duration, may be negative
+     * @since 9
+     */
+    public int toHoursPart(){
+        return (int) (toHours() % 24);
+    }
+
+    /**
+     * Extracts the number of minutes part in the duration.
+     * <p>
+     * This returns the number of remaining minutes when dividing {@link #toMinutes}
+     * by minutes in an hour.
+     * This is based on the standard definition of an hour as 60 minutes.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the number of minutes parts in the duration, may be negative
+     * @since 9
+     */
+    public int toMinutesPart(){
+        return (int) (toMinutes() % MINUTES_PER_HOUR);
+    }
+
+    /**
+     * Extracts the number of seconds part in the duration.
+     * <p>
+     * This returns the remaining seconds when dividing {@link #toSeconds}
+     * by seconds in a minute.
+     * This is based on the standard definition of a minute as 60 seconds.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the number of seconds parts in the duration, may be negative
+     * @since 9
+     */
+    public int toSecondsPart(){
+        return (int) (seconds % SECONDS_PER_MINUTE);
+    }
+
+    /**
+     * Extracts the number of milliseconds part of the duration.
+     * <p>
+     * This returns the milliseconds part by dividing the number of nanoseconds by 1,000,000.
+     * The length of the duration is stored using two fields - seconds and nanoseconds.
+     * The nanoseconds part is a value from 0 to 999,999,999 that is an adjustment to
+     * the length in seconds.
+     * The total duration is defined by calling {@link #getNano()} and {@link #getSeconds()}.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the number of milliseconds part of the duration.
+     * @since 9
+     */
+    public int toMillisPart(){
+        return nanos / 1000_000;
+    }
+
+    /**
+     * Get the nanoseconds part within seconds of the duration.
+     * <p>
+     * The length of the duration is stored using two fields - seconds and nanoseconds.
+     * The nanoseconds part is a value from 0 to 999,999,999 that is an adjustment to
+     * the length in seconds.
+     * The total duration is defined by calling {@link #getNano()} and {@link #getSeconds()}.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the nanoseconds within the second part of the length of the duration, from 0 to 999,999,999
+     * @since 9
+     */
+    public int toNanosPart(){
+        return nanos;
     }
 
     //-----------------------------------------------------------------------
