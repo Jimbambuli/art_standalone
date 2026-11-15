@@ -206,6 +206,11 @@ int __android_log_vprint(int prio, const char *tag, const char *fmt, va_list ap)
 {
     char buf[LOG_BUF_SIZE];
 
+    /* As in AOSP liblog (logger_write.cpp): skip formatting for messages
+     * that are dropped anyway. */
+    if (!__android_log_is_loggable(prio, tag, ANDROID_LOG_VERBOSE))
+        return -EPERM;
+
     vsnprintf(buf, LOG_BUF_SIZE, fmt, ap);
 
     return __android_log_write(prio, tag, buf);
@@ -215,6 +220,11 @@ int __android_log_print(int prio, const char *tag, const char *fmt, ...)
 {
     va_list ap;
     char buf[LOG_BUF_SIZE];
+
+    /* As in AOSP liblog (logger_write.cpp): skip formatting for messages
+     * that are dropped anyway. */
+    if (!__android_log_is_loggable(prio, tag, ANDROID_LOG_VERBOSE))
+        return -EPERM;
 
     va_start(ap, fmt);
     vsnprintf(buf, LOG_BUF_SIZE, fmt, ap);
