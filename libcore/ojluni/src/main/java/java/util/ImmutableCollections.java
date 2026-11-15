@@ -540,7 +540,7 @@ class ImmutableCollections {
 
         @Override
         public Set<Map.Entry<K,V>> entrySet() {
-            return new AbstractSet<>() {
+            return new AbstractSet<Map.Entry<K,V>>() {
                 @Override
                 public int size() {
                     return MapN.this.size;
