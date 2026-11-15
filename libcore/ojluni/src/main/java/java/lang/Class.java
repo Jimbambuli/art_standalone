@@ -911,6 +911,63 @@ public final class Class<T> implements java.io.Serializable,
         return last == -1 ? null : name.substring(0, last);
     }
 
+    /**
+     * Returns the fully qualified package name.
+     *
+     * <p> If this class is a top level class, then this method returns the fully
+     * qualified name of the package that the class is a member of, or the
+     * empty string if the class is in an unnamed package.
+     *
+     * <p> If this class is a member class, then this method is equivalent to
+     * invoking {@code getPackageName()} on the {@linkplain #getEnclosingClass
+     * enclosing class}.
+     *
+     * <p> If this class is a {@linkplain #isLocalClass local class} or an {@linkplain
+     * #isAnonymousClass() anonymous class}, then this method is equivalent to
+     * invoking {@code getPackageName()} on the {@linkplain #getDeclaringClass
+     * declaring class} of the {@linkplain #getEnclosingMethod enclosing method} or
+     * {@linkplain #getEnclosingConstructor enclosing constructor}.
+     *
+     * <p> If this class represents an array type then this method returns the
+     * package name of the element type. If this class represents a primitive
+     * type or void then the package name "{@code java.lang}" is returned.
+     *
+     * @return the fully qualified package name
+     *
+     * @since 9
+     * @jls 6.7 Fully Qualified Names
+     */
+    public String getPackageName() {
+        // BEGIN Android-changed: Don't use a private field as a cache.
+        /*
+        String pn = this.packageName;
+        if (pn == null) {
+            Class<?> c = isArray() ? elementType() : this;
+            if (c.isPrimitive()) {
+                pn = "java.lang";
+            } else {
+                String cn = c.getName();
+                int dot = cn.lastIndexOf('.');
+                pn = (dot != -1) ? cn.substring(0, dot).intern() : "";
+            }
+            this.packageName = pn;
+        }
+        return pn;
+        */
+            Class<?> c = this;
+            while (c.isArray()) {
+                c = c.getComponentType();
+            }
+            if (c.isPrimitive()) {
+                return "java.lang";
+            } else {
+                String cn = c.getName();
+                int dot = cn.lastIndexOf('.');
+                return (dot != -1) ? cn.substring(0, dot).intern() : "";
+            }
+        // END Android-changed: Don't use a private field as a cache.
+    }
+
 
     /**
      * Determines the interfaces implemented by the class or interface
