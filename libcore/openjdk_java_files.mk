@@ -203,6 +203,7 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/lang/reflect/WildcardType.java \
     ojluni/src/main/java/java/lang/reflect/package-info.java \
     ojluni/src/main/java/java/lang/ref/PhantomReference.java \
+    ojluni/src/main/java/java/lang/ref/Cleaner.java \
     ojluni/src/main/java/java/lang/ref/Reference.java \
     ojluni/src/main/java/java/lang/ref/ReferenceQueue.java \
     ojluni/src/main/java/java/lang/ref/SoftReference.java \
@@ -1390,6 +1391,9 @@ openjdk_java_files := \
     ojluni/src/main/java/sun/misc/FDBigInteger.java \
     ojluni/src/main/java/sun/misc/FloatingDecimal.java \
     ojluni/src/main/java/jdk/net/ExtendedSocketOptions.java \
+    ojluni/src/main/java/jdk/internal/misc/InnocuousThread.java \
+    ojluni/src/main/java/jdk/internal/ref/CleanerImpl.java \
+    ojluni/src/main/java/jdk/internal/ref/PhantomCleanable.java \
     ojluni/src/main/java/jdk/net/NetworkPermission.java \
     ojluni/src/main/java/jdk/net/SocketFlow.java \
     ojluni/src/main/java/jdk/net/Sockets.java \
