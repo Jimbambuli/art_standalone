@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.nio.charset.Charset;
 
 /**
  * Convenience class for writing character files.  The constructors of this
@@ -114,6 +115,75 @@ public class FileWriter extends OutputStreamWriter {
      */
     public FileWriter(FileDescriptor fd) {
         super(new FileOutputStream(fd));
+    }
+
+    /**
+     * Constructs a {@code FileWriter} given a file name and
+     * {@linkplain java.nio.charset.Charset charset}.
+     *
+     * @param fileName  the name of the file to write
+     * @param charset the {@linkplain java.nio.charset.Charset charset}
+     * @throws IOException  if the named file exists but is a directory rather
+     *                  than a regular file, does not exist but cannot be
+     *                  created, or cannot be opened for any other reason
+     *
+     * @since 11
+     */
+    public FileWriter(String fileName, Charset charset) throws IOException {
+        super(new FileOutputStream(fileName), charset);
+    }
+
+    /**
+     * Constructs a {@code FileWriter} given a file name,
+     * {@linkplain java.nio.charset.Charset charset} and a boolean indicating
+     * whether to append the data written.
+     *
+     * @param fileName  the name of the file to write
+     * @param charset the {@linkplain java.nio.charset.Charset charset}
+     * @param append    a boolean. If {@code true}, the writer will write the data
+     *                  to the end of the file rather than the beginning.
+     * @throws IOException  if the named file exists but is a directory rather
+     *                  than a regular file, does not exist but cannot be
+     *                  created, or cannot be opened for any other reason
+     *
+     * @since 11
+     */
+    public FileWriter(String fileName, Charset charset, boolean append) throws IOException {
+        super(new FileOutputStream(fileName, append), charset);
+    }
+
+    /**
+     * Constructs a {@code FileWriter} given the {@code File} to write and
+     * {@linkplain java.nio.charset.Charset charset}.
+     *
+     * @param file  the {@code File} to write
+     * @param charset the {@linkplain java.nio.charset.Charset charset}
+     * @throws IOException  if the file exists but is a directory rather than
+     *                  a regular file, does not exist but cannot be created,
+     *                  or cannot be opened for any other reason
+     *
+     * @since 11
+     */
+    public FileWriter(File file, Charset charset) throws IOException {
+        super(new FileOutputStream(file), charset);
+    }
+
+    /**
+     * Constructs a {@code FileWriter} given the {@code File} to write,
+     * {@linkplain java.nio.charset.Charset charset} and a boolean indicating
+     * whether to append the data written.
+     *
+     * @param file  the {@code File} to write
+     * @param charset the {@linkplain java.nio.charset.Charset charset}
+     * @param append    a boolean. If {@code true}, the writer will write the data
+     *                  to the end of the file rather than the beginning.
+     * @throws IOException  if the file exists but is a directory rather than
+     *                  a regular file, does not exist but cannot be created,
+     *                  or cannot be opened for any other reason
+     * @since 11
+     */
+    public FileWriter(File file, Charset charset, boolean append) throws IOException {
+        super(new FileOutputStream(file, append), charset);
     }
 
 }
