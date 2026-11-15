@@ -129,6 +129,31 @@ public abstract class FileStore {
     public abstract long getUnallocatedSpace() throws IOException;
 
     /**
+     * Returns the number of bytes per block in this file store.
+     *
+     * <p> File storage is typically organized into discrete sequences of bytes
+     * called <i>blocks</i>. A block is the smallest storage unit of a file store.
+     * Every read and write operation is performed on a multiple of blocks.
+     *
+     * @implSpec The implementation in this class throws an
+     *         {@code UnsupportedOperationException}.
+     *
+     * @return  a positive value representing the block size of this file store,
+     *          in bytes
+     *
+     * @throws  IOException
+     *          if an I/O error occurs
+     *
+     * @throws  UnsupportedOperationException
+     *          if the operation is not supported
+     *
+     * @since 10
+     */
+    public long getBlockSize() throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
      * Tells whether or not this file store supports the file attributes
      * identified by the given file attribute view.
      *

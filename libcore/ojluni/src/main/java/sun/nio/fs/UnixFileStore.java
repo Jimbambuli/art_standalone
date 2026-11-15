@@ -126,6 +126,12 @@ abstract class UnixFileStore
     }
 
     @Override
+    public long getBlockSize() throws IOException {
+       UnixFileStoreAttributes attrs = readAttributes();
+       return attrs.blockSize();
+    }
+
+    @Override
     public long getUnallocatedSpace() throws IOException {
         UnixFileStoreAttributes attrs = readAttributes();
         return attrs.blockSize() * attrs.freeBlocks();
