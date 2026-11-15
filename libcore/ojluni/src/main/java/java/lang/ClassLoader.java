@@ -1170,6 +1170,23 @@ public abstract class ClassLoader {
     }
 
     /**
+     * Returns a {@code Package} that has been defined by this class loader
+     * or {@code null} if this class loader has not defined a package of the
+     * given name.
+     *
+     * @since  9
+     * @hide
+     */
+    // libcore: android16 ClassLoader.getDefinedPackage(String); the packages map
+    // here is a synchronized HashMap, not a ConcurrentHashMap.
+    public final Package getDefinedPackage(String name) {
+        java.util.Objects.requireNonNull(name, "name cannot be null");
+        synchronized (packages) {
+            return packages.get(name);
+        }
+    }
+
+    /**
      * Returns a <tt>Package</tt> that has been defined by this class loader
      * or any of its ancestors.
      *

@@ -617,11 +617,17 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/security/interfaces/ECKey.java \
     ojluni/src/main/java/java/security/interfaces/ECPrivateKey.java \
     ojluni/src/main/java/java/security/interfaces/ECPublicKey.java \
+    ojluni/src/main/java/java/security/interfaces/EdECKey.java \
+    ojluni/src/main/java/java/security/interfaces/EdECPrivateKey.java \
+    ojluni/src/main/java/java/security/interfaces/EdECPublicKey.java \
     ojluni/src/main/java/java/security/interfaces/RSAKey.java \
     ojluni/src/main/java/java/security/interfaces/RSAMultiPrimePrivateCrtKey.java \
     ojluni/src/main/java/java/security/interfaces/RSAPrivateCrtKey.java \
     ojluni/src/main/java/java/security/interfaces/RSAPrivateKey.java \
     ojluni/src/main/java/java/security/interfaces/RSAPublicKey.java \
+    ojluni/src/main/java/java/security/interfaces/XECKey.java \
+    ojluni/src/main/java/java/security/interfaces/XECPrivateKey.java \
+    ojluni/src/main/java/java/security/interfaces/XECPublicKey.java \
     ojluni/src/main/java/java/security/interfaces/package-info.java \
     ojluni/src/main/java/java/security/InvalidAlgorithmParameterException.java \
     ojluni/src/main/java/java/security/InvalidKeyException.java \
@@ -679,12 +685,16 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/security/spec/ECPoint.java \
     ojluni/src/main/java/java/security/spec/ECPrivateKeySpec.java \
     ojluni/src/main/java/java/security/spec/ECPublicKeySpec.java \
+    ojluni/src/main/java/java/security/spec/EdECPoint.java \
+    ojluni/src/main/java/java/security/spec/EdECPrivateKeySpec.java \
+    ojluni/src/main/java/java/security/spec/EdECPublicKeySpec.java \
     ojluni/src/main/java/java/security/spec/EllipticCurve.java \
     ojluni/src/main/java/java/security/spec/EncodedKeySpec.java \
     ojluni/src/main/java/java/security/spec/InvalidKeySpecException.java \
     ojluni/src/main/java/java/security/spec/InvalidParameterSpecException.java \
     ojluni/src/main/java/java/security/spec/KeySpec.java \
     ojluni/src/main/java/java/security/spec/MGF1ParameterSpec.java \
+    ojluni/src/main/java/java/security/spec/NamedParameterSpec.java \
     ojluni/src/main/java/java/security/spec/PKCS8EncodedKeySpec.java \
     ojluni/src/main/java/java/security/spec/PSSParameterSpec.java \
     ojluni/src/main/java/java/security/spec/RSAKeyGenParameterSpec.java \
@@ -694,6 +704,8 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/security/spec/RSAPrivateKeySpec.java \
     ojluni/src/main/java/java/security/spec/RSAPublicKeySpec.java \
     ojluni/src/main/java/java/security/spec/X509EncodedKeySpec.java \
+    ojluni/src/main/java/java/security/spec/XECPrivateKeySpec.java \
+    ojluni/src/main/java/java/security/spec/XECPublicKeySpec.java \
     ojluni/src/main/java/java/security/spec/package-info.java \
     ojluni/src/main/java/java/security/Timestamp.java \
     ojluni/src/main/java/java/security/UnrecoverableEntryException.java \
@@ -915,6 +927,7 @@ openjdk_javadoc_files := \
     ojluni/src/main/java/java/util/IllegalFormatWidthException.java \
     ojluni/src/main/java/java/util/IllformedLocaleException.java \
     ojluni/src/main/java/java/util/ImmutableCollections.java \
+    ojluni/src/main/java/java/util/KeyValueHolder.java \
     ojluni/src/main/java/java/util/InputMismatchException.java \
     ojluni/src/main/java/java/util/InvalidPropertiesFormatException.java \
     ojluni/src/main/java/java/util/Iterator.java \

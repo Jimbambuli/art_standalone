@@ -409,6 +409,16 @@ public abstract class Buffer {
     public abstract boolean isReadOnly();
 
     /**
+     * Creates a new buffer whose content is a shared subsequence of
+     * this buffer's content.
+     *
+     * @return  The new buffer
+     *
+     * @since 9
+     */
+    public abstract Buffer slice();
+
+    /**
      * Tells whether or not this buffer is backed by an accessible
      * array.
      *
