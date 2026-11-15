@@ -211,6 +211,53 @@ public final class Objects {
         return index;
     }
 
+    /**
+     * Checks if the sub-range from {@code fromIndex} (inclusive) to
+     * {@code toIndex} (exclusive) is within the bounds of range from
+     * {@code 0} (inclusive) to {@code length} (exclusive) (Java 9).
+     * Body inlined from jdk.internal.util.Preconditions.checkFromToIndex.
+     */
+    public static
+    int checkFromToIndex(int fromIndex, int toIndex, int length) {
+        if (fromIndex < 0 || fromIndex > toIndex || toIndex > length)
+            throw new IndexOutOfBoundsException(String.format(
+                    "Range [%s, %s) out of bounds for length %s",
+                    fromIndex, toIndex, length));
+        return fromIndex;
+    }
+
+    /**
+     * Checks if the sub-range from {@code fromIndex} (inclusive) to
+     * {@code fromIndex + size} (exclusive) is within the bounds of range from
+     * {@code 0} (inclusive) to {@code length} (exclusive) (Java 9).
+     * Body inlined from jdk.internal.util.Preconditions.checkFromIndexSize.
+     */
+    public static
+    int checkFromIndexSize(int fromIndex, int size, int length) {
+        if ((length | fromIndex | size) < 0 || size > length - fromIndex)
+            throw new IndexOutOfBoundsException(String.format(
+                    "Range [%s, %<s + %s) out of bounds for length %s",
+                    fromIndex, size, length));
+        return fromIndex;
+    }
+
+    /**
+     * Returns the first argument if it is non-{@code null} and
+     * otherwise returns the non-{@code null} second argument (Java 9).
+     */
+    public static <T> T requireNonNullElse(T obj, T defaultObj) {
+        return (obj != null) ? obj : requireNonNull(defaultObj, "defaultObj");
+    }
+
+    /**
+     * Returns the first argument if it is non-{@code null} and otherwise
+     * returns the non-{@code null} value of {@code supplier.get()} (Java 9).
+     */
+    public static <T> T requireNonNullElseGet(T obj, Supplier<? extends T> supplier) {
+        return (obj != null) ? obj
+                : requireNonNull(requireNonNull(supplier, "supplier").get(), "supplier.get()");
+    }
+
     public static <T> T requireNonNull(T obj) {
         if (obj == null)
             throw new NullPointerException();
