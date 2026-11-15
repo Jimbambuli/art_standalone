@@ -55,4 +55,32 @@ class IndexOutOfBoundsException extends RuntimeException {
     public IndexOutOfBoundsException(String s) {
         super(s);
     }
+
+    /**
+     * Constructs a new {@code IndexOutOfBoundsException} class with an
+     * argument indicating the illegal index.
+     *
+     * <p>The index is included in this exception's detail message.  The
+     * exact presentation format of the detail message is unspecified.
+     *
+     * @param index the illegal index.
+     * @since 9
+     */
+    public IndexOutOfBoundsException(int index) {
+        super("Index out of range: " + index);
+    }
+
+    /**
+     * Constructs a new {@code IndexOutOfBoundsException} class with an
+     * argument indicating the illegal index.
+     *
+     * <p>The index is included in this exception's detail message.  The
+     * exact presentation format of the detail message is unspecified.
+     *
+     * @param index the illegal index.
+     * @since 16
+     */
+    public IndexOutOfBoundsException(long index) {
+        super("Index out of range: " + index);
+    }
 }
