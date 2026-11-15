@@ -154,10 +154,13 @@ public abstract class DoublePipeline<E_IN>
     }
 
     @Override
-    public final void forEachWithCancel(Spliterator<Double> spliterator, Sink<Double> sink) {
+    // Android-changed: Make public, to match the method it's overriding.
+    public final boolean forEachWithCancel(Spliterator<Double> spliterator, Sink<Double> sink) {
         Spliterator.OfDouble spl = adapt(spliterator);
         DoubleConsumer adaptedSink = adapt(sink);
-        do { } while (!sink.cancellationRequested() && spl.tryAdvance(adaptedSink));
+        boolean cancelled;
+        do { } while (!(cancelled = sink.cancellationRequested()) && spl.tryAdvance(adaptedSink));
+        return cancelled;
     }
 
     @Override
@@ -338,6 +341,16 @@ public abstract class DoublePipeline<E_IN>
         if (maxSize < 0)
             throw new IllegalArgumentException(Long.toString(maxSize));
         return SliceOps.makeDouble(this, (long) 0, maxSize);
+    }
+
+    @Override
+    public final DoubleStream takeWhile(DoublePredicate predicate) {
+        return WhileOps.makeTakeWhileDouble(this, predicate);
+    }
+
+    @Override
+    public final DoubleStream dropWhile(DoublePredicate predicate) {
+        return WhileOps.makeDropWhileDouble(this, predicate);
     }
 
     @Override

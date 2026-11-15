@@ -69,6 +69,21 @@ final class Nodes {
     private static final Node.OfLong EMPTY_LONG_NODE = new EmptyNode.OfLong();
     private static final Node.OfDouble EMPTY_DOUBLE_NODE = new EmptyNode.OfDouble();
 
+    /**
+     * @return an array generator for an array whose elements are of type T.
+     */
+    @SuppressWarnings("unchecked")
+    static <T> IntFunction<T[]> castingArray() {
+        // ATL-changed: anonymous class instead of the AOSP lambda; this libcore has no
+        // LambdaMetafactory, so core library code must not use invokedynamic.
+        return new IntFunction<T[]>() {
+            @Override
+            public T[] apply(int size) {
+                return (T[]) new Object[size];
+            }
+        };
+    }
+
     // General shape-based node creation methods
 
     /**

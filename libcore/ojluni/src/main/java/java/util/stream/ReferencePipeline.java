@@ -123,8 +123,11 @@ public abstract class ReferencePipeline<P_IN, P_OUT>
     }
 
     @Override
-    public final void forEachWithCancel(Spliterator<P_OUT> spliterator, Sink<P_OUT> sink) {
-        do { } while (!sink.cancellationRequested() && spliterator.tryAdvance(sink));
+    // Android-changed: Make public, to match the method it's overriding.
+    public final boolean forEachWithCancel(Spliterator<P_OUT> spliterator, Sink<P_OUT> sink) {
+        boolean cancelled;
+        do { } while (!(cancelled = sink.cancellationRequested()) && spliterator.tryAdvance(sink));
+        return cancelled;
     }
 
     @Override
@@ -400,6 +403,16 @@ public abstract class ReferencePipeline<P_IN, P_OUT>
         if (maxSize < 0)
             throw new IllegalArgumentException(Long.toString(maxSize));
         return SliceOps.makeRef(this, 0, maxSize);
+    }
+
+    @Override
+    public final Stream<P_OUT> takeWhile(Predicate<? super P_OUT> predicate) {
+        return WhileOps.makeTakeWhileRef(this, predicate);
+    }
+
+    @Override
+    public final Stream<P_OUT> dropWhile(Predicate<? super P_OUT> predicate) {
+        return WhileOps.makeDropWhileRef(this, predicate);
     }
 
     @Override

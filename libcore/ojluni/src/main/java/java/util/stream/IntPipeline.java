@@ -157,10 +157,13 @@ public abstract class IntPipeline<E_IN>
     }
 
     @Override
-    public final void forEachWithCancel(Spliterator<Integer> spliterator, Sink<Integer> sink) {
+    // Android-changed: Make public, to match the method it's overriding.
+    public final boolean forEachWithCancel(Spliterator<Integer> spliterator, Sink<Integer> sink) {
         Spliterator.OfInt spl = adapt(spliterator);
         IntConsumer adaptedSink = adapt(sink);
-        do { } while (!sink.cancellationRequested() && spl.tryAdvance(adaptedSink));
+        boolean cancelled;
+        do { } while (!(cancelled = sink.cancellationRequested()) && spl.tryAdvance(adaptedSink));
+        return cancelled;
     }
 
     @Override
@@ -374,6 +377,16 @@ public abstract class IntPipeline<E_IN>
         if (maxSize < 0)
             throw new IllegalArgumentException(Long.toString(maxSize));
         return SliceOps.makeInt(this, 0, maxSize);
+    }
+
+    @Override
+    public final IntStream takeWhile(IntPredicate predicate) {
+        return WhileOps.makeTakeWhileInt(this, predicate);
+    }
+
+    @Override
+    public final IntStream dropWhile(IntPredicate predicate) {
+        return WhileOps.makeDropWhileInt(this, predicate);
     }
 
     @Override

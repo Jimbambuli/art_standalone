@@ -155,10 +155,13 @@ public abstract class LongPipeline<E_IN>
     }
 
     @Override
-    public final void forEachWithCancel(Spliterator<Long> spliterator, Sink<Long> sink) {
+    // Android-changed: Make public, to match the method it's overriding.
+    public final boolean forEachWithCancel(Spliterator<Long> spliterator, Sink<Long> sink) {
         Spliterator.OfLong spl = adapt(spliterator);
         LongConsumer adaptedSink =  adapt(sink);
-        do { } while (!sink.cancellationRequested() && spl.tryAdvance(adaptedSink));
+        boolean cancelled;
+        do { } while (!(cancelled = sink.cancellationRequested()) && spl.tryAdvance(adaptedSink));
+        return cancelled;
     }
 
     @Override
@@ -355,6 +358,16 @@ public abstract class LongPipeline<E_IN>
         if (maxSize < 0)
             throw new IllegalArgumentException(Long.toString(maxSize));
         return SliceOps.makeLong(this, 0, maxSize);
+    }
+
+    @Override
+    public final LongStream takeWhile(LongPredicate predicate) {
+        return WhileOps.makeTakeWhileLong(this, predicate);
+    }
+
+    @Override
+    public final LongStream dropWhile(LongPredicate predicate) {
+        return WhileOps.makeDropWhileLong(this, predicate);
     }
 
     @Override
