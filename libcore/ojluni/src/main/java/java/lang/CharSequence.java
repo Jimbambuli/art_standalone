@@ -87,6 +87,21 @@ public interface CharSequence {
     char charAt(int index);
 
     /**
+     * Returns {@code true} if this character sequence is empty.
+     *
+     * @implSpec
+     * The default implementation returns the result of calling {@code length() == 0}.
+     *
+     * @return {@code true} if {@link #length()} is {@code 0}, otherwise
+     * {@code false}
+     *
+     * @since 15
+     */
+    default boolean isEmpty() {
+        return this.length() == 0;
+    }
+
+    /**
      * Returns a <code>CharSequence</code> that is a subsequence of this sequence.
      * The subsequence starts with the <code>char</code> value at the specified index and
      * ends with the <code>char</code> value at index <tt>end - 1</tt>.  The length
