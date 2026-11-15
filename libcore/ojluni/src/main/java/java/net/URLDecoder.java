@@ -27,6 +27,10 @@
 package java.net;
 
 import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
+import java.util.Objects;
 
 /**
  * Utility class for HTML form decoding. This class contains static methods
@@ -107,9 +111,45 @@ public class URLDecoder {
     }
 
     /**
-     * Decodes a {@code application/x-www-form-urlencoded} string using a specific
-     * encoding scheme.
-     * The supplied encoding is used to determine
+     * Decodes an {@code application/x-www-form-urlencoded} string using
+     * a specific encoding scheme.
+     *
+     * <p>
+     * This method behaves the same as {@linkplain String decode(String s, Charset charset)}
+     * except that it will {@linkplain java.nio.charset.Charset#forName look up the charset}
+     * using the given encoding name.
+     *
+     * @implNote This implementation will throw an {@link java.lang.IllegalArgumentException}
+     * when illegal strings are encountered.
+     *
+     * @param s the {@code String} to decode
+     * @param enc   The name of a supported
+     *    <a href="../lang/package-summary.html#charenc">character
+     *    encoding</a>.
+     * @return the newly decoded {@code String}
+     * @throws UnsupportedEncodingException
+     *             If character encoding needs to be consulted, but
+     *             named character encoding is not supported
+     * @see URLEncoder#encode(java.lang.String, java.lang.String)
+     * @since 1.4
+     */
+    public static String decode(String s, String enc) throws UnsupportedEncodingException {
+        if (enc.isEmpty()) {
+            throw new UnsupportedEncodingException ("URLDecoder: empty string enc parameter");
+        }
+
+        try {
+            Charset charset = Charset.forName(enc);
+            return decode(s, charset);
+        } catch (IllegalCharsetNameException | UnsupportedCharsetException e) {
+            throw new UnsupportedEncodingException(enc);
+        }
+    }
+
+    /**
+     * Decodes an {@code application/x-www-form-urlencoded} string using
+     * a specific {@linkplain java.nio.charset.Charset Charset}.
+     * The supplied charset is used to determine
      * what characters are represented by any consecutive sequences of the
      * form "<i>{@code %xy}</i>".
      * <p>
@@ -119,28 +159,24 @@ public class URLDecoder {
      * UTF-8 should be used. Not doing so may introduce
      * incompatibilities.</em>
      *
+     * @implNote This implementation will throw an {@link java.lang.IllegalArgumentException}
+     * when illegal strings are encountered.
+     *
      * @param s the {@code String} to decode
-     * @param enc   The name of a supported
-     *    <a href="../lang/package-summary.html#charenc">character
-     *    encoding</a>.
+     * @param charset the given charset
      * @return the newly decoded {@code String}
-     * @exception  UnsupportedEncodingException
-     *             If character encoding needs to be consulted, but
-     *             named character encoding is not supported
-     * @see URLEncoder#encode(java.lang.String, java.lang.String)
-     * @since 1.4
+     * @throws NullPointerException if {@code s} or {@code charset} is {@code null}
+     * @throws IllegalArgumentException if the implementation encounters illegal
+     * characters
+     * @see URLEncoder#encode(java.lang.String, java.nio.charset.Charset)
+     * @since 10
      */
-    public static String decode(String s, String enc)
-        throws UnsupportedEncodingException{
-
+    public static String decode(String s, Charset charset) {
+        Objects.requireNonNull(charset, "Charset");
         boolean needToChange = false;
         int numChars = s.length();
-        StringBuffer sb = new StringBuffer(numChars > 500 ? numChars / 2 : numChars);
+        StringBuilder sb = new StringBuilder(numChars > 500 ? numChars / 2 : numChars);
         int i = 0;
-
-        if (enc.length() == 0) {
-            throw new UnsupportedEncodingException ("URLDecoder: empty string enc parameter");
-        }
 
         char c;
         byte[] bytes = null;
@@ -172,14 +208,15 @@ public class URLDecoder {
 
                     while ( ((i+2) < numChars) &&
                             (c=='%')) {
-                        // BEGIN Android-changed
+                        // BEGIN Android-changed: App compat. Forbid non-hex chars after '%'.
                         if (!isValidHexChar(s.charAt(i+1)) || !isValidHexChar(s.charAt(i+2))) {
                             throw new IllegalArgumentException("URLDecoder: Illegal hex characters in escape (%) pattern : "
                                     + s.substring(i, i + 3));
                         }
-                        // END Android-changed
+                        // END Android-changed: App compat. Forbid non-hex chars after '%'.
                         int v = Integer.parseInt(s.substring(i+1,i+3),16);
                         if (v < 0)
+                            // Android-changed: Improve error message by printing the string value.
                             throw new IllegalArgumentException("URLDecoder: Illegal hex characters in escape (%) pattern - negative value : "
                                     + s.substring(i, i + 3));
                         bytes[pos++] = (byte) v;
@@ -195,7 +232,7 @@ public class URLDecoder {
                         throw new IllegalArgumentException(
                          "URLDecoder: Incomplete trailing escape (%) pattern");
 
-                    sb.append(new String(bytes, 0, pos, enc));
+                    sb.append(new String(bytes, 0, pos, charset));
                 } catch (NumberFormatException e) {
                     throw new IllegalArgumentException(
                     "URLDecoder: Illegal hex characters in escape (%) pattern - "
@@ -213,9 +250,9 @@ public class URLDecoder {
         return (needToChange? sb.toString() : s);
     }
 
-    // BEGIN Android-changed
+    // BEGIN Android-added: App compat. Forbid non-hex chars after '%'.
     private static boolean isValidHexChar(char c) {
         return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F');
     }
-    // END Android-changed
+    // END Android-added: App compat. Forbid non-hex chars after '%'.
 }
