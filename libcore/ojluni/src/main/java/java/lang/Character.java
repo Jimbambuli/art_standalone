@@ -2499,6 +2499,16 @@ class Character implements java.io.Serializable, Comparable<Character> {
                              "ARABICEXTENDED-A");
 
         /**
+         * Constant for the "Arabic Extended-B" Unicode
+         * character block.
+         * @since 19
+         */
+        public static final UnicodeBlock ARABIC_EXTENDED_B =
+            new UnicodeBlock("ARABIC_EXTENDED_B",
+                    "ARABIC EXTENDED-B",
+                    "ARABICEXTENDED-B");
+
+        /**
          * Constant for the "Sundanese Supplement" Unicode character block.
          * @since 1.8
          */
@@ -2602,6 +2612,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
             0x0800,   // 0800..083F; Samaritan
             0x0840,   // 0840..085F; Mandaic
             0x0860,   //             unassigned
+            0x0870,   // 0870..089F; Arabic Extended-B
             0x08A0,   // 08A0..08FF; Arabic Extended-A
             0x0900,   // 0900..097F; Devanagari
             0x0980,   // 0980..09FF; Bengali
@@ -2861,6 +2872,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
             SAMARITAN,
             MANDAIC,
             null,
+            ARABIC_EXTENDED_B,
             ARABIC_EXTENDED_A,
             DEVANAGARI,
             BENGALI,
