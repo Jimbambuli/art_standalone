@@ -53,6 +53,7 @@ struct JniConstants {
     static jclass inetAddressHolderClass;
     static jclass inetSocketAddressClass;
     static jclass inetSocketAddressHolderClass;
+    static jclass int64RefClass;
     static jclass integerClass;
     static jclass localeDataClass;
     static jclass longClass;

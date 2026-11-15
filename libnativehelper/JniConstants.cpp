@@ -42,6 +42,7 @@ jclass JniConstants::inetAddressClass;
 jclass JniConstants::inetAddressHolderClass;
 jclass JniConstants::inetSocketAddressClass;
 jclass JniConstants::inetSocketAddressHolderClass;
+jclass JniConstants::int64RefClass;
 jclass JniConstants::integerClass;
 jclass JniConstants::localeDataClass;
 jclass JniConstants::longClass;
@@ -108,6 +109,7 @@ void JniConstants::init(JNIEnv* env) {
     inetAddressHolderClass = findClass(env, "java/net/InetAddress$InetAddressHolder");
     inetSocketAddressClass = findClass(env, "java/net/InetSocketAddress");
     inetSocketAddressHolderClass = findClass(env, "java/net/InetSocketAddress$InetSocketAddressHolder");
+    int64RefClass = findClass(env, "android/system/Int64Ref");
     integerClass = findClass(env, "java/lang/Integer");
     localeDataClass = findClass(env, "libcore/icu/LocaleData");
     longClass = findClass(env, "java/lang/Long");

@@ -1,6 +1,7 @@
 non_openjdk_javadoc_files := \
   luni/src/main/java/android/system/ErrnoException.java \
   luni/src/main/java/android/system/GaiException.java \
+  luni/src/main/java/android/system/Int64Ref.java \
   luni/src/main/java/android/system/NetlinkSocketAddress.java \
   luni/src/main/java/android/system/Os.java \
   luni/src/main/java/android/system/OsConstants.java \

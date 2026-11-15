@@ -17,6 +17,7 @@
 package libcore.io;
 
 import android.system.ErrnoException;
+import android.system.Int64Ref;
 import android.system.GaiException;
 import android.system.StructAddrinfo;
 import android.system.StructCapUserData;
@@ -145,6 +146,7 @@ public interface Os {
     public int sendto(FileDescriptor fd, byte[] bytes, int byteOffset, int byteCount, int flags, InetAddress inetAddress, int port) throws ErrnoException, SocketException;
     public int sendto(FileDescriptor fd, byte[] bytes, int byteOffset, int byteCount, int flags, SocketAddress address) throws ErrnoException, SocketException;
     public long sendfile(FileDescriptor outFd, FileDescriptor inFd, MutableLong inOffset, long byteCount) throws ErrnoException;
+    public long sendfile(FileDescriptor outFd, FileDescriptor inFd, Int64Ref offset, long byteCount) throws ErrnoException;
     public void setegid(int egid) throws ErrnoException;
     public void setenv(String name, String value, boolean overwrite) throws ErrnoException;
     public void seteuid(int euid) throws ErrnoException;

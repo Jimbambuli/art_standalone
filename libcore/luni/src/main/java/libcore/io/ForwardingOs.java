@@ -17,6 +17,7 @@
 package libcore.io;
 
 import android.system.ErrnoException;
+import android.system.Int64Ref;
 import android.system.GaiException;
 import android.system.StructAddrinfo;
 import android.system.StructCapUserData;
@@ -155,6 +156,7 @@ public class ForwardingOs implements Os {
     public void removexattr(String path, String name) throws ErrnoException { os.removexattr(path, name); }
     public void rename(String oldPath, String newPath) throws ErrnoException { os.rename(oldPath, newPath); }
     public long sendfile(FileDescriptor outFd, FileDescriptor inFd, MutableLong inOffset, long byteCount) throws ErrnoException { return os.sendfile(outFd, inFd, inOffset, byteCount); }
+    public long sendfile(FileDescriptor outFd, FileDescriptor inFd, Int64Ref offset, long byteCount) throws ErrnoException { return os.sendfile(outFd, inFd, offset, byteCount); }
     public int sendto(FileDescriptor fd, ByteBuffer buffer, int flags, InetAddress inetAddress, int port) throws ErrnoException, SocketException { return os.sendto(fd, buffer, flags, inetAddress, port); }
     public int sendto(FileDescriptor fd, byte[] bytes, int byteOffset, int byteCount, int flags, InetAddress inetAddress, int port) throws ErrnoException, SocketException { return os.sendto(fd, bytes, byteOffset, byteCount, flags, inetAddress, port); }
     public int sendto(FileDescriptor fd, byte[] bytes, int byteOffset, int byteCount, int flags, SocketAddress address) throws ErrnoException, SocketException { return os.sendto(fd, bytes, byteOffset, byteCount, flags, address); }

@@ -457,6 +457,11 @@ public final class Os {
   public static long sendfile(FileDescriptor outFd, FileDescriptor inFd, MutableLong inOffset, long byteCount) throws ErrnoException { return Libcore.os.sendfile(outFd, inFd, inOffset, byteCount); }
 
   /**
+   * See <a href="http://man7.org/linux/man-pages/man2/sendfile.2.html">sendfile(2)</a>.
+   */
+  public static long sendfile(FileDescriptor outFd, FileDescriptor inFd, Int64Ref offset, long byteCount) throws ErrnoException { return Libcore.os.sendfile(outFd, inFd, offset, byteCount); }
+
+  /**
    * See <a href="http://man7.org/linux/man-pages/man2/sendto.2.html">sendto(2)</a>.
    */
   public static int sendto(FileDescriptor fd, ByteBuffer buffer, int flags, InetAddress inetAddress, int port) throws ErrnoException, SocketException { return Libcore.os.sendto(fd, buffer, flags, inetAddress, port); }

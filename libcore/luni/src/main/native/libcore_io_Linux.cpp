@@ -2082,10 +2082,9 @@ static void Linux_rename(JNIEnv* env, jobject, jstring javaOldPath, jstring java
     throwIfMinusOne(env, "rename", TEMP_FAILURE_RETRY(rename(oldPath.c_str(), newPath.c_str())));
 }
 
-static jlong Linux_sendfile(JNIEnv* env, jobject, jobject javaOutFd, jobject javaInFd, jobject javaOffset, jlong byteCount) {
+static jlong doSendfile(JNIEnv* env, jobject javaOutFd, jobject javaInFd, jobject javaOffset, jfieldID valueFid, jlong byteCount) {
     int outFd = jniGetFDFromFileDescriptor(env, javaOutFd);
     int inFd = jniGetFDFromFileDescriptor(env, javaInFd);
-    static jfieldID valueFid = env->GetFieldID(JniConstants::mutableLongClass, "value", "J");
     off_t offset = 0;
     off_t* offsetPtr = NULL;
     if (javaOffset != NULL) {
@@ -2101,6 +2100,16 @@ static jlong Linux_sendfile(JNIEnv* env, jobject, jobject javaOutFd, jobject jav
         env->SetLongField(javaOffset, valueFid, offset);
     }
     return result;
+}
+
+static jlong Linux_sendfile(JNIEnv* env, jobject, jobject javaOutFd, jobject javaInFd, jobject javaOffset, jlong byteCount) {
+    static jfieldID valueFid = env->GetFieldID(JniConstants::mutableLongClass, "value", "J");
+    return doSendfile(env, javaOutFd, javaInFd, javaOffset, valueFid, byteCount);
+}
+
+static jlong Linux_sendfileInt64Ref(JNIEnv* env, jobject, jobject javaOutFd, jobject javaInFd, jobject javaOffset, jlong byteCount) {
+    static jfieldID valueFid = env->GetFieldID(JniConstants::int64RefClass, "value", "J");
+    return doSendfile(env, javaOutFd, javaInFd, javaOffset, valueFid, byteCount);
 }
 
 static jint Linux_sendtoBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jint flags, jobject javaInetAddress, jint port) {
@@ -2560,6 +2569,7 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(Linux, removexattr, "(Ljava/lang/String;Ljava/lang/String;)V"),
     NATIVE_METHOD(Linux, rename, "(Ljava/lang/String;Ljava/lang/String;)V"),
     NATIVE_METHOD(Linux, sendfile, "(Ljava/io/FileDescriptor;Ljava/io/FileDescriptor;Landroid/util/MutableLong;J)J"),
+    NATIVE_METHOD_OVERLOAD(Linux, sendfile, "(Ljava/io/FileDescriptor;Ljava/io/FileDescriptor;Landroid/system/Int64Ref;J)J", Int64Ref),
     NATIVE_METHOD(Linux, sendtoBytes, "(Ljava/io/FileDescriptor;Ljava/lang/Object;IIILjava/net/InetAddress;I)I"),
     NATIVE_METHOD_OVERLOAD(Linux, sendtoBytes, "(Ljava/io/FileDescriptor;Ljava/lang/Object;IIILjava/net/SocketAddress;)I", SocketAddress),
     NATIVE_METHOD(Linux, setegid, "(I)V"),

@@ -17,6 +17,7 @@
 package libcore.io;
 
 import android.system.ErrnoException;
+import android.system.Int64Ref;
 import android.system.OsConstants;
 import android.system.StructLinger;
 import android.system.StructPollfd;
@@ -289,6 +290,11 @@ public class BlockGuardOs extends ForwardingOs {
     @Override public long sendfile(FileDescriptor outFd, FileDescriptor inFd, MutableLong inOffset, long byteCount) throws ErrnoException {
         BlockGuard.getThreadPolicy().onWriteToDisk();
         return os.sendfile(outFd, inFd, inOffset, byteCount);
+    }
+
+    @Override public long sendfile(FileDescriptor outFd, FileDescriptor inFd, Int64Ref offset, long byteCount) throws ErrnoException {
+        BlockGuard.getThreadPolicy().onWriteToDisk();
+        return os.sendfile(outFd, inFd, offset, byteCount);
     }
 
     @Override public int sendto(FileDescriptor fd, ByteBuffer buffer, int flags, InetAddress inetAddress, int port) throws ErrnoException, SocketException {
