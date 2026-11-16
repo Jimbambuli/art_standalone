@@ -162,6 +162,35 @@ struct ResTable_ref
     uint32_t ident;
 };
 
+/**
+ * Reference to a string in a string pool.
+ */
+struct ResStringPool_ref
+{
+    // Index into the string pool table (uint32_t-offset from the indices
+    // immediately after ResStringPool_header) at which to find the location
+    // of the string data in the pool.
+    uint32_t index;
+};
+
+// ResStringPool_span::END in C++, an enum inside a struct would be global in C
+#define ResStringPool_span_END 0xFFFFFFFF
+
+/**
+ * This structure defines a span of style information associated with
+ * a string in the pool.
+ */
+struct ResStringPool_span
+{
+    // This is the name of the span -- that is, the name of the XML
+    // tag that defined it.  The special value END (0xFFFFFFFF) indicates
+    // the end of an array of spans.
+    struct ResStringPool_ref name;
+
+    // The range of characters in the string that this span applies to.
+    uint32_t firstChar, lastChar;
+};
+
 // A single key-value entry in a bag.
 struct ResolvedBag_Entry {
   // The key, as described in ResTable_map::name.
@@ -509,6 +538,8 @@ struct ResStringPool *ResStringPool_new(const void* data, size_t size, bool copy
 size_t ResStringPool_getSize(const struct ResStringPool *res_string_pool);
 const char* ResStringPool_string8At(const struct ResStringPool *res_string_pool, size_t idx, size_t *outLen);
 const char16_t* ResStringPool_stringAt(const struct ResStringPool *res_string_pool, size_t idx, size_t *outLen);
+/* the spans of the string at idx, terminated by a span with name.index == END; NULL if it has none */
+const struct ResStringPool_span *ResStringPool_styleAt(const struct ResStringPool *res_string_pool, size_t idx);
 int32_t ResStringPool_getErrors(const struct ResStringPool *res_string_pool);
 void ResStringPool_delete(const struct ResStringPool *res_string_pool);
 

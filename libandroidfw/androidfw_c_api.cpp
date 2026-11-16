@@ -513,6 +513,16 @@ extern "C" const char16_t* ResStringPool_stringAt(const struct ResStringPool *re
   return string.data();
 }
 
+extern "C" const struct ResStringPool_span *ResStringPool_styleAt(const struct ResStringPool *res_string_pool, size_t idx)
+{
+  const android::ResStringPool *stringPool = reinterpret_cast<const android::ResStringPool *>(res_string_pool);
+  auto ret = stringPool->styleAt(idx);
+  if(!ret.has_value() || !ret.value())
+    return NULL;
+
+  return reinterpret_cast<const struct ResStringPool_span *>(ret.value().unsafe_ptr());
+}
+
 extern "C" android::status_t ResStringPool_getErrors(const struct ResStringPool *res_string_pool){
   const android::ResStringPool *stringPool = reinterpret_cast<const android::ResStringPool *>(res_string_pool);
   return stringPool->getError();
