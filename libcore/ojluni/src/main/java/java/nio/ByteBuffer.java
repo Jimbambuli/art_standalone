@@ -493,6 +493,47 @@ public abstract class ByteBuffer
         return get(dst, 0, dst.length);
     }
 
+    /**
+     * Absolute bulk <i>get</i> method.
+     *
+     * <p> This method transfers {@code length} bytes from this
+     * buffer into the given array, starting at the given index in this
+     * buffer and at the given offset in the array.  The position of this
+     * buffer is unchanged.
+     *
+     * @throws IndexOutOfBoundsException
+     *         If the preconditions on the {@code index}, {@code offset}, and
+     *         {@code length} parameters do not hold
+     *
+     * @since 16
+     */
+    public ByteBuffer get(int index, byte[] dst, int offset, int length) {
+        // Android-changed: Objects.checkFromIndexSize is not available, checkBounds is equivalent.
+        checkBounds(index, length, limit());
+        checkBounds(offset, length, dst.length);
+
+        getArray(index, dst, offset, length);
+
+        return this;
+    }
+
+    /**
+     * Absolute bulk <i>get</i> method.
+     *
+     * @since 16
+     */
+    public ByteBuffer get(int index, byte[] dst) {
+        return get(index, dst, 0, dst.length);
+    }
+
+    private ByteBuffer getArray(int index, byte[] dst, int offset, int length) {
+        int end = offset + length;
+        for (int i = offset, j = index; i < end; i++, j++) {
+            dst[i] = get(j);
+        }
+        return this;
+    }
+
 
     // -- Bulk put operations --
 
@@ -640,6 +681,108 @@ public abstract class ByteBuffer
      */
     public final ByteBuffer put(byte[] src) {
         return put(src, 0, src.length);
+    }
+
+    /**
+     * Absolute bulk <i>put</i> method&nbsp;&nbsp;<i>(optional operation)</i>.
+     *
+     * <p> This method transfers {@code length} bytes into this buffer from
+     * the given source buffer, starting at the given {@code offset} in the
+     * source buffer and the given {@code index} in this buffer. The
+     * positions of both buffers are unchanged.
+     *
+     * @throws IndexOutOfBoundsException
+     *         If the preconditions on the {@code index}, {@code offset}, and
+     *         {@code length} parameters do not hold
+     *
+     * @throws ReadOnlyBufferException
+     *         If this buffer is read-only
+     *
+     * @since 16
+     */
+    public ByteBuffer put(int index, ByteBuffer src, int offset, int length) {
+        // Android-changed: Objects.checkFromIndexSize is not available, checkBounds is equivalent.
+        checkBounds(index, length, limit());
+        checkBounds(offset, length, src.limit());
+        if (isReadOnly())
+            throw new ReadOnlyBufferException();
+
+        putBuffer(index, src, offset, length);
+
+        return this;
+    }
+
+    void putBuffer(int pos, ByteBuffer src, int srcPos, int n) {
+        // Note that we use offset instead of arrayOffset because arrayOffset is specified to
+        // throw for read only buffers. Our use of arrayOffset here is provably safe, we only
+        // use it to read *from* readOnly buffers.
+        if (this.hb != null && src.hb != null) {
+            // System.arraycopy is intrinsified by ART and therefore tiny bit faster than memmove
+            System.arraycopy(src.hb, srcPos + src.offset, hb, pos + offset, n);
+        } else {
+            // Use the buffer object (and the raw memory address) if it's a direct buffer. Note that
+            // isDirect() doesn't imply !hasArray(), ByteBuffer.allocateDirect allocated buffer will
+            // have a backing, non-gc-movable byte array. JNI allocated direct byte buffers WILL NOT
+            // have a backing array.
+            final Object srcObject = src.isDirect() ? src : src.hb;
+            int srcOffset = srcPos;
+            if (!src.isDirect()) {
+                srcOffset += src.offset;
+            }
+
+            final ByteBuffer dst = this;
+            final Object dstObject = dst.isDirect() ? dst : dst.hb;
+            int dstOffset = pos;
+            if (!dst.isDirect()) {
+                dstOffset += dst.offset;
+            }
+            Memory.memmove(dstObject, dstOffset, srcObject, srcOffset, n);
+        }
+    }
+
+    /**
+     * Absolute bulk <i>put</i> method&nbsp;&nbsp;<i>(optional operation)</i>.
+     *
+     * <p> This method transfers {@code length} bytes from the given
+     * array, starting at the given offset in the array and at the given index
+     * in this buffer.  The position of this buffer is unchanged.
+     *
+     * @throws IndexOutOfBoundsException
+     *         If the preconditions on the {@code index}, {@code offset}, and
+     *         {@code length} parameters do not hold
+     *
+     * @throws ReadOnlyBufferException
+     *         If this buffer is read-only
+     *
+     * @since 16
+     */
+    public ByteBuffer put(int index, byte[] src, int offset, int length) {
+        if (isReadOnly())
+            throw new ReadOnlyBufferException();
+        // Android-changed: Objects.checkFromIndexSize is not available, checkBounds is equivalent.
+        checkBounds(index, length, limit());
+        checkBounds(offset, length, src.length);
+
+        putArray(index, src, offset, length);
+
+        return this;
+    }
+
+    /**
+     * Absolute bulk <i>put</i> method&nbsp;&nbsp;<i>(optional operation)</i>.
+     *
+     * @since 16
+     */
+    public ByteBuffer put(int index, byte[] src) {
+        return put(index, src, 0, src.length);
+    }
+
+    private ByteBuffer putArray(int index, byte[] src, int offset, int length) {
+        int end = offset + length;
+        for (int i = offset, j = index; i < end; i++, j++) {
+            this.put(j, src[i]);
+        }
+        return this;
     }
 
 
