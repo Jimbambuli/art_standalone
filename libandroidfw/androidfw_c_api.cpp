@@ -53,6 +53,11 @@ extern "C" void AssetManager_setConfiguration(struct AssetManager *asset_manager
   assetManager->SetConfigurations({*reinterpret_cast<const android::ResTable_config *>(config)});
 }
 
+extern "C" void ResTable_config_setBcp47Locale(struct ResTable_config *config, const char *in)
+{
+  reinterpret_cast<android::ResTable_config *>(config)->setBcp47Locale(in);
+}
+
 // FIXME filter_incompatible_configs
 extern "C" bool AssetManager_setApkAssets(struct AssetManager *asset_manager,
                                           const struct ApkAssets* apk_assets[], size_t num_assets,

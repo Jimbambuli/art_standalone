@@ -519,6 +519,7 @@ struct AssetManager *AssetManager_new(void);
 void AssetManager_lock(struct AssetManager *asset_manager);
 void AssetManager_unlock(struct AssetManager *asset_manager);
 void AssetManager_setConfiguration(struct AssetManager *asset_manager, const struct ResTable_config *config);
+void ResTable_config_setBcp47Locale(struct ResTable_config *config, const char *in);
 bool AssetManager_setApkAssets(struct AssetManager *asset_manager, const struct ApkAssets* apk_assets[], size_t num_assets, bool invalidate_caches, bool filter_incompatible_configs);
 const struct ResStringPool *AssetManager_getStringPoolForCookie(struct AssetManager *asset_manager, ApkAssetsCookie cookie);
 const struct ResolvedBag *AssetManager_getBag(struct AssetManager *asset_manager, uint32_t resid);
