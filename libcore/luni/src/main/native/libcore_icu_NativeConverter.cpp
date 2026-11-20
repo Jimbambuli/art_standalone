@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include <memory>
 #include <vector>
@@ -90,6 +91,39 @@ static bool collectStandardNames(JNIEnv* env, const char* canonicalName, const c
   return true;
 }
 
+// Android's ICU data gives the two versioned UTF-16 converters an alias of their own (external/icu
+// icu4c/source/data/mappings/convrtrs.txt, "Android-changed": "alias made up to avoid
+// java.nio.charset.IllegalCharsetNameException"), so that their Java names are x-JavaUnicode and
+// x-JavaUnicode2. The system ICU used here has upstream ICU's data without these aliases: without
+// them the Java name would be "x-UTF-16,version=1", which Charset rejects.
+static const struct {
+  const char* icuName;
+  const char* alias;
+} kAndroidAliases[] = {
+  { "UTF-16,version=1", "JavaUnicode" },
+  { "UTF-16,version=2", "JavaUnicode2" },
+};
+
+// The converter that one of Android's own aliases names (ICU compares alias names ignoring case).
+static const char* icuNameOfAndroidAlias(const char* name) {
+  for (const auto& a : kAndroidAliases) {
+    if (strcasecmp(name, a.alias) == 0) {
+      return a.icuName;
+    }
+  }
+  return NULL;
+}
+
+// Android's own alias of a converter, if it has one.
+static const char* androidAliasOf(const char* icuCanonicalName) {
+  for (const auto& a : kAndroidAliases) {
+    if (strcmp(icuCanonicalName, a.icuName) == 0) {
+      return a.alias;
+    }
+  }
+  return NULL;
+}
+
 static const char* getICUCanonicalName(const char* name) {
   UErrorCode error = U_ZERO_ERROR;
   const char* canonicalName = NULL;
@@ -110,7 +144,12 @@ static const char* getICUCanonicalName(const char* name) {
       return name + 2;
     }
   }
-  return NULL;
+  // Android's ICU data resolves its own aliases (with or without "x-") like the others.
+  const char* androidName = icuNameOfAndroidAlias(name);
+  if (androidName == NULL && strstr(name, "x-") == name) {
+    androidName = icuNameOfAndroidAlias(name + 2);
+  }
+  return androidName;
 }
 
 // If a charset listed in the IANA Charset Registry is supported by an implementation
@@ -146,6 +185,9 @@ static jstring getJavaCanonicalName(JNIEnv* env, const char* icuCanonicalName) {
   const char* name = ucnv_getStandardName(icuCanonicalName, "UTR22", &status);
   if (name == NULL && strchr(icuCanonicalName, ',') != NULL) {
     name = ucnv_getAlias(icuCanonicalName, 1, &status);
+    if (name == NULL) {
+      name = androidAliasOf(icuCanonicalName);
+    }
   }
   // If there is no UTR22 canonical name then just return the original name.
   if (name == NULL) {
