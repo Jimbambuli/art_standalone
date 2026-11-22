@@ -23,6 +23,9 @@
 
 namespace art {
 
+// The alternate signal stack SetUpAlternateSignalStack() allocated for the calling thread.
+static thread_local uint8_t* gAllocatedSignalStack = nullptr;
+
 static void SigAltStack(stack_t* new_stack, stack_t* old_stack) {
   if (sigaltstack(new_stack, old_stack) == -1) {
     PLOG(FATAL) << "sigaltstack failed";
@@ -47,6 +50,7 @@ void Thread::SetUpAlternateSignalStack() {
   ss.ss_flags = 0;
   CHECK(ss.ss_sp != nullptr);
   SigAltStack(&ss, nullptr);
+  gAllocatedSignalStack = reinterpret_cast<uint8_t*>(ss.ss_sp);
 
   // Double-check that it worked.
   ss.ss_sp = nullptr;
@@ -55,10 +59,12 @@ void Thread::SetUpAlternateSignalStack() {
 }
 
 void Thread::TearDownAlternateSignalStack() {
-  // Get the pointer so we can free the memory.
+  // Free the stack this thread allocated, not the one installed now: native code of the app may have
+  // put its own alternate stack in place, which is not ours to free. On Android, bionic sets up and
+  // frees the thread's stack itself (thread_android.cc), so an app's sigaltstack() never reaches ART.
+  uint8_t* allocated_signal_stack = gAllocatedSignalStack;
+  gAllocatedSignalStack = nullptr;
   stack_t ss;
-  SigAltStack(nullptr, &ss);
-  uint8_t* allocated_signal_stack = reinterpret_cast<uint8_t*>(ss.ss_sp);
 
   // Tell the kernel to stop using it.
   ss.ss_sp = nullptr;
