@@ -107,24 +107,14 @@ void LogHelper::LogLineLowStack(const char* file,
 //#ifdef ART_TARGET_ANDROID
 #if 1 // ATL changed: use liblog in host build
   // Use android_writeLog() to avoid stack-based buffers used by android_printLog().
+  // ATL: no "file:line" prefix built with malloc() as on the target. This runs in the unexpected-signal
+  // handler, also when it is reentered after a fault inside malloc() (glibc aborts with the arena lock
+  // held), where malloc() would never return. The host branch below is async-signal-safe for the same reason.
+  UNUSED(file);
+  UNUSED(line);
   const char* tag = ProgramInvocationShortName();
   int priority = kLogSeverityToAndroidLogPriority[static_cast<size_t>(log_severity)];
-  char* buf = nullptr;
-  size_t buf_size = 0u;
-  if (priority == ANDROID_LOG_FATAL) {
-    // Allocate buffer for snprintf(buf, buf_size, "%s:%u] %s", file, line, message) below.
-    // If allocation fails, fall back to printing only the message.
-    buf_size = strlen(file) + 1 /* ':' */ + std::numeric_limits<decltype(line)>::max_digits10 +
-        2 /* "] " */ + strlen(message) + 1 /* terminating 0 */;
-    buf = reinterpret_cast<char*>(malloc(buf_size));
-  }
-  if (buf != nullptr) {
-    snprintf(buf, buf_size, "%s:%u] %s", file, line, message);
-    android_writeLog(priority, tag, buf);
-    free(buf);
-  } else {
-    android_writeLog(priority, tag, message);
-  }
+  android_writeLog(priority, tag, message);
 #else
   static constexpr char kLogCharacters[] = { 'V', 'D', 'I', 'W', 'E', 'F', 'F' };
   static_assert(
