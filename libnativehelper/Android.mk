@@ -18,6 +18,7 @@ LOCAL_PATH := $(call my-dir)
 local_src_files := \
     JNIHelp.cpp \
     JniConstants.cpp \
+    file_descriptor_jni.cpp \
     toStringArray.cpp
 
 #
