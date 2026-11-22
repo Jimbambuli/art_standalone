@@ -201,7 +201,11 @@ public class WolfSSLKeyX509 implements X509KeyManager{
         WolfSSLDebug.log(getClass(), WolfSSLDebug.INFO,
             "entered getCertificateChain(), alias: " + alias);
 
-        if (store == null) {
+        /* like getPrivateKey(): no alias, no chain (X509KeyManager returns
+         * null if the alias can't be found); KeyStore implementations such
+         * as BouncyCastle's look the alias up in a Hashtable, which throws
+         * NullPointerException for null */
+        if (store == null || alias == null) {
             return null;
         }
 
