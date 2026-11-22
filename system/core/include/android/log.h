@@ -68,6 +68,8 @@
  */
 
 #include <stdarg.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -125,6 +127,37 @@ void __android_log_assert(const char *cond, const char *tag,
     __attribute__ ((format(printf, 3, 4)))
 #endif
     ;
+
+/*
+ * The logging API of API level 30 (AOSP system/logging/liblog/include/android/log.h): log messages
+ * as a struct, a replaceable logger and aborter, a default tag and a process-wide minimum priority.
+ */
+struct __android_log_message {
+    size_t struct_size;   /* sizeof(struct __android_log_message) */
+    int32_t buffer_id;    /* log_id_t, or LOG_ID_DEFAULT */
+    int32_t priority;     /* android_LogPriority */
+    const char *tag;
+    const char *file;
+    uint32_t line;
+    const char *message;
+};
+
+typedef void (*__android_logger_function)(const struct __android_log_message *log_message);
+typedef void (*__android_aborter_function)(const char *abort_message);
+
+void __android_log_write_log_message(struct __android_log_message *log_message);
+void __android_log_set_logger(__android_logger_function logger);
+void __android_log_logd_logger(const struct __android_log_message *log_message);
+void __android_log_set_aborter(__android_aborter_function aborter);
+void __android_log_call_aborter(const char *abort_message);
+void __android_log_default_aborter(const char *abort_message)
+#if defined(__GNUC__)
+    __attribute__ ((noreturn))
+#endif
+    ;
+int32_t __android_log_set_minimum_priority(int32_t priority);
+int32_t __android_log_get_minimum_priority(void);
+void __android_log_set_default_tag(const char *tag);
 
 #ifdef __cplusplus
 }
