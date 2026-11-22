@@ -83,32 +83,18 @@ import static android.system.OsConstants.S_ISDIR;
      *
      * @param dexFiles the bytebuffers containing the dex files that we should load classes from.
      */
-    public DexPathList(ClassLoader definingContext, ByteBuffer[] dexFiles) {
+    public DexPathList(ClassLoader definingContext, String librarySearchPath) {
         if (definingContext == null) {
             throw new NullPointerException("definingContext == null");
         }
-        if (dexFiles == null) {
-            throw new NullPointerException("dexFiles == null");
-        }
-        if (Arrays.stream(dexFiles).anyMatch(v -> v == null)) {
-            throw new NullPointerException("dexFiles contains a null Buffer!");
-        }
 
         this.definingContext = definingContext;
-        // TODO It might be useful to let in-memory dex-paths have native libraries.
-        this.nativeLibraryDirectories = Collections.emptyList();
+        this.nativeLibraryDirectories = splitPaths(librarySearchPath, false);
         this.systemNativeLibraryDirectories =
                 splitPaths(System.getProperty("java.library.path"), true);
-        this.nativeLibraryPathElements = makePathElements(this.systemNativeLibraryDirectories);
-
-        ArrayList<IOException> suppressedExceptions = new ArrayList<IOException>();
-        this.dexElements = makeInMemoryDexElements(dexFiles, suppressedExceptions);
-        if (suppressedExceptions.size() > 0) {
-            this.dexElementsSuppressedExceptions =
-                    suppressedExceptions.toArray(new IOException[suppressedExceptions.size()]);
-        } else {
-            dexElementsSuppressedExceptions = null;
-        }
+        List<File> allNativeLibraryDirectories = new ArrayList<>(nativeLibraryDirectories);
+        allNativeLibraryDirectories.addAll(systemNativeLibraryDirectories);
+        this.nativeLibraryPathElements = makePathElements(allNativeLibraryDirectories);
     }
 
     /**
@@ -282,13 +268,51 @@ import static android.system.OsConstants.S_ISDIR;
         return result;
     }
 
-    private static Element[] makeInMemoryDexElements(ByteBuffer[] dexFiles,
+    /**
+     * For InMemoryDexClassLoader. Initializes {@code dexElements} with dex files
+     * loaded from {@code dexFiles} buffers.
+     *
+     * @param dexFiles ByteBuffers containing raw dex data. Apks are not supported.
+     */
+    /* package */ void initByteBufferDexPath(ByteBuffer[] dexFiles) {
+        if (dexFiles == null) {
+            throw new NullPointerException("dexFiles == null");
+        }
+        if (Arrays.stream(dexFiles).anyMatch(v -> v == null)) {
+            throw new NullPointerException("dexFiles contains a null Buffer!");
+        }
+        if (dexElements != null || dexElementsSuppressedExceptions != null) {
+            throw new IllegalStateException("Should only be called once");
+        }
+
+        final List<IOException> suppressedExceptions = new ArrayList<IOException>();
+
+        try {
+            Element[] null_elements = null;
+            DexFile dex = new DexFile(dexFiles, definingContext, null_elements);
+            dexElements = new Element[] { new Element(dex) };
+        } catch (IOException suppressed) {
+            System.logE("Unable to load dex files", suppressed);
+            suppressedExceptions.add(suppressed);
+            dexElements = new Element[0];
+        }
+
+        if (suppressedExceptions.size() > 0) {
+            dexElementsSuppressedExceptions = suppressedExceptions.toArray(
+                    new IOException[suppressedExceptions.size()]);
+        }
+    }
+
+    // This method is not used anymore. Kept around only because there are many legacy users of it.
+    @SuppressWarnings("unused")
+    public static Element[] makeInMemoryDexElements(ByteBuffer[] dexFiles,
             List<IOException> suppressedExceptions) {
         Element[] elements = new Element[dexFiles.length];
         int elementPos = 0;
         for (ByteBuffer buf : dexFiles) {
             try {
-                DexFile dex = new DexFile(buf);
+                DexFile dex = new DexFile(new ByteBuffer[] { buf }, /* classLoader */ null,
+                        /* dexElements */ null);
                 elements[elementPos++] = new Element(dex);
             } catch (IOException suppressed) {
                 System.logE("Unable to load dex file: " + buf, suppressed);

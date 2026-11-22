@@ -29,10 +29,24 @@ public final class InMemoryDexClassLoader extends BaseDexClassLoader {
      *
      * @param dexBuffers array of buffers containing DEX files between
      *                       <tt>buffer.position()</tt> and <tt>buffer.limit()</tt>.
+     * @param librarySearchPath the list of directories containing native
+     *   libraries, delimited by {@code File.pathSeparator}; may be {@code null}
+     * @param parent the parent class loader for delegation.
+     */
+    public InMemoryDexClassLoader(ByteBuffer[] dexBuffers,
+            String librarySearchPath, ClassLoader parent) {
+        super(dexBuffers, librarySearchPath, parent);
+    }
+
+    /**
+     * Create an in-memory DEX class loader with the given dex buffers.
+     *
+     * @param dexBuffers array of buffers containing DEX files between
+     *                       <tt>buffer.position()</tt> and <tt>buffer.limit()</tt>.
      * @param parent the parent class loader for delegation.
      */
     public InMemoryDexClassLoader(ByteBuffer[] dexBuffers, ClassLoader parent) {
-        super(dexBuffers, parent);
+        this(dexBuffers, null, parent);
     }
 
     /**
