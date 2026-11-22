@@ -214,4 +214,60 @@ public abstract class MappedByteBuffer
     private native void load0(long address, long length);
 
     private native void force0(FileDescriptor fd, long address, long length);
+
+    // BEGIN Android-added: covariant overloads of *Buffer methods that return this (AOSP 16
+    // @CovariantReturnType(returnType = MappedByteBuffer.class, presentAfter = 34)); javac keeps the Buffer
+    // descriptors as bridge methods.
+    @Override
+    public final MappedByteBuffer position(int newPosition) {{
+        super.position(newPosition);
+        return this;
+    }}
+
+    @Override
+    public final MappedByteBuffer limit(int newLimit) {{
+        super.limit(newLimit);
+        return this;
+    }}
+
+    @Override
+    public final MappedByteBuffer mark() {{
+        super.mark();
+        return this;
+    }}
+
+    @Override
+    public final MappedByteBuffer reset() {{
+        super.reset();
+        return this;
+    }}
+
+    @Override
+    public final MappedByteBuffer clear() {{
+        super.clear();
+        return this;
+    }}
+
+    @Override
+    public final MappedByteBuffer flip() {{
+        super.flip();
+        return this;
+    }}
+
+    @Override
+    public final MappedByteBuffer rewind() {{
+        super.rewind();
+        return this;
+    }}
+    // END Android-added: covariant overloads of *Buffer methods that return this.
+
+    // Android-changed: covariant overloads (AOSP 16 @CovariantReturnType(returnType = MappedByteBuffer.class, presentAfter = 34)).
+    @Override
+    public abstract MappedByteBuffer slice();
+
+    @Override
+    public abstract MappedByteBuffer duplicate();
+
+    @Override
+    public abstract MappedByteBuffer compact();
 }

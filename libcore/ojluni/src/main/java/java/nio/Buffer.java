@@ -244,7 +244,8 @@ public abstract class Buffer {
      * @return This buffer
      * @throws IllegalArgumentException If the preconditions on <tt>newPosition</tt> do not hold
      */
-    public final Buffer position(int newPosition) {
+    // Android-changed: not final, the subclasses override it with a covariant return type (AOSP 16).
+    public Buffer position(int newPosition) {
         if ((newPosition > limit) || (newPosition < 0))
             throw new IllegalArgumentException("Bad position " + newPosition + "/" + limit);
         position = newPosition;
@@ -271,7 +272,8 @@ public abstract class Buffer {
      * @return This buffer
      * @throws IllegalArgumentException If the preconditions on <tt>newLimit</tt> do not hold
      */
-    public final Buffer limit(int newLimit) {
+    // Android-changed: not final, the subclasses override it with a covariant return type (AOSP 16).
+    public Buffer limit(int newLimit) {
         if ((newLimit > capacity) || (newLimit < 0))
             throw new IllegalArgumentException();
         limit = newLimit;
@@ -285,7 +287,8 @@ public abstract class Buffer {
      *
      * @return This buffer
      */
-    public final Buffer mark() {
+    // Android-changed: not final, the subclasses override it with a covariant return type (AOSP 16).
+    public Buffer mark() {
         mark = position;
         return this;
     }
@@ -299,7 +302,8 @@ public abstract class Buffer {
      * @return This buffer
      * @throws InvalidMarkException If the mark has not been set
      */
-    public final Buffer reset() {
+    // Android-changed: not final, the subclasses override it with a covariant return type (AOSP 16).
+    public Buffer reset() {
         int m = mark;
         if (m < 0)
             throw new InvalidMarkException();
@@ -324,7 +328,8 @@ public abstract class Buffer {
      *
      * @return This buffer
      */
-    public final Buffer clear() {
+    // Android-changed: not final, the subclasses override it with a covariant return type (AOSP 16).
+    public Buffer clear() {
         position = 0;
         limit = capacity;
         mark = -1;
@@ -352,7 +357,8 @@ public abstract class Buffer {
      *
      * @return This buffer
      */
-    public final Buffer flip() {
+    // Android-changed: not final, the subclasses override it with a covariant return type (AOSP 16).
+    public Buffer flip() {
         limit = position;
         position = 0;
         mark = -1;
@@ -374,7 +380,8 @@ public abstract class Buffer {
      *
      * @return This buffer
      */
-    public final Buffer rewind() {
+    // Android-changed: not final, the subclasses override it with a covariant return type (AOSP 16).
+    public Buffer rewind() {
         position = 0;
         mark = -1;
         return this;

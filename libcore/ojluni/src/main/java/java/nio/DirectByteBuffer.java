@@ -155,7 +155,7 @@ public class DirectByteBuffer extends MappedByteBuffer implements DirectBuffer {
     }
 
     @Override
-    public final ByteBuffer slice() {
+    public final MappedByteBuffer slice() {
         if (!memoryRef.isAccessible) {
             throw new IllegalStateException("buffer is inaccessible");
         }
@@ -169,7 +169,7 @@ public class DirectByteBuffer extends MappedByteBuffer implements DirectBuffer {
     }
 
     @Override
-    public final ByteBuffer duplicate() {
+    public final MappedByteBuffer duplicate() {
         if (memoryRef.isFreed) {
             throw new IllegalStateException("buffer has been freed");
         }
@@ -296,7 +296,7 @@ public class DirectByteBuffer extends MappedByteBuffer implements DirectBuffer {
     }
 
     @Override
-    public final ByteBuffer compact() {
+    public final MappedByteBuffer compact() {
         if (!memoryRef.isAccessible) {
             throw new IllegalStateException("buffer is inaccessible");
         }

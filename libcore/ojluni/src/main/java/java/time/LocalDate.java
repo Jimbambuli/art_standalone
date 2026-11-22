@@ -83,6 +83,7 @@ import java.io.Serializable;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Era;
 import java.time.chrono.IsoChronology;
+import java.time.chrono.IsoEra;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
@@ -713,8 +714,10 @@ public final class LocalDate
      * @return the {@code IsoChronology} era constant applicable at this date, not null
      */
     @Override // override for Javadoc
-    public Era getEra() {
-        return ChronoLocalDate.super.getEra();
+    // Android-changed: returns IsoEra as AOSP 16 (@CovariantReturnType(returnType = IsoEra.class, presentAfter = 33));
+    // javac keeps getEra()Ljava/time/chrono/Era; as bridge method.
+    public IsoEra getEra() {
+        return (IsoEra) ChronoLocalDate.super.getEra();
     }
 
     /**

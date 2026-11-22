@@ -1069,4 +1069,50 @@ public abstract class CharBuffer
         return StreamSupport.intStream(() -> new CharBufferSpliterator(self),
             Buffer.SPLITERATOR_CHARACTERISTICS, false);
     }
+
+    // BEGIN Android-added: covariant overloads of *Buffer methods that return this (AOSP 16
+    // @CovariantReturnType(returnType = CharBuffer.class, presentAfter = 28)); javac keeps the Buffer
+    // descriptors as bridge methods.
+    @Override
+    public CharBuffer position(int newPosition) {{
+        super.position(newPosition);
+        return this;
+    }}
+
+    @Override
+    public CharBuffer limit(int newLimit) {{
+        super.limit(newLimit);
+        return this;
+    }}
+
+    @Override
+    public CharBuffer mark() {{
+        super.mark();
+        return this;
+    }}
+
+    @Override
+    public CharBuffer reset() {{
+        super.reset();
+        return this;
+    }}
+
+    @Override
+    public CharBuffer clear() {{
+        super.clear();
+        return this;
+    }}
+
+    @Override
+    public CharBuffer flip() {{
+        super.flip();
+        return this;
+    }}
+
+    @Override
+    public CharBuffer rewind() {{
+        super.rewind();
+        return this;
+    }}
+    // END Android-added: covariant overloads of *Buffer methods that return this.
 }

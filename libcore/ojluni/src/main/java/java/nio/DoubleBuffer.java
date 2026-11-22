@@ -727,4 +727,50 @@ public abstract class DoubleBuffer
     public abstract ByteOrder order();
 
 
+
+    // BEGIN Android-added: covariant overloads of *Buffer methods that return this (AOSP 16
+    // @CovariantReturnType(returnType = DoubleBuffer.class, presentAfter = 28)); javac keeps the Buffer
+    // descriptors as bridge methods.
+    @Override
+    public DoubleBuffer position(int newPosition) {{
+        super.position(newPosition);
+        return this;
+    }}
+
+    @Override
+    public DoubleBuffer limit(int newLimit) {{
+        super.limit(newLimit);
+        return this;
+    }}
+
+    @Override
+    public DoubleBuffer mark() {{
+        super.mark();
+        return this;
+    }}
+
+    @Override
+    public DoubleBuffer reset() {{
+        super.reset();
+        return this;
+    }}
+
+    @Override
+    public DoubleBuffer clear() {{
+        super.clear();
+        return this;
+    }}
+
+    @Override
+    public DoubleBuffer flip() {{
+        super.flip();
+        return this;
+    }}
+
+    @Override
+    public DoubleBuffer rewind() {{
+        super.rewind();
+        return this;
+    }}
+    // END Android-added: covariant overloads of *Buffer methods that return this.
 }

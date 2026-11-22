@@ -1657,4 +1657,50 @@ public abstract class ByteBuffer
     public void setAccessible(boolean value) {
         throw new UnsupportedOperationException();
     }
+
+    // BEGIN Android-added: covariant overloads of *Buffer methods that return this (AOSP 16
+    // @CovariantReturnType(returnType = ByteBuffer.class, presentAfter = 28)); javac keeps the Buffer
+    // descriptors as bridge methods.
+    @Override
+    public ByteBuffer position(int newPosition) {{
+        super.position(newPosition);
+        return this;
+    }}
+
+    @Override
+    public ByteBuffer limit(int newLimit) {{
+        super.limit(newLimit);
+        return this;
+    }}
+
+    @Override
+    public ByteBuffer mark() {{
+        super.mark();
+        return this;
+    }}
+
+    @Override
+    public ByteBuffer reset() {{
+        super.reset();
+        return this;
+    }}
+
+    @Override
+    public ByteBuffer clear() {{
+        super.clear();
+        return this;
+    }}
+
+    @Override
+    public ByteBuffer flip() {{
+        super.flip();
+        return this;
+    }}
+
+    @Override
+    public ByteBuffer rewind() {{
+        super.rewind();
+        return this;
+    }}
+    // END Android-added: covariant overloads of *Buffer methods that return this.
 }

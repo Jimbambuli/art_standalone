@@ -725,4 +725,50 @@ public abstract class IntBuffer
     public abstract ByteOrder order();
 
 
+
+    // BEGIN Android-added: covariant overloads of *Buffer methods that return this (AOSP 16
+    // @CovariantReturnType(returnType = IntBuffer.class, presentAfter = 28)); javac keeps the Buffer
+    // descriptors as bridge methods.
+    @Override
+    public IntBuffer position(int newPosition) {{
+        super.position(newPosition);
+        return this;
+    }}
+
+    @Override
+    public IntBuffer limit(int newLimit) {{
+        super.limit(newLimit);
+        return this;
+    }}
+
+    @Override
+    public IntBuffer mark() {{
+        super.mark();
+        return this;
+    }}
+
+    @Override
+    public IntBuffer reset() {{
+        super.reset();
+        return this;
+    }}
+
+    @Override
+    public IntBuffer clear() {{
+        super.clear();
+        return this;
+    }}
+
+    @Override
+    public IntBuffer flip() {{
+        super.flip();
+        return this;
+    }}
+
+    @Override
+    public IntBuffer rewind() {{
+        super.rewind();
+        return this;
+    }}
+    // END Android-added: covariant overloads of *Buffer methods that return this.
 }
