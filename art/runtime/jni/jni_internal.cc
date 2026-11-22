@@ -16,6 +16,8 @@
 
 #include "jni_internal.h"
 
+#include "nativebridge/native_bridge.h"
+
 #include <cstdarg>
 #include <log/log.h>
 #include <memory>
@@ -2767,6 +2769,17 @@ class JNI {
         // TODO: make this a hard register error in the future.
       }
 
+      // As in AOSP: a function of a library the native bridge runs (e.g. registered from JNI_OnLoad
+      // of an ARM64 library) is called through a trampoline of the bridge.
+      if (android::NativeBridgeIsNativeBridgeFunctionPointer(fnPtr)) {
+        uint32_t shorty_length;
+        const char* shorty = m->GetShorty(&shorty_length);
+        android::JNICallType jni_call_type = m->IsCriticalNative()
+            ? android::JNICallType::kJNICallTypeCriticalNative
+            : android::JNICallType::kJNICallTypeRegular;
+        fnPtr = android::NativeBridgeGetTrampolineForFunctionPointer(
+            fnPtr, shorty, shorty_length, jni_call_type);
+      }
       const void* final_function_ptr = m->RegisterNative(fnPtr);
       UNUSED(final_function_ptr);
     }

@@ -904,12 +904,23 @@ bool Runtime::Start() {
   system_class_loader_ = CreateSystemClassLoader(this);
 
   if (!is_zygote_) {
-    if (is_native_bridge_loaded_) {
-      PreInitializeNativeBridge(".");
-    }
     NativeBridgeAction action = force_native_bridge_
         ? NativeBridgeAction::kInitialize
         : NativeBridgeAction::kUnload;
+#ifndef ART_TARGET_ANDROID
+    // ATL runs without a zygote but, like the zygote, loads the bridge here and initializes it only
+    // for an app whose native code needs it, with the app's instruction set (AOSP: Zygote's
+    // SpecializeCommon -> PreInitializeNativeBridge(app_data_dir, isa), ZygoteHooks.postForkChild ->
+    // InitNonZygoteOrPostFork(kInitialize, isa)). ATL knows the app's ABI only after it has unpacked
+    // the app and registered its own natives, which the bridge's environment setup needs
+    // (android.os.Build), so it calls libnativebridge itself; -Xforce-nb-testing keeps its meaning.
+    if (!force_native_bridge_) {
+      action = NativeBridgeAction::kKeep;
+    }
+#endif
+    if (is_native_bridge_loaded_ && action != NativeBridgeAction::kKeep) {
+      PreInitializeNativeBridge(".");
+    }
     InitNonZygoteOrPostFork(self->GetJniEnv(),
                             /* is_system_server= */ false,
                             action,
@@ -990,6 +1001,9 @@ void Runtime::InitNonZygoteOrPostFork(
 
       case NativeBridgeAction::kInitialize:
         InitializeNativeBridge(env, isa);
+        break;
+
+      case NativeBridgeAction::kKeep:
         break;
     }
   }

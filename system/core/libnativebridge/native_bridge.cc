@@ -29,6 +29,19 @@
 
 #include <elf.h>
 
+#ifndef ART_TARGET_ANDROID
+// On ATL the native bridge implementations that exist (Berberis/Digitalis, libndk_translation) are
+// bionic libraries, like the app libraries they translate for: load them through bionic_translation.
+#include "../../../bionic_translation/linker/dlfcn.h"
+#define NB_DLSYM bionic_dlsym
+#define NB_DLCLOSE bionic_dlclose
+#define NB_DLERROR bionic_dlerror
+#else
+#define NB_DLSYM dlsym
+#define NB_DLCLOSE dlclose
+#define NB_DLERROR dlerror
+#endif
+
 #ifndef TEMP_FAILURE_RETRY
 #define TEMP_FAILURE_RETRY(exp) ({ \
   decltype(exp) _rc; \
@@ -105,7 +118,7 @@ void* OpenSystemLibrary(const char* path, int flags) {
   };
   return android_dlopen_ext(path, flags, &dlextinfo);
 #else
-  return dlopen(path, flags);
+  return bionic_dlopen(path, flags);
 #endif
 }
 
@@ -179,6 +192,8 @@ enum NativeBridgeImplementationVersion {
   PRE_ZYGOTE_FORK_VERSION = 6,
   // The version with critical_native support
   CRITICAL_NATIVE_SUPPORT_VERSION = 7,
+  // The version with support for identifying natively bridged function pointers
+  IDENTIFY_NATIVELY_BRIDGED_FUNCTION_POINTERS_VERSION = 8,
 };
 
 // Whether we had an error at some point.
@@ -306,7 +321,7 @@ bool LoadNativeBridge(const char* nb_library_filename,
       void* handle = OpenSystemLibrary(nb_library_filename, RTLD_LAZY);
 
       if (handle != nullptr) {
-        callbacks = reinterpret_cast<NativeBridgeCallbacks*>(dlsym(handle,
+        callbacks = reinterpret_cast<NativeBridgeCallbacks*>(NB_DLSYM(handle,
                                                                    kNativeBridgeInterfaceSymbol));
         if (callbacks != nullptr) {
           if (isCompatibleWith(NAMESPACE_VERSION)) {
@@ -316,15 +331,15 @@ bool LoadNativeBridge(const char* nb_library_filename,
             ALOGW("Unsupported native bridge API in %s (is version %d not compatible with %d)",
                   nb_library_filename, callbacks->version, NAMESPACE_VERSION);
             callbacks = nullptr;
-            dlclose(handle);
+            NB_DLCLOSE(handle);
           }
         } else {
-          dlclose(handle);
+          NB_DLCLOSE(handle);
           ALOGW("Unsupported native bridge API in %s: %s not found",
                 nb_library_filename, kNativeBridgeInterfaceSymbol);
         }
       } else {
-        ALOGW("Failed to load native bridge implementation: %s", dlerror());
+        ALOGW("Failed to load native bridge implementation: %s", NB_DLERROR());
       }
 
       // Two failure conditions: could not find library (dlopen failed), or could not find native
@@ -559,7 +574,7 @@ bool InitializeNativeBridge(JNIEnv* env, const char* instruction_set) {
         ReleaseAppCodeCacheDir();
       } else {
         // Unload the library.
-        dlclose(native_bridge_handle);
+        NB_DLCLOSE(native_bridge_handle);
         CloseNativeBridge(true);
       }
     }
@@ -579,7 +594,7 @@ void UnloadNativeBridge() {
     case NativeBridgeState::kPreInitialized:
     case NativeBridgeState::kInitialized:
       // Unload.
-      dlclose(native_bridge_handle);
+      NB_DLCLOSE(native_bridge_handle);
       CloseNativeBridge(false);
       break;
 
@@ -780,6 +795,18 @@ void* NativeBridgeLoadLibraryExt(const char* libpath, int flag, native_bridge_na
     }
   }
   return nullptr;
+}
+
+bool NativeBridgeIsNativeBridgeFunctionPointer(const void* method) {
+  if (NativeBridgeInitialized()) {
+    if (isCompatibleWith(IDENTIFY_NATIVELY_BRIDGED_FUNCTION_POINTERS_VERSION)) {
+      return callbacks->isNativeBridgeFunctionPointer(method);
+    } else {
+      ALOGW("not compatible with version %d, unable to call isNativeBridgeFunctionPointer",
+            IDENTIFY_NATIVELY_BRIDGED_FUNCTION_POINTERS_VERSION);
+    }
+  }
+  return false;
 }
 
 }  // extern "C"

@@ -775,19 +775,28 @@ int __android_log_is_loggable(int prio, const char* tag, int default_prio)
     LogState* state = openLogTable[0];
     unlock();
 
-    if (state == NULL) // fake log device not yet initialized
-        return prio >= default_prio;
+    /* the configured level (ANDROID_LOG_TAGS) stands for AOSP's log.tag properties; as in AOSP
+     * (properties.cpp), __android_log_set_minimum_priority() lowers it or replaces the default */
+    int minimum_log_priority = __android_log_get_minimum_priority();
+    int configured = -1;
+    if (state != NULL) { // fake log device initialized
+        configured = state->globalMinPriority;
+        for (int i = 0; i < kTagSetSize; i++) {
+            if (state->tagSet[i].minPriority == ANDROID_LOG_UNKNOWN)
+                break;      /* reached end of configured values */
 
-    int minPrio = state->globalMinPriority;
-    for (int i = 0; i < kTagSetSize; i++) {
-        if (state->tagSet[i].minPriority == ANDROID_LOG_UNKNOWN)
-            break;      /* reached end of configured values */
-
-        if (strcmp(state->tagSet[i].tag, tag) == 0) {
-            minPrio = state->tagSet[i].minPriority;
-            break;
+            if (tag && strcmp(state->tagSet[i].tag, tag) == 0) {
+                configured = state->tagSet[i].minPriority;
+                break;
+            }
         }
     }
 
-    return prio >= minPrio;
+    if (configured >= 0 && minimum_log_priority != ANDROID_LOG_DEFAULT)
+        return prio >= (configured < minimum_log_priority ? configured : minimum_log_priority);
+    if (configured >= 0)
+        return prio >= configured;
+    if (minimum_log_priority != ANDROID_LOG_DEFAULT)
+        return prio >= minimum_log_priority;
+    return prio >= default_prio;
 }

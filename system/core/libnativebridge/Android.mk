@@ -14,7 +14,7 @@ LOCAL_CLANG := true
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_CFLAGS += -Werror -Wall
 LOCAL_CPPFLAGS := -std=gnu++11 -fvisibility=protected
-LOCAL_LDFLAGS := -ldl
+LOCAL_LDFLAGS := -ldl -ldl_bio
 LOCAL_SHARED_LIBRARIES := liblog
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
 
