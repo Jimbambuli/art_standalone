@@ -35,6 +35,13 @@ extern "C" struct AssetManager *AssetManager_new(void)
   return reinterpret_cast<struct AssetManager *>(assetManager);
 }
 
+/* like AOSP's android_util_AssetManager.cpp NativeDestroy(): the ApkAssets are reference counted and stay
+ * alive as long as another reference (ApkAssets_load()'s, or another AssetManager's) holds them */
+extern "C" void AssetManager_delete(struct AssetManager *asset_manager)
+{
+  delete reinterpret_cast<GuardedAssetManager2 *>(asset_manager);
+}
+
 extern "C" void AssetManager_lock(struct AssetManager *asset_manager)
 {
   GuardedAssetManager2 *assetManager = reinterpret_cast<GuardedAssetManager2 *>(asset_manager);
