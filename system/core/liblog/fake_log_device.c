@@ -769,7 +769,7 @@ ssize_t fakeLogWritev(int fd, const struct iovec* vector, int count)
     return redirectWritev(fd, vector, count);
 }
 
-int __android_log_is_loggable(int prio, const char* tag, int default_prio)
+int __android_log_is_loggable_len(int prio, const char* tag, size_t len, int default_prio)
 {
     lock();
     LogState* state = openLogTable[0];
@@ -785,7 +785,7 @@ int __android_log_is_loggable(int prio, const char* tag, int default_prio)
             if (state->tagSet[i].minPriority == ANDROID_LOG_UNKNOWN)
                 break;      /* reached end of configured values */
 
-            if (tag && strcmp(state->tagSet[i].tag, tag) == 0) {
+            if (tag && strlen(state->tagSet[i].tag) == len && strncmp(state->tagSet[i].tag, tag, len) == 0) {
                 configured = state->tagSet[i].minPriority;
                 break;
             }
@@ -799,4 +799,9 @@ int __android_log_is_loggable(int prio, const char* tag, int default_prio)
     if (minimum_log_priority != ANDROID_LOG_DEFAULT)
         return prio >= minimum_log_priority;
     return prio >= default_prio;
+}
+
+int __android_log_is_loggable(int prio, const char* tag, int default_prio)
+{
+    return __android_log_is_loggable_len(prio, tag, tag ? strlen(tag) : 0, default_prio);
 }

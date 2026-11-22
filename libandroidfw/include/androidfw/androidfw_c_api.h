@@ -521,6 +521,19 @@ void AssetManager_lock(struct AssetManager *asset_manager);
 void AssetManager_unlock(struct AssetManager *asset_manager);
 void AssetManager_setConfiguration(struct AssetManager *asset_manager, const struct ResTable_config *config);
 void ResTable_config_setBcp47Locale(struct ResTable_config *config, const char *in);
+/* the configuration resources are chosen for (AssetManager2::GetConfigurations()[0]), for AConfiguration_fromAssetManager() */
+void AssetManager_getConfiguration(struct AssetManager *asset_manager, struct ResTable_config *out_config);
+/* ResTable_config::diff(), match() and isBetterThan(), for AConfiguration_diff(), _match() and _isBetterThan() */
+int ResTable_config_diff(const struct ResTable_config *config, const struct ResTable_config *other);
+bool ResTable_config_match(const struct ResTable_config *config, const struct ResTable_config *settings);
+bool ResTable_config_isBetterThan(const struct ResTable_config *config, const struct ResTable_config *other, const struct ResTable_config *requested);
+/* ObbFile, for libandroid's AObbScanner_getObbInfo() and AObbInfo_*(); readFrom() returns NULL if the file has no OBB footer */
+struct ObbFile;
+struct ObbFile *ObbFile_readFrom(const char *filename);
+void ObbFile_delete(struct ObbFile *obb);
+const char *ObbFile_getPackageName(struct ObbFile *obb);
+int32_t ObbFile_getVersion(struct ObbFile *obb);
+int32_t ObbFile_getFlags(struct ObbFile *obb);
 bool AssetManager_setApkAssets(struct AssetManager *asset_manager, const struct ApkAssets* apk_assets[], size_t num_assets, bool invalidate_caches, bool filter_incompatible_configs);
 const struct ResStringPool *AssetManager_getStringPoolForCookie(struct AssetManager *asset_manager, ApkAssetsCookie cookie);
 const struct ResolvedBag *AssetManager_getBag(struct AssetManager *asset_manager, uint32_t resid);

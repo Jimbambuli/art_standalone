@@ -1,5 +1,6 @@
 #include <androidfw/AssetManager2.h>
 #include <androidfw/AttributeResolution.h>
+#include <androidfw/ObbFile.h>
 #include <androidfw/ResourceTypes.h>
 #include <androidfw/androidfw_c_api.h>
 #include "include/androidfw/ResourceTypes.h"
@@ -63,6 +64,63 @@ extern "C" void AssetManager_setConfiguration(struct AssetManager *asset_manager
 extern "C" void ResTable_config_setBcp47Locale(struct ResTable_config *config, const char *in)
 {
   reinterpret_cast<android::ResTable_config *>(config)->setBcp47Locale(in);
+}
+
+extern "C" void AssetManager_getConfiguration(struct AssetManager *asset_manager, ResTable_config *out_config)
+{
+  GuardedAssetManager2 *assetManager = reinterpret_cast<GuardedAssetManager2 *>(asset_manager);
+  *reinterpret_cast<android::ResTable_config *>(out_config) = assetManager->GetConfigurations()[0];
+}
+
+/* AOSP frameworks/base/native/android/obb.cpp: a subclass, whose destructor is public */
+struct ObbInfo : public android::ObbFile {};
+
+extern "C" struct ObbFile *ObbFile_readFrom(const char *filename)
+{
+  ObbInfo *obb = new ObbInfo();
+  if (!obb->readFrom(filename)) {
+    delete obb;
+    return NULL;
+  }
+  obb->incStrong((void *)ObbFile_readFrom);
+  return reinterpret_cast<struct ObbFile *>(obb);
+}
+
+extern "C" void ObbFile_delete(struct ObbFile *obb)
+{
+  if (obb)
+    reinterpret_cast<android::ObbFile *>(obb)->decStrong((void *)ObbFile_readFrom);
+}
+
+extern "C" const char *ObbFile_getPackageName(struct ObbFile *obb)
+{
+  return reinterpret_cast<android::ObbFile *>(obb)->getPackageName().c_str();
+}
+
+extern "C" int32_t ObbFile_getVersion(struct ObbFile *obb)
+{
+  return reinterpret_cast<android::ObbFile *>(obb)->getVersion();
+}
+
+extern "C" int32_t ObbFile_getFlags(struct ObbFile *obb)
+{
+  return reinterpret_cast<android::ObbFile *>(obb)->getFlags();
+}
+
+extern "C" int ResTable_config_diff(const ResTable_config *config, const ResTable_config *other)
+{
+  return reinterpret_cast<const android::ResTable_config *>(config)->diff(*reinterpret_cast<const android::ResTable_config *>(other));
+}
+
+extern "C" bool ResTable_config_match(const ResTable_config *config, const ResTable_config *settings)
+{
+  return reinterpret_cast<const android::ResTable_config *>(config)->match(*reinterpret_cast<const android::ResTable_config *>(settings));
+}
+
+extern "C" bool ResTable_config_isBetterThan(const ResTable_config *config, const ResTable_config *other, const ResTable_config *requested)
+{
+  return reinterpret_cast<const android::ResTable_config *>(config)->isBetterThan(*reinterpret_cast<const android::ResTable_config *>(other),
+                                                                                 reinterpret_cast<const android::ResTable_config *>(requested));
 }
 
 // FIXME filter_incompatible_configs

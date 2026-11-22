@@ -184,6 +184,29 @@ void __android_log_logd_logger(const struct __android_log_message *log_message)
     write_to_log(buffer_id, vec, 3);
 }
 
+/* the stderr logger, with the line format of AOSP liblog's filestream_logger() */
+void __android_log_stderr_logger(const struct __android_log_message *log_message)
+{
+    static const char log_characters[] = "XXVDIWEF";
+    struct timespec ts;
+    struct tm now;
+    char timestamp[sizeof("mm-DD HH::MM::SS.mmm")];
+
+    clock_gettime(CLOCK_REALTIME, &ts);
+    localtime_r(&ts.tv_sec, &now);
+    size_t n = strftime(timestamp, sizeof(timestamp), "%m-%d %H:%M:%S", &now);
+    snprintf(timestamp + n, sizeof(timestamp) - n, ".%03ld", ts.tv_nsec / (1000 * 1000));
+    int32_t priority = log_message->priority > ANDROID_LOG_SILENT ? ANDROID_LOG_FATAL : log_message->priority;
+    const char *tag = log_message->tag ? log_message->tag : " nullptr";
+
+    if (log_message->file != NULL)
+        fprintf(stderr, "%s %5d %5d %c %-8s: %s:%u %s\n", timestamp, getpid(), gettid(),
+                log_characters[priority], tag, log_message->file, log_message->line, log_message->message);
+    else
+        fprintf(stderr, "%s %5d %5d %c %-8s: %s\n", timestamp, getpid(), gettid(),
+                log_characters[priority], tag, log_message->message);
+}
+
 static __android_logger_function logger_function = __android_log_logd_logger;
 
 void __android_log_set_logger(__android_logger_function logger)

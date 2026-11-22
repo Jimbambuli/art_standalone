@@ -99,6 +99,7 @@ int __android_log_write(int prio, const char *tag, const char *text);
  * Check whether a message at the given priority for the given tag should be logged.
  */
 int __android_log_is_loggable(int prio, const char *tag, int default_prio);
+int __android_log_is_loggable_len(int prio, const char *tag, size_t len, int default_prio);
 
 /*
  * Send a formatted string to the log, used like printf(fmt,...)
@@ -148,6 +149,7 @@ typedef void (*__android_aborter_function)(const char *abort_message);
 void __android_log_write_log_message(struct __android_log_message *log_message);
 void __android_log_set_logger(__android_logger_function logger);
 void __android_log_logd_logger(const struct __android_log_message *log_message);
+void __android_log_stderr_logger(const struct __android_log_message *log_message);
 void __android_log_set_aborter(__android_aborter_function aborter);
 void __android_log_call_aborter(const char *abort_message);
 void __android_log_default_aborter(const char *abort_message)
