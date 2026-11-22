@@ -458,7 +458,8 @@ class Runtime {
 
   enum class NativeBridgeAction {  // private
     kUnload,
-    kInitialize
+    kInitialize,
+    kKeep  // leave a loaded bridge to the embedder, which initializes it with the app's ISA (ATL)
   };
 
   jit::Jit* GetJit() const {
