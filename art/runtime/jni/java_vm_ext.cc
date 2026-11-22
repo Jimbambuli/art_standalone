@@ -17,6 +17,8 @@
 #include "java_vm_ext.h"
 
 #include "../../bionic_translation/linker/dlfcn.h"
+#include <map>
+#include <mutex>
 #include <string_view>
 
 #include "android-base/stringprintf.h"
@@ -715,6 +717,48 @@ void JavaVMExt::DeleteWeakGlobalRef(Thread* self, jweak obj) {
   }
 }
 
+// ATL has no libnativeloader. Like its CreateClassLoaderNamespace() for a bridged class loader
+// (art/libnativeloader/library_namespaces.cpp, native_loader_namespace.cpp), an app library that
+// needs the native bridge is loaded in a bridge namespace for the class loader's library path,
+// linked to the bridge's system namespace for the public libraries; the first one is also the
+// anonymous namespace. Namespaces are kept per library path (ATL's class loaders of one app share
+// it). Not isolated: ATL has no permitted paths for app files (its own libraries share one
+// namespace, too), so an app may load libraries it unpacked anywhere, as from its lib directory.
+static android::native_bridge_namespace_t* NativeBridgeClassLoaderNamespace(const std::string& library_path) {
+  // AOSP system/core/rootdir/etc/public.libraries.android.txt (the 64-bit ones)
+  static constexpr const char* kPublicLibraries =
+      "libandroid.so:libaaudio.so:libamidi.so:libbinder_ndk.so:libc.so:libcamera2ndk.so:libdl.so:"
+      "libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libicu.so:libicui18n.so:libicuuc.so:"
+      "libjnigraphics.so:liblog.so:libmediandk.so:libm.so:libnativehelper.so:libnativewindow.so:"
+      "libneuralnetworks.so:libOpenMAXAL.so:libOpenSLES.so:libRS.so:libstdc++.so:libsync.so:"
+      "libvulkan.so:libwebviewchromium_plat_support.so:libz.so";
+  static constexpr uint64_t kAlsoUsedAsAnonymous = 0x10000000;  // ANDROID_NAMESPACE_TYPE_ALSO_USED_AS_ANONYMOUS
+  static std::mutex lock;
+  static std::map<std::string, android::native_bridge_namespace_t*> namespaces;
+  std::lock_guard<std::mutex> guard(lock);
+  auto it = namespaces.find(library_path);
+  if (it != namespaces.end()) {
+    return it->second;
+  }
+  android::native_bridge_namespace_t* system_ns = android::NativeBridgeGetExportedNamespace("system");
+  if (system_ns == nullptr) {
+    system_ns = android::NativeBridgeGetExportedNamespace("default");
+  }
+  android::native_bridge_namespace_t* ns = android::NativeBridgeCreateNamespace(
+      "classloader-namespace", nullptr, library_path.c_str(), namespaces.empty() ? kAlsoUsedAsAnonymous : 0,
+      "", system_ns);
+  if (ns == nullptr) {
+    LOG(WARNING) << "native bridge: no namespace for " << library_path << ": " << android::NativeBridgeGetError();
+    return nullptr;
+  }
+  if (system_ns != nullptr && !android::NativeBridgeLinkNamespaces(ns, system_ns, kPublicLibraries)) {
+    LOG(WARNING) << "native bridge: cannot link the namespace for " << library_path << ": "
+                 << android::NativeBridgeGetError();
+  }
+  namespaces.emplace(library_path, ns);
+  return ns;
+}
+
 static void ThreadEnableCheckJni(Thread* thread, void* arg) {
   bool* check_jni = reinterpret_cast<bool*>(arg);
   thread->GetJniEnv()->SetCheckJniEnabled(*check_jni);
@@ -1001,7 +1045,14 @@ bool JavaVMExt::LoadNativeLibrary(JNIEnv* env,
 
   void* handle;
   if (android::NativeBridgeIsSupported(path_str)) {
-    handle = android::NativeBridgeLoadLibrary(path_str, RTLD_NOW);
+    std::string search_path;
+    if (library_path.get() != nullptr) {
+      ScopedUtfChars library_path_utf(env, library_path.get());
+      search_path = library_path_utf.c_str();
+    }
+    android::native_bridge_namespace_t* ns = NativeBridgeClassLoaderNamespace(search_path);
+    handle = ns != nullptr ? android::NativeBridgeLoadLibraryExt(path_str, RTLD_NOW, ns)
+                           : android::NativeBridgeLoadLibrary(path_str, RTLD_NOW);
     needs_native_bridge = true;
     VLOG(jni) << "[Call to android::NativeBridgeLoadLibrary(\"" << path << "\", RTLD_NOW) returned " << handle << "]";
   } else {
